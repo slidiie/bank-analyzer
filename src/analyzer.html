@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <!--CSP-->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
   <title>Анализ банковской выписки</title>
   <style>
     /* Цвета заданы переменными: тёмная тема по умолчанию, светлая включается кнопкой */
@@ -165,6 +165,12 @@
       .modalcard { padding: 1rem; }
       input[type=text], select { max-width: 100%; }
     }
+    /* Защита от раздувания страницы (iPhone): длинное слово без пробелов не должно растягивать раскладку шире экрана,
+       иначе iOS уменьшает страницу и отключает мобильные правила выше. */
+    html { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+    body { overflow-wrap: anywhere; }
+    .pie .lname, .pname, .pnote, .lrow > span, summary, td, th { overflow-wrap: anywhere; min-width: 0; }
+    button, .tab { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
@@ -321,7 +327,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.23, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.24, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
