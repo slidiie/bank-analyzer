@@ -278,6 +278,10 @@
     #demoBar[hidden], #clearBtn[hidden] { display: none; }
     tr.own td { opacity: .62; }
     tr.own td:nth-child(3) { opacity: 1; }
+    .bankchips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .6rem; }
+    .bankchips:empty { display: none; }
+    .bankchip { display: inline-flex; align-items: center; gap: .45rem; padding: .15rem .7rem .15rem .2rem; border: 1px solid var(--ctl-border); border-radius: 999px; font-size: .9rem; }
+    .bankchip .mono { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: .85rem; }
     .badge { display: inline-block; border: 1px solid var(--ctl-border); border-radius: 6px; padding: 0 .4rem; margin-right: .4rem; font-size: .85em; white-space: nowrap; }
     .suggest { position: absolute; top: 100%; left: .4rem; z-index: 30; min-width: 15rem; max-height: 16rem; overflow: auto; text-align: left;
       background: var(--bg); border: 1px solid var(--ctl-border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .45); font-weight: 400; }
@@ -368,6 +372,8 @@
       <p>Кнопка «Сохранить в файл» создаёт файл с вашими правилами и операциями, то есть с реальными тратами. Храните его у себя и никому не отправляйте. На чужом компьютере после работы сотрите сохранённое, как описано выше.</p></details>
     <details><summary>Насколько точны итоги?</summary>
       <p>Если банк указывает итоги в шапке выписки, сайт сверяет с ними разобранные операции и показывает результат: зелёная галочка, если сумма сошлась. Если сверить нечем, так и написано. Категории определяются по правилам и могут ошибаться: поправьте вручную, выбор запомнится. Сайт не даёт финансовых советов, это справочный разбор ваших же данных.</p></details>
+    <details><summary>Это сайт банка?</summary>
+      <p>Нет. Сайт независимый, он не связан ни с одним банком и не является сервисом какого-либо банка. Названия банков указаны только для того, чтобы было понятно, выписки какого формата сайт умеет читать. Логотипы и фирменные цвета банков здесь не используются.</p></details>
     <details><summary>Моего банка нет в списке</summary>
       <p id="faqBanks"></p>
       <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Мастер из пяти шагов сам закроет личное, вы проверите образец и отправите его письмом. Сайт файлы никуда не отправляет.</p>
@@ -474,6 +480,7 @@
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
     </p>
     <p id="status" data-sec="overview more"></p>
+    <div id="bankChips" class="bankchips" data-sec="overview more" aria-label="Загруженные банки"></div>
     <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
       <span><b>Демо на выдуманных данных.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
@@ -582,7 +589,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.39, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.40, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1361,8 +1368,16 @@
       if (typeof renderTabbar === "function") renderTabbar();
     }
 
+    // Плашки загруженных банков: одинаковые для всех, без логотипов и фирменных цветов (сайт с банками не связан)
+    function renderBankChips() {
+      const box = $("bankChips");
+      const names = demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))];
+      box.replaceChildren(...names.map(n => h("span", { class: "bankchip" },
+        h("span", { class: "mono", "aria-hidden": "true" }, n.trim().charAt(0).toUpperCase()), n)));
+    }
     function renderCheck() {
       const box = $("check");
+      renderBankChips();
       if (demoMode) { box.className = ""; box.replaceChildren(); return; }
       let ok = true;
       const lines = statements.map(st => {
@@ -2638,7 +2653,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.39", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.40", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
