@@ -321,7 +321,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.22, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.23, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -340,13 +340,36 @@
   <script>
     // Чтение PDF: библиотека pdf.js встроена в страницу (build.py), из интернета ничего не подгружается.
     // Читаем в отдельном потоке (Worker из встроенного кода); если браузер или «песочница» его не даёт, читаем в основном потоке.
+    // Дополнения для Safari/iOS: pdf.js перебирает потоки через `for await`, а в Safari у ReadableStream этого нет
+    // («undefined is not a function (near '...of e...')»). Тот же код подкладываем и в Worker.
+    function installPolyfills() {
+      if (typeof ReadableStream !== "undefined" && !ReadableStream.prototype[Symbol.asyncIterator]) {
+        ReadableStream.prototype[Symbol.asyncIterator] = function () {
+          const reader = this.getReader();
+          return {
+            next() { return reader.read(); },
+            return() { try { reader.releaseLock(); } catch (e) { /* уже освобождён */ } return Promise.resolve({ done: true, value: undefined }); },
+            [Symbol.asyncIterator]() { return this; }
+          };
+        };
+      }
+      if (!Promise.withResolvers) {
+        Promise.withResolvers = function () {
+          let resolve, reject;
+          const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+          return { promise, resolve, reject };
+        };
+      }
+    }
+    installPolyfills();
+
     async function openPdf(bytes) {
       const lib = window.pdfjsLib;
       if (!lib) throw new Error("не удалось запустить чтение PDF: обновите браузер");
       const opts = { isEvalSupported: false };
       let port = null, task = null, timer = null;
       try {
-        const src = document.getElementById("pdfWorkerModule").textContent;
+        const src = "(" + installPolyfills.toString() + ")();\n" + document.getElementById("pdfWorkerModule").textContent;
         port = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })), { type: "module" });
         const dead = new Promise((_, reject) => port.addEventListener("error", () => reject({ workerFailed: true }), { once: true }));
         // На iPhone и в «песочницах» Worker иногда не запускается молча, без ошибки: через 6 с переходим на чтение в основном потоке.
