@@ -279,7 +279,7 @@ check("разбор: в заголовке указан месяц", textOf(byId
 check("разбор: в навигации счётчик по выбранному месяцу", textOf(byId["nav"]).includes("Нужно разобрать (1)"));
 clickButton(byId["reviewOther"], "Октябрь");
 check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
-check("плашка «Ждут разбора» первая в отчёте, вкладки внизу", html.indexOf('id="reviewBanner"') < html.indexOf('id="check"') && html.indexOf('id="insightsTitle"') < html.indexOf('id="bottomTabs"'));
+check("плашка «Ждут разбора» первая в отчёте, вкладки внизу", html.indexOf('id="reviewBanner"') < html.indexOf('id="check"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
 check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Ждут разбора") && textOf(byId["reviewBanner"]).includes("Разобрать"));
 check("есть нижние вкладки «Все операции» и «Нужно разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
 vm.runInContext(`bottomTab = null; render();`, ctx);
@@ -291,7 +291,7 @@ check("кнопка на плашке открывает «Нужно разоб
 // Разбираем всё: операция уходит из «Нужно разобрать» и попадает в «Все операции»
 vm.runInContext(`txs.filter(t => !categoryOf(t)).forEach(t => setTxRule(t, "Прочее"));`, ctx);
 check("всё разобрано: плашки и вкладки «Нужно разобрать» нет", byId["reviewBanner"].hidden === true && !textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
-check("всё разобрано: показана вкладка «Все операции»", byId["allPanel"].hidden === false && byId["reviewSection"].hidden === true);
+check("всё разобрано: список свёрнут (панели закрыты), «Все операции» открываются по кнопке", byId["allPanel"].hidden === true && byId["reviewSection"].hidden === true && textOf(byId["bottomTabs"]).includes("Все операции"));
 
 // ---- Сворачивание списка внизу: только кликом по вкладке ----
 vm.runInContext(`bottomOpen = true; bottomTab = "all"; render();`, ctx);
