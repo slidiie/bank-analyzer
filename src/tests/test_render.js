@@ -162,11 +162,16 @@ check("один месяц: есть таблица с категориями", 
 check("один месяц: нет кнопки «Нужно разобрать», когда разбирать нечего", !textOf(byId["nav"]).includes("Нужно разобрать"));
 
 // ---- Тема и значки ----
-check("тема по умолчанию тёмная", document.documentElement.attrs["data-theme"] === "dark");
-byId["themeBtn"].listeners.click[0]();
-check("кнопка переключает на светлую", document.documentElement.attrs["data-theme"] === "light");
-byId["themeBtn"].listeners.click[0]();
-check("и обратно на тёмную", document.documentElement.attrs["data-theme"] === "dark");
+check("тема по умолчанию «Авто»", document.documentElement.attrs["data-theme"] === "auto" && byId["themeAuto"].attrs["aria-pressed"] === "true");
+byId["themeLight"].listeners.click[0]();
+check("кнопка «Светлая»", document.documentElement.attrs["data-theme"] === "light" && byId["themeLight"].attrs["aria-pressed"] === "true" && byId["themeAuto"].attrs["aria-pressed"] === "false");
+byId["themeDark"].listeners.click[0]();
+check("кнопка «Тёмная»", document.documentElement.attrs["data-theme"] === "dark");
+check("theme-color следует выбору", byId["themeMetaL"].attrs["content"] === "#0E0F11" && byId["themeMetaD"].attrs["content"] === "#0E0F11");
+byId["themeAuto"].listeners.click[0]();
+check("«Авто» возвращает свои цвета строки браузера", document.documentElement.attrs["data-theme"] === "auto" && byId["themeMetaL"].attrs["content"] === "#EEF0F2" && byId["themeMetaD"].attrs["content"] === "#0E0F11");
+check("цвет категории постоянен и из --cat-*", vm.runInContext(`catColor("Продукты") === "var(--cat-food)" && catColor("Прочее") === "var(--cat-other)" && catColor("Моя своя") === catColor("Моя своя") && /^var\\(--cat-/.test(catColor("Моя своя"))`, ctx));
+check("в таблице у категории цветная точка", JSON.stringify(byId["summary"]).includes("var(--cat-"));
 check("у всех стандартных категорий есть значок", vm.runInContext(`Cat.DEFAULT_CATEGORIES.every(c => Cat.ICONS[c])`, ctx));
 check("значок своей категории сохраняется", vm.runInContext(`ensureCategory("Питомцы","paw"); iconKey("Питомцы")`, ctx) === "paw");
 check("без значка — запасной", vm.runInContext(`ensureCategory("Без значка"); iconKey("Без значка")`, ctx) === "tag");
@@ -291,16 +296,27 @@ check("кнопка на плашке открывает «Нужно разоб
 // Разбираем всё: операция уходит из «Нужно разобрать» и попадает в «Все операции»
 vm.runInContext(`txs.filter(t => !categoryOf(t)).forEach(t => setTxRule(t, "Прочее"));`, ctx);
 check("всё разобрано: плашки и вкладки «Нужно разобрать» нет", byId["reviewBanner"].hidden === true && !textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
-check("всё разобрано: список свёрнут (панели закрыты), «Все операции» открываются по кнопке", byId["allPanel"].hidden === true && byId["reviewSection"].hidden === true && textOf(byId["bottomTabs"]).includes("Все операции"));
+check("всё разобрано: в разделе «Разобрать» открыты «Все операции», «Нужно разобрать» нет", byId["allPanel"].hidden === false && byId["reviewSection"].hidden === true && textOf(byId["bottomTabs"]).includes("Все операции"));
 
-// ---- Сворачивание списка внизу: только кликом по вкладке ----
+// ---- Список в разделе «Разобрать» всегда развёрнут: клик по вкладке только переключает ----
 vm.runInContext(`bottomOpen = true; bottomTab = "all"; render();`, ctx);
 check("список внизу по умолчанию развёрнут", byId["allPanel"].hidden === false);
 check("отдельной кнопки «Свернуть список» нет", !textOf(byId["bottomTabs"]).includes("Свернуть") && !textOf(byId["bottomTabs"]).includes("Развернуть"));
 clickButton(byId["bottomTabs"], "Все операции");
-check("клик по открытой вкладке сворачивает список", byId["allPanel"].hidden === true && byId["reviewSection"].hidden === true);
+check("клик по открытой вкладке список не сворачивает", byId["allPanel"].hidden === false);
 clickButton(byId["bottomTabs"], "Все операции");
-check("клик по вкладке снова разворачивает", byId["allPanel"].hidden === false);
+check("клик по вкладке снова: список открыт", byId["allPanel"].hidden === false);
+
+// ---- Разделы-экраны и панель разделов ----
+check("панель: пять разделов", ["Обзор", "Разобрать", "Выводы", "Планирование", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)));
+vm.runInContext(`curSection = "overview"; render();`, ctx);
+check("панель: у «Обзора» отмечен текущий раздел", vm.runInContext("curSection", ctx) === "overview" && byId["tabbar"].children[0].className === "active");
+clickButton(byId["tabbar"], "Выводы");
+check("раздел «Выводы»: data-view и активная кнопка", document.body.attrs["data-view"] === "insights" && byId["tabbar"].children[2].className === "active");
+clickButton(byId["tabbar"], "Ещё");
+check("раздел «Ещё»: data-view", document.body.attrs["data-view"] === "more");
+clickButton(byId["tabbar"], "Обзор");
+check("возврат на «Обзор»", document.body.attrs["data-view"] === "overview");
 
 // ---- Категории по кругу и поиск: выбранная категория поднимается наверх, остальные остаются ----
 function findEl(root, pred) {

@@ -2,43 +2,81 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-0EMYNTvjPqlgG5huQV14MJWs3nkGRVn59mab/iXEmQk=' 'sha256-VZsz1i9wb1SmdNWm03w8X8KMHJx/iDPmu2+Odl4DBaM=' 'sha256-0wC7VyWcrYQeRXYuHXlRkSp2dx4/vcgWU33WPxxZ48U='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-huo34h9LmeBIHKra1kUxlk8qLwj8Fd75tq3KZXUchH4=' 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-0EMYNTvjPqlgG5huQV14MJWs3nkGRVn59mab/iXEmQk=' 'sha256-VZsz1i9wb1SmdNWm03w8X8KMHJx/iDPmu2+Odl4DBaM=' 'sha256-j51hMsLFgtoL9+oELrDOjXK/FMHP2N2QVfHhjIfnXiw='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" id="themeMetaL" content="#EEF0F2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" id="themeMetaD" content="#0E0F11" media="(prefers-color-scheme: dark)">
+  <script id="themeInit">
+    /* Режим темы до первой отрисовки: "auto" (как в системе), "light" или "dark". Safari в приватном режиме бросает ошибку при чтении localStorage. */
+    (function () {
+      var m = null;
+      try { m = JSON.parse(localStorage.getItem("ba_theme_v2")); } catch (e) { m = null; }
+      if (m !== "light" && m !== "dark" && m !== "auto") { try { m = JSON.parse(localStorage.getItem("ba_theme_v1")); } catch (e) { m = null; } }
+      document.documentElement.setAttribute("data-theme", m === "light" || m === "dark" ? m : "auto");
+    })();
+  </script>
   <title>Анализ банковской выписки</title>
   <style>
-    /* Цвета заданы переменными: тёмная тема по умолчанию, светлая включается кнопкой */
+    /* Тема «Графит». Светлая по умолчанию; тёмная: системная (если выбор не светлый) и явная [data-theme="dark"].
+       Старые имена (--note-bg, --bar, --ctl-* …) оставлены и ссылаются на новые. Копия старых цветов: папка Резерв, v4.33-до-дизайна. */
     :root {
-      color-scheme: dark;
-      --bg: #1e1e20; --text: #ebebeb; --muted: #9b9b9f; --details: #b8b8bc;
-      --note-bg: #28282b; --note-border: #3c3c40;
-      --ok-bg: #28282b; --ok-border: #4a4a4f;
-      --warn-bg: #2c2c2f; --warn-border: #55555a;
-      --line: #36363a; --bar: #e4e4e6; --barbg: #333336;
-      --ctl-bg: #2a2a2d; --ctl-border: #48484d; --ctl-text: #ebebeb;
-      --active-text: #1e1e20;
-      --lvl-warn: #d9a400; --lvl-over: #e0554f;
+      color-scheme: light dark;
+      --bg:#EEF0F2; --surface:#F7F8F9; --surface-2:#E6E9EC; --line:#D3D8DD;
+      --text:#1F2328; --muted:#5C6570; --details:#4A525C;
+      --accent:#1C757D; --on-accent:#F7F8F9; --focus:#1C757D;
+      --pos:#2E8B5F; --neg:#B94A42;
+      --r-s:8px; --r-m:12px; --r-l:16px;
+      --cat-food:#3F9B6B;   --cat-cafe:#B7782F;   --cat-transport:#33629E;
+      --cat-home:#7C5CC4;   --cat-subs:#B2578D;   --cat-health:#2F9A90;
+      --cat-shop:#A38C1E;   --cat-fun:#BF5A4D;    --cat-transfer:#647084;
+      --cat-other:#8A9099;
+      --note-bg:var(--surface); --note-border:var(--line);
+      --ok-bg:var(--surface); --ok-border:#8FC3A9;
+      --warn-bg:var(--surface); --warn-border:#CDBB84;
+      --bar:var(--accent); --barbg:var(--surface-2); --active-text:var(--on-accent);
+      --ctl-bg:var(--surface); --ctl-border:#838C97; --ctl-text:var(--text);
+      --lvl-warn:#8a5f00; --lvl-over:#b3261e;
     }
-    :root[data-theme="light"] {
-      color-scheme: light;
-      --bg: #ffffff; --text: #222222; --muted: #666666; --details: #555555;
-      --note-bg: #eef6ff; --note-border: #b9d7f5;
-      --ok-bg: #eaf7ea; --ok-border: #a8d8a8;
-      --warn-bg: #fff7e0; --warn-border: #ecd48a;
-      --line: #e3e3e3; --bar: #4a7fd1; --barbg: #eeeeee;
-      --ctl-bg: #f4f4f4; --ctl-border: #bbbbbb; --ctl-text: #222222;
-      --active-text: #ffffff;
-      --lvl-warn: #8a5f00; --lvl-over: #b3261e;
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:#0E0F11; --surface:#16181B; --surface-2:#1D2024; --line:#2A2D33;
+        --text:#E6E8EB; --muted:#9AA0A8; --details:#B4BAC1;
+        --accent:#5CC8D0; --on-accent:#0E0F11; --focus:#5CC8D0;
+        --pos:#4CC38A; --neg:#E5736B;
+        --cat-food:#6FCF97;   --cat-cafe:#F2B26B;   --cat-transport:#6EA8E8;
+        --cat-home:#B79CF0;   --cat-subs:#E58FC0;   --cat-health:#5CCFC3;
+        --cat-shop:#F0DA6A;   --cat-fun:#F28B7E;    --cat-transfer:#9AA7B8;
+        --cat-other:#7D838C;
+        --ok-border:#2F6B4F; --warn-border:#6A5E32;
+        --ctl-border:#666D76;
+        --lvl-warn:#d9a400; --lvl-over:#e0554f;
+      }
     }
+    :root[data-theme="dark"] {
+      --bg:#0E0F11; --surface:#16181B; --surface-2:#1D2024; --line:#2A2D33;
+      --text:#E6E8EB; --muted:#9AA0A8; --details:#B4BAC1;
+      --accent:#5CC8D0; --on-accent:#0E0F11; --focus:#5CC8D0;
+      --pos:#4CC38A; --neg:#E5736B;
+      --cat-food:#6FCF97;   --cat-cafe:#F2B26B;   --cat-transport:#6EA8E8;
+      --cat-home:#B79CF0;   --cat-subs:#E58FC0;   --cat-health:#5CCFC3;
+      --cat-shop:#F0DA6A;   --cat-fun:#F28B7E;    --cat-transfer:#9AA7B8;
+      --cat-other:#7D838C;
+      --ok-border:#2F6B4F; --warn-border:#6A5E32;
+      --ctl-border:#666D76;
+      --lvl-warn:#d9a400; --lvl-over:#e0554f;
+    }
+    :root[data-theme="light"] { color-scheme: light; }
+    :root[data-theme="dark"] { color-scheme: dark; }
     body { font-family: system-ui, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; background: var(--bg); color: var(--text); }
     h2 { margin-top: 2rem; }
     /* Плашка демо всегда на виду при прокрутке, кнопка выхода заметная */
-    #demoBar { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-bottom: .6rem; background: linear-gradient(var(--note-bg), var(--note-bg)), var(--bg); box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+    #demoBar { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-bottom: .6rem; background: linear-gradient(var(--note-bg), var(--note-bg)), var(--bg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
     #demoBar[hidden] { display: none; }
     @media (max-width: 520px) { #demoBar .demohint { display: none; } #demoBar { padding: .5rem .8rem; } }
     #demoExit { font-size: 1rem; padding: .5rem 1.1rem; font-weight: 600; background: var(--text); color: var(--bg); border-color: var(--text); }
-    .note { background: var(--note-bg); border: 1px solid var(--note-border); padding: .75rem 1rem; border-radius: 8px; }
-    .ok { background: var(--ok-bg); border: 1px solid var(--ok-border); padding: .75rem 1rem; border-radius: 8px; }
-    .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: .75rem 1rem; border-radius: 8px; }
+    .note { background: var(--note-bg); border: 1px solid var(--note-border); padding: .75rem 1rem; border-radius: var(--r-m); }
+    .ok { background: var(--ok-bg); border: 1px solid var(--ok-border); padding: .75rem 1rem; border-radius: var(--r-m); }
+    .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: .75rem 1rem; border-radius: var(--r-m); }
     table { border-collapse: collapse; width: 100%; font-size: .92rem; }
     th, td { border-bottom: 1px solid var(--line); padding: .35rem .5rem; text-align: left; vertical-align: top; }
     td.num, th.num { text-align: right; white-space: nowrap; }
@@ -75,23 +113,35 @@
     .anonpage .arow { display: flex; flex-wrap: wrap; gap: .15rem .3rem; margin: .1rem 0; }
     .anonpage .achip { cursor: pointer; border-radius: 3px; padding: 0 .2rem; overflow-wrap: anywhere; border: 1px solid transparent; }
     .anonpage .achip:hover { border-color: var(--ctl-border); }
-    .anonpage .achip.hid { background: #000; color: #888; }
-    @media (prefers-color-scheme: dark) { .anonpage .achip.hid { background: #555; color: #bbb; } }
-    details.sect { margin: 1.2rem 0 0; }
-    details.sect > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: .5rem; }
-    details.sect > summary::-webkit-details-marker { display: none; }
-    details.sect > summary::before { content: "▸"; transition: transform .15s; }
-    details.sect[open] > summary::before { transform: rotate(90deg); }
-    details.sect > summary h2 { margin: 0; display: inline; }
-    #tabbar { display: none; }
+    .anonpage .achip.hid { background: var(--text); color: var(--bg); }
+    /* Разделы-экраны: показывается один раздел (body[data-view] ставит JS), остальные блоки с data-sec скрыты.
+       Пока отчёта нет, data-view нет (или "none"), и страница выглядит как раньше. */
+    body[data-view="overview"] [data-sec]:not([data-sec~="overview"]),
+    body[data-view="review"] [data-sec]:not([data-sec~="review"]),
+    body[data-view="insights"] [data-sec]:not([data-sec~="insights"]),
+    body[data-view="plan"] [data-sec]:not([data-sec~="plan"]),
+    body[data-view="more"] [data-sec]:not([data-sec~="more"]) { display: none !important; }
+    body[data-view]:not([data-view="none"]):not(.demo) #landing > :not(.topbar) { display: none; }
+    .sect { margin: 0; }
+    .sect > h2 { margin: .2rem 0 .6rem; }
+    .secthint { margin: 0 0 .8rem; }
+    .secthint button { margin-left: .4rem; }
+    /* Панель разделов: на телефоне закреплена снизу (иконка над подписью), на ПК горизонтальные вкладки под шапкой */
+    #tabbar { display: flex; gap: .3rem; margin: 0 0 1rem; border-bottom: 1px solid var(--line); }
+    #tabbar button { position: relative; display: inline-flex; align-items: center; gap: .45rem; min-width: 0; padding: .6rem .9rem; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: .95rem; white-space: nowrap; }
+    #tabbar button.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    #tabbar .tabico svg { display: block; width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    #tabbar .tabbadge { min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .72rem; font-weight: 700; line-height: 1.15rem; text-align: center; }
+    #tabbar .l-s { display: none; }
     @media (max-width: 768px) {
-      #tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--bg, Canvas); border-top: 1px solid var(--ctl-border); padding-bottom: env(safe-area-inset-bottom); }
-      #tabbar button { flex: 1 1 0; min-width: 0; border: 0; border-radius: 0; background: none; color: inherit; padding: .7rem .2rem; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      #tabbar button.active { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+      #tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; gap: 0; background: var(--surface); border-top: 1px solid var(--line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+      #tabbar button { flex: 1 1 0; flex-direction: column; justify-content: center; gap: .15rem; padding: .5rem .1rem .45rem; border-bottom: 0; font-size: .72rem; overflow: hidden; text-overflow: ellipsis; }
+      #tabbar .tabbadge { position: absolute; top: .2rem; left: calc(50% + .3rem); }
+      #tabbar .l-f { display: none; }
+      #tabbar .l-s { display: inline; }
       main { padding-bottom: 4.5rem; }
     }
-    @media (max-width: 380px) { #tabbar button { font-size: .72rem; padding: .7rem 0; } }
-    .nav { margin: .75rem 0; }
+    .nav { margin: .75rem 0; }   /* #nav скрыт (hidden): ссылки заменила панель разделов, но тесты ещё читают его текст */
     .nav a { margin-right: 1.2rem; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
     .nav a:hover { text-decoration-thickness: 2px; }
     #dataRules { margin-top: 2.5rem; border-top: 1px solid var(--line); }
@@ -134,26 +184,58 @@
        и не min-width: 0 для переноса. Иначе блок остаётся в той же строке в щели шириной в несколько пикселей. Проверка: tests/test_css.js. */
     .pie .legend { flex: 1 1 16rem; min-width: 0; }
     .pie .lrow { display: flex; flex-wrap: wrap; align-items: center; gap: .1rem .4rem; padding: .25rem 0; border-bottom: 1px solid var(--line); }
+    td .sw { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .45rem; vertical-align: middle; }
     .pie .sw { width: .8rem; height: .8rem; border-radius: 3px; flex: none; }
     .pie .lname { flex: 1 1 8rem; }
     th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
     .searchwrap { position: relative; display: inline-block; }
     /* Демо: прячем длинное вступление и загрузку файлов, чтобы кнопка и результат были рядом */
-    body.demo #landing > :not(h1):not(.cta), body.demo #app > :not(#demoBar):not(#report) { display: none !important; }
+    body.demo #landing > :not(.topbar):not(.upcard), body.demo .upcard > :not(.cta), body.demo #app > :not(#demoBar):not(#report) { display: none !important; }
     body.demo #startBtn { display: none; }
     body.demo .hero { margin-bottom: .6rem; padding-bottom: .6rem; }
-    .hero { padding-bottom: 1.2rem; border-bottom: 1px solid var(--line); margin-bottom: 1.2rem; }
-    .hero h1 { font-size: clamp(2rem, 5vw, 2.9rem); margin: 1.2rem 0 .6rem; line-height: 1.15; }
-    .cta { margin: 1.2rem 0 .6rem; }
-    .cta button { padding: .6rem 1.2rem; font-size: 1rem; margin-right: .5rem; }
-    button.primary { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
+    .hero { padding-bottom: .4rem; margin-bottom: 1.2rem; }
+    .hero h1 { font-size: clamp(1.5rem, 4.6vw, 2.1rem); margin: .4rem 0 1.1rem; line-height: 1.2; }
+    button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+    .gi { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .8rem; margin-bottom: 1.4rem; }
+    .brand { flex: 1 1 auto; font-size: .9rem; color: var(--muted); }
+    .topact { display: flex; align-items: center; gap: .5rem; }
+    .themeseg { display: inline-flex; border: 1px solid var(--ctl-border); border-radius: 999px; overflow: hidden; background: var(--surface); }
+    .themeseg button { display: inline-flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.1rem; padding: 0; border: 0; border-radius: 0; background: none; color: var(--muted); }
+    .themeseg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+    .themeseg svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .chipbtn { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.1rem; padding: 0 .8rem; border-radius: 999px; font-size: .9rem; background: transparent; }
+    .upcard { background: var(--surface); border: 1.5px dashed var(--line); border-radius: var(--r-l); padding: 1.4rem 1.2rem; text-align: center; }
+    .upcard.drag { border-color: var(--accent); background: var(--surface-2); }
+    .upicon { width: 2.4rem; height: 2.4rem; color: var(--accent); }
+    .upcap { margin: .5rem 0 1rem; }
+    .upcard .cta { display: flex; flex-direction: column; gap: .6rem; max-width: 24rem; margin: 0 auto; }
+    .upcard .cta button { width: 100%; min-height: 3rem; margin: 0; padding: .5rem 1rem; font-size: 1rem; border-radius: var(--r-m); }
+    #demoBtn { background: transparent; color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .rowcard { display: flex; align-items: center; gap: .7rem; width: 100%; min-height: 3rem; margin-top: .6rem; padding: .6rem 1rem; text-align: left; font-size: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); }
+    .rowcard > span { flex: 1 1 auto; min-width: 0; }
+    .rowcard .gi { color: var(--accent); }
+    .rowcard .chev { color: var(--muted); }
+    .aboutdet { margin-top: .8rem; }
+    .aboutdet .cards { margin: .6rem 0 0; }
+    body.demo .topbar { margin-bottom: .8rem; }
+    body.demo .upcard { padding: .6rem; border-style: solid; }
+    body.demo .upcard .cta { max-width: none; }
+    .sheet .modalcard { width: 100%; max-width: 34rem; background: var(--surface); }
+    .sheet h3 { margin: 1rem 0 .2rem; font-size: 1rem; }
+    .sheet p { margin: .2rem 0; }
+    .sheet .modalcard:focus { outline: none; }
+    @media (max-width: 520px) {
+      .sheet { align-items: flex-end; padding: 0; }
+      .sheet .modalcard { max-width: none; border-radius: var(--r-l) var(--r-l) 0 0; max-height: 85vh; max-height: 85dvh; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+    }
     #app > h2:first-child { margin-top: 1rem; }
     #status { white-space: pre-line; }
     footer { margin-top: 3rem; }
     #exportBox { margin-top: 2rem; }
     .lead { font-size: 1.15rem; max-width: 46rem; }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); gap: .8rem; margin: 1rem 0; }
-    .card { border: 1px solid var(--ctl-border); border-radius: 10px; padding: .8rem 1rem; background: var(--note-bg); }
+    .card { border: 1px solid var(--line); border-radius: var(--r-m); padding: .8rem 1rem; background: var(--note-bg); }
     .card h3 { margin: 0 0 .35rem; font-size: 1rem; }
     .card p { margin: 0; }
     #demoBar[hidden], #clearBtn[hidden] { display: none; }
@@ -168,19 +250,12 @@
     .suggest .opt.cur { font-weight: 700; }
     th.sortable:hover { color: var(--bar); }
     .oprow { border-top: 1px solid var(--warn-border); padding: .4rem 0; }
-    .themebtn { float: right; margin-top: .5rem; position: relative; width: 4.4rem; height: 2.1rem; padding: 0 .6rem; border-radius: 999px;
-      display: flex; align-items: center; justify-content: space-between; }
-    .themebtn::before { content: ""; position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px);
-      border-radius: 999px; background: var(--bar); transition: transform .2s; }
-    :root:not([data-theme="light"]) .themebtn::before { transform: translateX(100%); }
-    .themebtn svg { position: relative; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    :root[data-theme="light"] .themebtn .sun, :root:not([data-theme="light"]) .themebtn .moon { color: var(--active-text); }
     #bottom { margin-top: 2rem; }
     .modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, .6); }
     .modal[hidden] { display: none; }
     .modalcard { background: var(--bg); color: var(--text); border: 1px solid var(--ctl-border); border-radius: 12px; padding: 1.2rem 1.4rem; max-width: 30rem; max-height: calc(100vh - 2rem); overflow: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
     .modalbtns { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
-    :focus-visible { outline: 2px solid #5b9dff; outline-offset: 2px; }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
     details { border-bottom: 1px solid var(--line); padding: .5rem 0; max-width: 46rem; }
     details > summary { cursor: pointer; font-weight: 600; }
     details > p { margin: .5rem 0 .2rem; }
@@ -210,16 +285,30 @@
   </style>
 </head>
 <body>
-  <button id="themeBtn" class="themebtn" type="button"></button>
   <header id="landing" class="hero">
-    <h1>Анализ банковской выписки</h1>
-    <p class="lead">Загрузите выписки из банка в PDF и посмотрите, на что уходят деньги: траты по категориям,
-      сравнение месяцев, повторяющиеся платежи. Без регистрации.</p>
-    <p class="cta">
-      <button id="startBtn" class="primary" type="button">Загрузить выписки</button>
-      <button id="demoBtn" type="button">Посмотреть демо на выдуманных данных</button>
-    </p>
-    <p class="muted" id="banks"></p>
+    <div class="topbar">
+      <span class="brand">Анализ выписки</span>
+      <span class="topact">
+        <button id="privBtn" class="chipbtn" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Приватность</button>
+        <span class="themeseg" role="group" aria-label="Тема оформления">
+          <button id="themeAuto" type="button" title="Как в системе" aria-label="Тема: как в системе"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
+          <button id="themeLight" type="button" title="Светлая" aria-label="Тема: светлая"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+          <button id="themeDark" type="button" title="Тёмная" aria-label="Тема: тёмная"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></button>
+        </span>
+      </span>
+    </div>
+    <h1>Загрузите выписку и посмотрите, куда уходят деньги</h1>
+    <div id="dropzone" class="upcard">
+      <svg class="gi upicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
+      <p class="muted upcap" id="banks"></p>
+      <p class="cta">
+        <button id="startBtn" class="primary" type="button">Выбрать файл</button>
+        <button id="demoBtn" type="button">Посмотреть демо</button>
+      </p>
+    </div>
+    <button id="privRow" class="rowcard" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Файл не покидает ваш браузер</span><svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button id="howRow" class="rowcard" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg><span>Как получить выписку</span><svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <details class="aboutdet"><summary>Что умеет сайт</summary>
     <div class="cards">
       <div class="card"><h3>Файл остаётся у вас</h3>
         <p>Выписка читается прямо в браузере и никуда не отправляется. Из интернета не подгружается ничего: библиотека для чтения PDF встроена в страницу.</p></div>
@@ -230,19 +319,14 @@
       <div class="card"><h3>Вы сами решаете, что есть что</h3>
         <p>Операции, которые не удалось определить, разбираете вы. Выбор запоминается в этом браузере. Итоги можно выгрузить в таблицу.</p></div>
     </div>
-    <h2>Как получить выписку</h2>
-    <ol>
-      <li>Откройте интернет-банк и найдите выписку по счёту или карте.</li>
-      <li>Выберите период и скачайте её в формате PDF.</li>
-      <li>Загрузите файл ниже. Банк определится автоматически.</li>
-    </ol>
+    </details>
     <h2 id="faq">Приватность и частые вопросы</h2>
     <details><summary>Куда отправляется моя выписка?</summary>
       <p>Никуда. PDF читается прямо в вашем браузере, на сервер ничего не загружается. Библиотека для чтения PDF (pdf.js от Mozilla, лицензия Apache 2.0) встроена в саму страницу, поэтому ничего с чужих серверов не подгружается. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда. Чтобы убедиться, отключите интернет перед загрузкой выписки: всё продолжит работать.</p></details>
     <details><summary>Что сайт запоминает?</summary>
       <p>В памяти этого браузера (localStorage) хранятся: ваши правила категорий, свои категории и значки, лимиты бюджета и введённые числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций (он привязан к дате, времени и сумме операции). Сами выписки и операции автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора.</p></details>
     <details><summary>Как всё стереть?</summary>
-      <p>Кнопка «Забыть мои категории» внизу страницы удаляет ваши правила и выбор по операциям. Загруженные выписки убираются кнопкой «Убрать загруженные выписки» или просто закрытием вкладки. Полностью очистить сохранённое можно в настройках браузера: «Данные сайтов».</p></details>
+      <p>Кнопка «Забыть мои категории» в разделе «Ещё» удаляет ваши правила и выбор по операциям. Загруженные выписки убираются кнопкой «Убрать загруженные выписки» или просто закрытием вкладки. Полностью очистить сохранённое можно в настройках браузера: «Данные сайтов».</p></details>
     <details><summary>Что в файле разбора?</summary>
       <p>Кнопка «Сохранить в файл» создаёт файл с вашими правилами и операциями, то есть с реальными тратами. Храните его у себя и никому не отправляйте. На чужом компьютере после работы сотрите сохранённое, как описано выше.</p></details>
     <details><summary>Насколько точны итоги?</summary>
@@ -255,18 +339,42 @@
       <p><button id="anonOpen" type="button">Подготовить образец выписки здесь</button></p></details>
   </header>
 
+  <div id="privSheet" class="modal sheet" hidden>
+    <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="privTitle" tabindex="-1">
+      <h2 id="privTitle" style="margin-top:0">Файл не покидает ваш браузер</h2>
+      <h3>Что происходит с файлом?</h3>
+      <p>Ничего не отправляется. Выписка читается прямо на вашем устройстве, на сервер ничего не загружается. Библиотека для чтения PDF встроена в саму страницу, поэтому ничего с чужих серверов не подгружается.</p>
+      <h3>Как это проверить?</h3>
+      <p>Отключите интернет перед загрузкой выписки: всё продолжит работать. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда.</p>
+      <h3>Что хранится на устройстве?</h3>
+      <p>Только ваши настройки: правила и свои категории, лимиты и числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций. Сами выписки автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора. Стереть всё можно кнопкой «Забыть мои категории» в разделе «Ещё» или в настройках браузера: «Данные сайтов».</p>
+      <div class="modalbtns"><button id="privClose" type="button">Понятно</button> <a href="#faq" id="privFaq">Все вопросы</a></div>
+    </div>
+  </div>
+  <div id="howSheet" class="modal sheet" hidden>
+    <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="howTitle" tabindex="-1">
+      <h2 id="howTitle" style="margin-top:0">Как получить выписку</h2>
+      <ol>
+        <li>Откройте интернет-банк и найдите выписку по счёту или карте.</li>
+        <li>Выберите период и скачайте её в формате PDF (у Приорбанка можно и CSV).</li>
+        <li>Нажмите «Выбрать файл» выше. Банк определится автоматически.</li>
+      </ol>
+      <div class="modalbtns"><button id="howClose" type="button">Понятно</button></div>
+    </div>
+  </div>
+
   <main id="app">
-    <h2 id="appTitle">Ваш анализ</h2>
-    <p class="note">
+    <h2 id="appTitle" data-sec="overview more">Ваш анализ</h2>
+    <p class="note" data-sec="overview more">
       Выписки обрабатываются <b>только в вашем браузере</b> и никуда не отправляются; выбор категорий запоминается там же.
       Можно выбрать сразу несколько файлов или добавлять по одному: повторы пропускаются.
     </p>
-    <p>
+    <p data-sec="overview more">
       <input type="file" id="file" accept="application/pdf,.pdf,.csv,text/csv" multiple aria-label="Выберите файлы выписок (PDF или CSV)">
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
     </p>
-    <p id="status"></p>
-      <div id="anonBox" class="datablock" hidden>
+    <p id="status" data-sec="overview more"></p>
+      <div id="anonBox" class="datablock" data-sec="overview more" hidden>
         <b id="anonTitle">Подготовить безопасный образец выписки</b>
         <p class="muted">Выберите свою выписку (PDF или CSV). Сайт найдёт и закроет личное, вы проверите и допишете. В образец попадают только тексты и их положение на странице, сам файл не попадает, поэтому «закрашено, но выделяется» невозможно. Всё считается в вашем браузере.</p>
         <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
@@ -282,7 +390,7 @@
           <p id="anonMailRow" hidden><b>2.</b> <a id="anonMail" href="#">Открыть письмо для отправки</a>. В варианте А приложите скачанный файл «образец-выписки.json», в варианте Б вставьте скопированный текст в письмо.</p>
         </div>
       </div>
-    <div id="mergeNote" class="note" hidden style="margin:.6rem 0"></div>
+    <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
       <span><b>Демо на выдуманных данных.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
       <button id="demoExit" type="button">✕ Выйти из демо</button>
@@ -291,12 +399,12 @@
 
   <div id="report" hidden>
     <nav id="tabbar" aria-label="Разделы"></nav>
-    <div id="reviewBanner" class="warn" hidden style="margin-bottom:.8rem"></div>
-    <div id="check"></div>
-    <div class="nav" id="nav"></div>
-    <h2 id="secSummary" style="margin-top:1rem">Траты по категориям</h2>
-    <div id="summary"></div>
-    <div id="bottom">
+    <div id="reviewBanner" class="warn" data-sec="overview" hidden style="margin-bottom:.8rem"></div>
+    <div id="check" data-sec="overview"></div>
+    <div class="nav" id="nav" hidden></div>
+    <h2 id="secSummary" data-sec="overview" style="margin-top:1rem">Траты по категориям</h2>
+    <div id="summary" data-sec="overview"></div>
+    <div id="bottom" data-sec="review">
       <div id="undoBar"></div>
       <div class="tabs" id="bottomTabs"></div>
       <div class="note" id="catCreator" hidden></div>
@@ -321,16 +429,18 @@
         <div id="all"></div>
       </div>
     </div>
-    <p class="muted" id="roughNote" hidden></p>
-    <details class="sect" id="insightsBox" open>
-      <summary><h2 id="insightsTitle">Выводы</h2></summary>
+    <p class="muted" id="roughNote" data-sec="insights plan" hidden></p>
+    <section class="sect" id="insightsBox" data-sec="insights">
+      <h2 id="insightsTitle">Выводы</h2>
+      <p class="muted secthint">Период выбирается на экране «Обзор».<button id="insPeriod" type="button">Сменить период</button></p>
       <ul class="insights" id="insights"></ul>
-    </details>
-    <details class="sect" id="planBox" open>
-      <summary><h2 id="planTitle">Планирование</h2></summary>
+    </section>
+    <section class="sect" id="planBox" data-sec="plan">
+      <h2 id="planTitle">Планирование</h2>
+      <p class="muted secthint">Период выбирается на экране «Обзор».<button id="planPeriod" type="button">Сменить период</button></p>
       <div id="plan"></div>
-    </details>
-    <div id="exportBox">
+    </section>
+    <div id="exportBox" data-sec="more">
       <h3>Выгрузить в таблицу</h3>
       <p class="muted">Файлы CSV открываются в Excel и Google Таблицах. Переводы между своими и «Дал в долг» в расходы не входят и помечены отдельно.</p>
       <p>
@@ -343,7 +453,7 @@
       <p><textarea id="exportText" aria-label="Текст таблицы для копирования" rows="6" style="width:100%;display:none;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:5px"></textarea></p>
       <p class="muted" id="exportMsg"></p>
     </div>
-    <p id="resetRow" style="margin-top:2rem"><button id="reset">Забыть мои категории</button></p>
+    <p id="resetRow" data-sec="more" style="margin-top:2rem"><button id="reset">Забыть мои категории</button></p>
     <div id="resetBox" class="modal" hidden>
       <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
         <p id="resetTitle" style="margin-top:0;font-size:1.15rem"><b>Забыть все ваши категории и выбор по операциям?</b></p>
@@ -357,7 +467,7 @@
     </div>
   </div>
 
-  <section id="dataRules">
+  <section id="dataRules" data-sec="more">
     <h2>Данные и правила</h2>
     <details id="backup" class="datablock">
       <summary>Сохранить и загрузить мой разбор</summary>
@@ -388,7 +498,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.30, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.34, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <script type="module">
 /**
@@ -2370,7 +2480,8 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     let calc = loadJSON("ba_calc_v1", {});         // значения, которые пользователь ввёл в «Сколько остаётся»
     const openKeys = new Set();                    // группы, где пользователь раскрыл «Операции по отдельности» (по умолчанию свёрнуты, чтобы список был короче)
     let recurring = new Map();                     // повторяющиеся суммы (см. findRecurring)
-    let bottomOpen = true;                         // список внизу развёрнут (можно свернуть)
+    let bottomOpen = true;                         // список в разделе «Разобрать» всегда развёрнут (раздел и есть экран)
+    let curSection = "overview";                   // открытый раздел: overview | review | insights | plan | more
     let bottomTab = null;                          // нижняя вкладка: "review" или "all" (null: выбрать при первой отрисовке)
     let reviewOther = 0;                           // сколько неразобранных операций в других месяцах
     let incomeGroups = 0;                            // сколько групп неопознанных поступлений ждут отметки
@@ -2446,7 +2557,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
 
     const $ = id => document.getElementById(id);
     const bankNames = Banks.BANKS.map(b => b.name).reverse().join(", ");
-    $("banks").textContent = "Поддерживаются выписки в PDF: " + bankNames + " (у Приорбанка ещё и CSV). Банк определяется автоматически.";
+    $("banks").textContent = "PDF или CSV · " + bankNames;
     $("faqBanks").textContent = "Сейчас разбираются выписки: " + bankNames + ". Для каждого банка формат PDF свой, поэтому новые банки добавляются по мере того, как появляются образцы выписок. Выписку неподдерживаемого банка сайт честно откажется читать, а не покажет неверные суммы.";
     $("landingBanks").textContent = "Сейчас поддерживаются: " + bankNames + ". В планах: Приорбанк.";
 
@@ -2464,7 +2575,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       calc = { saveVal: 10 };
       statements = [{ bank: "demo", bankName: "Демо", from: d.header.from, to: d.header.to, count: d.txs.length, added: d.txs.length, skipped: 0, check: null }];
       allCat = "all"; allSort = "date-desc"; bottomTab = null;
-      if (!wasDemo) activeTab = "all";   // при повторном нажатии выбранный месяц остаётся (если такого месяца нет, render сам вернёт «весь период»)
+      if (!wasDemo) { activeTab = "all"; curSection = "overview"; }   // при повторном нажатии выбранный месяц остаётся (если такого месяца нет, render сам вернёт «весь период»)
       openKeys.clear();
       render();
     }
@@ -2472,45 +2583,69 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     function leaveDemo() {
       if (!demoMode) return;
       demoMode = false;
-      document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо на выдуманных данных";
+      document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо";
       ({ userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab } = stash);
       stash = null;
       ownUndo.length = 0;
       openKeys.clear();
       if (txs.length) render();
-      else { $("report").hidden = true; $("demoBar").hidden = true; $("dataRules").hidden = false; $("shareBox").hidden = true; $("clearBtn").hidden = true; }
+      else { hideReport(); $("demoBar").hidden = true; $("dataRules").hidden = false; $("shareBox").hidden = true; $("clearBtn").hidden = true; }
     }
+    function hideReport() { $("report").hidden = true; document.body.setAttribute("data-view", "none"); curSection = "overview"; }
     const scrollTo = id => { try { $(id).scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { /* без прокрутки */ } };
     const toApp = () => scrollTo("app");
     // Демо: сразу показываем результат (плашка демо, вкладки, таблица трат), а не начало страницы анализа
     $("demoBtn").addEventListener("click", () => { enterDemo(); try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { /* без прокрутки */ } });
     $("startBtn").addEventListener("click", () => { toApp(); $("file").click(); });
+    // Перетаскивание файла на карточку загрузки (ПК); на телефоне работает кнопка «Выбрать файл»
+    const dz = $("dropzone");
+    dz.addEventListener("dragover", e => { e.preventDefault(); dz.className = "upcard drag"; });
+    dz.addEventListener("dragleave", () => { dz.className = "upcard"; });
+    dz.addEventListener("drop", e => {
+      e.preventDefault(); dz.className = "upcard";
+      try { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) { $("file").files = fl; $("file").dispatchEvent(new Event("change")); toApp(); } } catch (err) { /* старый браузер: используйте кнопку */ }
+    });
+    // Шторки «Приватность» и «Как получить выписку»: Esc, клик по фону и кнопка «Понятно» закрывают, фокус возвращается на кнопку
+    const SHEETS = ["privSheet", "howSheet"];
+    let sheetOpener = null;
+    function openSheet(id, opener) { sheetOpener = opener; $(id).hidden = false; try { $(id).querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ } }
+    function closeSheets() { SHEETS.forEach(id => { $(id).hidden = true; }); try { if (sheetOpener) sheetOpener.focus(); } catch (e) { /* без фокуса */ } sheetOpener = null; }
+    [["privBtn", "privSheet"], ["privRow", "privSheet"], ["howRow", "howSheet"]].forEach(([b, sh]) => $(b).addEventListener("click", () => openSheet(sh, $(b))));
+    ["privClose", "howClose"].forEach(b => $(b).addEventListener("click", closeSheets));
+    $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
+    SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
+    if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
     $("clearBtn").addEventListener("click", () => {
       txs = []; header = {}; statements = [];
       bottomTab = null; allCat = "all"; activeTab = "all";
-      $("report").hidden = true; $("clearBtn").hidden = true;
+      hideReport(); $("clearBtn").hidden = true;
       $("status").textContent = "Выписки убраны. Ваш выбор категорий сохранён.";
       $("backupMsg").textContent = backupSummary();
     });
     $("demoExit").addEventListener("click", () => { leaveDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
 
-    // ---------- Тема оформления (тёмная по умолчанию, выбор запоминается) ----------
-    const SUN_MOON =
-      '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
-      '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>';
-    let theme = loadJSON("ba_theme_v1", "dark");
+    // ---------- Тема оформления: Авто (как в системе) / Светлая / Тёмная; выбор запоминается ----------
+    // Режим ставит и маленький скрипт в <head> (до отрисовки); здесь переключатель, theme-color и перерисовка цветов диаграммы.
+    let themeMode = loadJSON("ba_theme_v2", null) || loadJSON("ba_theme_v1", "auto");
+    if (!["auto", "light", "dark"].includes(themeMode)) themeMode = "auto";
+    const THEME_COLOR = { light: "#EEF0F2", dark: "#0E0F11" };
     function applyTheme() {
-      document.documentElement.setAttribute("data-theme", theme);
-      const btn = $("themeBtn");
-      btn.innerHTML = SUN_MOON;
-      btn.setAttribute("title", theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
-      btn.setAttribute("aria-label", theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
+      document.documentElement.setAttribute("data-theme", themeMode);
+      [["themeAuto", "auto"], ["themeLight", "light"], ["themeDark", "dark"]].forEach(([id, m]) => $(id).setAttribute("aria-pressed", String(m === themeMode)));
+      // Цвет строки браузера: при явном выборе обе метки получают один цвет, при «Авто» возвращаются свои
+      $("themeMetaL").setAttribute("content", themeMode === "dark" ? THEME_COLOR.dark : THEME_COLOR.light);
+      $("themeMetaD").setAttribute("content", themeMode === "light" ? THEME_COLOR.light : THEME_COLOR.dark);
+      if (typeof txs !== "undefined" && txs.length) refreshTop();   // подписи на диаграмме подбираются под цвета темы
     }
-    $("themeBtn").addEventListener("click", () => {
-      theme = theme === "dark" ? "light" : "dark";
-      saveJSON("ba_theme_v1", theme);
+    [["themeAuto", "auto"], ["themeLight", "light"], ["themeDark", "dark"]].forEach(([id, m]) => $(id).addEventListener("click", () => {
+      themeMode = m;
+      saveJSON("ba_theme_v2", themeMode);
       applyTheme();
-    });
+    }));
+    try {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      if (mq.addEventListener) mq.addEventListener("change", () => { if (themeMode === "auto") applyTheme(); });
+    } catch (e) { /* без слежения за системной темой */ }
     applyTheme();
 
     // Значки: простые линии одного цвета (берут цвет текста). Для стандартных категорий свои, для своих выбирает пользователь
@@ -2837,6 +2972,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     // ---------- Отрисовка отчёта ----------
     function render() {
       $("report").hidden = false;
+      document.body.setAttribute("data-view", curSection);
       $("demoBar").hidden = !demoMode;
       $("clearBtn").hidden = demoMode || !txs.length;
       $("dataRules").hidden = demoMode;
@@ -2864,7 +3000,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       bottomTab = tab;
       bottomOpen = true;
       renderBottom();
-      $("bottom").scrollIntoView({ behavior: "smooth", block: "start" });
+      showSection("review");
     }
     const SMALL_LIMIT = 10;                          // «мелкой» считаем операцию меньше этой суммы
     const opsWord = n => (n % 10 === 1 && n % 100 !== 11 ? "операция" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "операции" : "операций");
@@ -2872,9 +3008,9 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       const period = currentPeriod();
       const allCount = txs.filter(t => period === "all" || (t.date && t.date.startsWith(period))).length;
       const hasReview = reviewOps > 0 || reviewOther > 0;
-      if (bottomTab === null) { bottomTab = hasReview ? "review" : "all"; bottomOpen = hasReview; }   // список теперь над «Выводами»: если разбирать нечего, он свёрнут
+      if (bottomTab === null) bottomTab = hasReview ? "review" : "all";
       if (bottomTab === "income" && !incomeGroups) bottomTab = hasReview ? "review" : "all";
-      if (bottomTab === "review" && !hasReview) { bottomTab = "all"; bottomOpen = false; }   // всё разобрано: список сворачиваем, «Все операции» открываются по кнопке
+      if (bottomTab === "review" && !hasReview) bottomTab = "all";   // всё разобрано: показываем «Все операции»
       renderUndo();
       if (!catCreatorBuilt) buildCatCreator();
       $("catCreator").hidden = !bottomOpen;
@@ -2886,7 +3022,6 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";
       // Нажатие на вкладку открывает её; повторное нажатие на уже открытую сворачивает список
       const tab = (id, label) => h("button", { class: "tab" + (bottomOpen && bottomTab === id ? " active" : ""), onclick: () => {
-        bottomOpen = bottomOpen && bottomTab === id ? false : true;
         bottomTab = id;
         renderBottom();
       } }, label);
@@ -2998,8 +3133,31 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     }
 
     // Блок: заголовок, пояснение, таблица с полосками по категориям
-    // Цвета долей диаграммы: яркие, на них читаются тёмные значки и цифры
-    const PIE_COLORS = ["#6ea8ff", "#ff9466", "#4fd1a5", "#ffd166", "#b794f6", "#ff7eb3", "#9be15d", "#5ad1e6", "#d9a066", "#a9b1c0", "#e6d84a", "#8f9cff"];
+    // Цвет категории: один и тот же в диаграмме, легенде и таблице (переменные --cat-* темы «Графит»).
+    // Стандартные категории закреплены за ключами; «Прочее», корзины и «Не разобрано» серые; свои получают цвет по названию (всегда один и тот же).
+    const CAT_COLOR = {
+      "Продукты": "food", "Кафе и рестораны": "cafe", "Транспорт": "transport", "Путешествия": "transport",
+      "Аренда и жильё": "home", "Товары для дома": "home", "Связь и подписки": "subs", "Образование": "subs",
+      "Здоровье": "health", "Красота и уход": "health", "Одежда и покупки": "shop", "Подарки": "shop",
+      "Развлечения": "fun", "Азартные игры": "fun", "Наличные": "transfer", "Прочее": "other", "Не разобрано": "other",
+      [Cat.OWN]: "transfer", [Cat.LOAN]: "transfer", [Cat.SAVINGS]: "transfer", [Cat.FEES]: "transfer",
+      [Cat.BUCKETS[0]]: "other", [Cat.BUCKETS[1]]: "other"
+    };
+    const CUSTOM_KEYS = ["food", "cafe", "transport", "home", "subs", "health", "shop", "fun"];
+    const catVar = cat => "--cat-" + (CAT_COLOR[cat] || CUSTOM_KEYS[[...String(cat)].reduce((a, c) => a + c.charCodeAt(0), 0) % CUSTOM_KEYS.length]);
+    const catColor = cat => `var(${catVar(cat)})`;
+    // Цвет подписи на доле: тёмный или светлый, смотря по яркости цвета в текущей теме (контраст не ниже ~4:1)
+    function inkFor(varName) {
+      try {
+        const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        const m = /^#([0-9a-f]{6})$/i.exec(v);
+        if (m) {
+          const c = [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16) / 255).map(x => (x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)));
+          return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] > 0.19 ? "#16181B" : "#F7F8F9";
+        }
+      } catch (e) { /* без вычисления: тёмный */ }
+      return "#16181B";
+    }
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     // Кольцо: у каждой доли значок и процент прямо на диаграмме (если доля достаточно большая).
     // Совсем мелкие категории (меньше 3%) сливаются в одну серую долю, чтобы кольцо не рябило.
@@ -3010,13 +3168,13 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       const small = [];
       st.rows.forEach(([cat, sum], i) => {
         if (sum / st.total < MIN) small.push([cat, sum]);
-        else slices.push({ cats: [[cat, sum]], sum, color: PIE_COLORS[i % PIE_COLORS.length] });
+        else slices.push({ cats: [[cat, sum]], sum, color: catColor(cat), v: catVar(cat) });
       });
       const sliceOf = new Map();               // категория -> номер доли
       slices.forEach((sl, i) => sliceOf.set(sl.cats[0][0], i));
       if (small.length) {
         const sum = small.reduce((a, [, v]) => a + v, 0);
-        slices.push({ cats: small, sum, color: small.length > 1 ? "#6f737c" : PIE_COLORS[st.rows.findIndex(r => r[0] === small[0][0]) % PIE_COLORS.length], group: small.length > 1 });
+        slices.push({ cats: small, sum, color: small.length > 1 ? "var(--cat-other)" : catColor(small[0][0]), v: small.length > 1 ? "--cat-other" : catVar(small[0][0]), group: small.length > 1 });
         small.forEach(([cat]) => sliceOf.set(cat, slices.length - 1));
       }
 
@@ -3033,16 +3191,17 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         } else {
           const [x0, y0] = pt(R, a0), [x1, y1] = pt(R, a1), [x2, y2] = pt(r, a1), [x3, y3] = pt(r, a0);
           const big = f > 0.5 ? 1 : 0;
-          shape = `<path class="slice" data-i="${i}" fill="${sl.color}" d="M${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}L${x2.toFixed(2)} ${y2.toFixed(2)}A${r} ${r} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z"/>`;
+          shape = `<path class="slice" data-i="${i}" style="fill:${sl.color}" d="M${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}L${x2.toFixed(2)} ${y2.toFixed(2)}A${r} ${r} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z"/>`;
         }
         parts += shape;
+        const ink = inkFor(sl.v);
         const pct = Math.round(f * 100);
         const [mx, my] = pt(M, (a0 + a1) / 2);
         if (f >= 0.06) {
-          const icon = sl.group ? "" : `<g class="lbl" transform="translate(${(mx - 3.6).toFixed(2)} ${(my - 8.2).toFixed(2)}) scale(0.3)">${ICON_SVG[iconKey(sl.cats[0][0])] || ICON_SVG.tag}</g>`;
-          parts += icon + `<text class="pct" x="${mx.toFixed(2)}" y="${(my + (sl.group ? 1.8 : 6)).toFixed(2)}" text-anchor="middle" font-size="4.6">${pct}%</text>`;
+          const icon = sl.group ? "" : `<g class="lbl" style="stroke:${ink}" transform="translate(${(mx - 3.6).toFixed(2)} ${(my - 8.2).toFixed(2)}) scale(0.3)">${ICON_SVG[iconKey(sl.cats[0][0])] || ICON_SVG.tag}</g>`;
+          parts += icon + `<text class="pct" style="fill:${ink}" x="${mx.toFixed(2)}" y="${(my + (sl.group ? 1.8 : 6)).toFixed(2)}" text-anchor="middle" font-size="4.6">${pct}%</text>`;
         } else if (f >= 0.03) {
-          parts += `<text class="pct" x="${mx.toFixed(2)}" y="${(my + 1.5).toFixed(2)}" text-anchor="middle" font-size="3.6">${pct}%</text>`;
+          parts += `<text class="pct" style="fill:${ink}" x="${mx.toFixed(2)}" y="${(my + 1.5).toFixed(2)}" text-anchor="middle" font-size="3.6">${pct}%</text>`;
         }
       });
 
@@ -3126,10 +3285,10 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         parts.push(h("table", {},
           h("tr", {}, h("th", {}, "Категория"), h("th", { class: "num" }, "Сумма, BYN"), h("th", { class: "num" }, "Доля"), h("th", { style: "width:35%" }, "")),
           st.rows.map(([cat, sum]) => h("tr", {},
-            h("td", {}, iconEl(iconKey(cat)), cat),
+            h("td", {}, h("span", { class: "sw", style: `background:${catColor(cat)}` }), iconEl(iconKey(cat)), cat),
             h("td", { class: "num" }, fmt(sum)),
             h("td", { class: "num" }, st.total ? Math.round(sum / st.total * 100) + "%" : ""),
-            h("td", {}, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${sum / max * 100}%` }))))),
+            h("td", {}, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${sum / max * 100}%;background:${catColor(cat)}` }))))),
           h("tr", {}, h("th", {}, "Итого"), h("th", { class: "num" }, fmt(st.total)), h("th", {}, ""), h("th", {}, ""))));
       }
       if (st.rows.some(r => Cat.BUCKETS.includes(r[0]))) parts.push(h("div", { class: "muted" }, "«Платежи ЕРИП» и «Платежи через интернет-банк»: по выписке видно только способ оплаты, но не то, на что потрачено. Разберите получателей на вкладке «Нужно разобрать»."));
@@ -3260,7 +3419,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         }
       }
       const unkSum = rows.filter(r => isUnclear(r[0])).reduce((a, r) => a + r[1], 0);
-      if (unkSum > 0) ul.append(h("li", {}, `${fmt(unkSum)} BYN (${Math.round(unkSum / total * 100)}%) пока без понятной категории: по выписке видно только способ оплаты. Подпишите самых крупных получателей на вкладке «Нужно разобрать» внизу, и картина станет точнее.`));
+      if (unkSum > 0) ul.append(h("li", {}, `${fmt(unkSum)} BYN (${Math.round(unkSum / total * 100)}%) пока без понятной категории: по выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Разобрать», и картина станет точнее.`));
     }
 
     // ---------- Планирование: регулярные платежи, прогноз, накопления, бюджеты, «сколько остаётся» ----------
@@ -3540,7 +3699,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
           rec ? h("div", { class: "muted" }, `Получатель: счёт …${rec.last4}` + (rec.op ? ` (${rec.op})` : "") + ".") : "",
           Cat.isErip(g.tx) ? h("div", { class: "muted" }, "Платёж через ЕРИП: по выписке не видно, за что заплачено.") : "",
-          sc > 1 ? h("div", { class: "muted" }, `Выбор применится ко всем ${sc} операциям этого получателя (во всех месяцах) и к будущим выпискам. Отменить можно в разделе «Мои правила» внизу страницы.`) : "",
+          sc > 1 ? h("div", { class: "muted" }, `Выбор применится ко всем ${sc} операциям этого получателя (во всех месяцах) и к будущим выпискам. Отменить можно в разделе «Ещё» → «Мои правила».`) : "",
           rec ? labelEditor(g.tx) : "");
         if (many) {
           // Каждую операцию группы можно разобрать отдельно (по умолчанию свёрнуто)
@@ -3605,7 +3764,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
           h("div", { class: "muted" }, `${range}${range ? " · " : ""}суммы: ${amountsText}`),
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
           h("div", { style: "margin-top:.4rem" }, chooser(scopeText(ruleScope(g.tx)), (cat, icon) => setRule(g.tx, cat, icon)),
-            ruleScope(g.tx) > 1 ? h("div", { class: "muted" }, `Выбор сразу применится ко всем ${ruleScope(g.tx)} операциям такого получателя (во всех месяцах) и к будущим выпискам. Только к одной операции: выберите категорию ниже, в списке «Операции по отдельности». Отменить можно в разделе «Мои правила» внизу страницы.`) : ""));
+            ruleScope(g.tx) > 1 ? h("div", { class: "muted" }, `Выбор сразу применится ко всем ${ruleScope(g.tx)} операциям такого получателя (во всех месяцах) и к будущим выпискам. Только к одной операции: выберите категорию ниже, в списке «Операции по отдельности». Отменить можно в разделе «Ещё» → «Мои правила».`) : ""));
         if (many) {
           card.append(h("details", { style: "margin-top:.5rem" },
             h("summary", {}, "Операции по отдельности"),
@@ -3856,6 +4015,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         }
         header = Merge.mergedHeader(statements);
         bottomTab = null;
+        curSection = "overview";
         render();
         $("backupMsg").textContent = backupSummary();
         scrollTo("status");
@@ -4125,7 +4285,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.33", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.34", consent: ANON_CONSENT })); }
     function anonShowMail(how) {
       const m = $("anonMail");
       m.href = "mailto:bankanalyzer.help@gmail.com?subject=" + encodeURIComponent("Образец выписки для нового банка") +
@@ -4155,29 +4315,36 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       $("anonHint").textContent = done ? "Образец скопирован. Откройте письмо и вставьте его в текст письма." : "Не удалось скопировать: скачайте файл (вариант А).";
     });
 
-    // Сворачиваемые «Выводы» и «Планирование»: выбор запоминается; на телефоне «Планирование» по умолчанию свёрнуто
-    const SECT_KEY = "ba_sect_v1";
-    const sectSaved = loadJSON(SECT_KEY, {});
-    const narrow = () => typeof window !== "undefined" && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
-    for (const id of ["insightsBox", "planBox"]) {
-      const d = $(id);
-      d.open = id in sectSaved ? !!sectSaved[id] : !(id === "planBox" && narrow());
-      d.addEventListener("toggle", () => { sectSaved[id] = d.open; saveJSON(SECT_KEY, sectSaved); renderTabbar(); });
-    }
-    // Нижняя панель разделов (только телефон, CSS); подсвечивает раздел, который сейчас на экране
-    function goSect(id) {
-      const el = $(id);
-      if (el.tagName === "DETAILS") el.open = true;
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Разделы-экраны: один показан, остальные скрыты CSS по body[data-view]; «Ещё» объединяет данные, правила и выгрузку
+    const TAB_ICONS = {
+      overview: '<path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
+      review: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
+      insights: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+      plan: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+      more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'
+    };
+    function showSection(id) {
+      curSection = id;
+      document.body.setAttribute("data-view", id);
+      renderTabbar();
+      try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
     }
     function renderTabbar() {
       const bar = $("tabbar");
-      const btn = (label, action) => h("button", { type: "button", onclick: action }, label);
-      const items = [btn("Траты", () => goSect("secSummary"))];
-      if (reviewOps || reviewOther) items.push(btn("Разобрать", () => openBottom("review")));
-      items.push(btn("Операции", () => openBottom("all")), btn("Выводы", () => goSect("insightsBox")), btn("План", () => goSect("planBox")));
-      bar.replaceChildren(...items);
+      const todo = reviewOps || reviewOther;
+      const btn = (id, label, short) => {
+        const ico = h("span", { class: "tabico" });
+        ico.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + TAB_ICONS[id] + "</svg>";
+        const kids = [ico, short ? [h("span", { class: "l-f" }, label), h("span", { class: "l-s" }, short)] : h("span", {}, label)];
+        if (id === "review" && todo) kids.push(h("span", { class: "tabbadge", "aria-label": `${todo} ждут разбора` }, String(todo)));
+        const attrs = { type: "button", class: id === curSection ? "active" : "", onclick: () => showSection(id) };
+        if (id === curSection) attrs["aria-current"] = "page";
+        return h("button", attrs, ...kids);
+      };
+      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Разобрать"), btn("insights", "Выводы"), btn("plan", "Планирование", "План"), btn("more", "Ещё"));
     }
+    $("insPeriod").addEventListener("click", () => showSection("overview"));
+    $("planPeriod").addEventListener("click", () => showSection("overview"));
     renderRules();
     renderMergeNote();
   </script>
