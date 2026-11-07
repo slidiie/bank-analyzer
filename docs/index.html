@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-ROvMKr6BJDB2xrGpSrQ/SdSOXGRFRCCWw1+tu0Lb9uo=' 'sha256-UHHViG+0nGMEELSkLVEwoj8Y8BZJT0DaYQySLJxaZ8Q='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-ROvMKr6BJDB2xrGpSrQ/SdSOXGRFRCCWw1+tu0Lb9uo=' 'sha256-ccGCtQWj5wYQUzFXCPd6L7efTqTp9fFPs08O8U40IvI='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
   <title>Анализ банковской выписки</title>
   <style>
@@ -176,6 +176,8 @@
       .modalcard { padding: 1rem; }
       input[type=text], select { max-width: 100%; }
     }
+    /* На самых узких экранах (320 px) полоска в таблице трат отнимает место у названия категории: прячем её, цифры остаются */
+    @media (max-width: 359px) { #summary td:nth-child(4), #summary th:nth-child(4) { display: none; } }
     /* Защита от раздувания страницы (iPhone): длинное слово без пробелов не должно растягивать раскладку шире экрана,
        иначе iOS уменьшает страницу и отключает мобильные правила выше. */
     html { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
@@ -254,10 +256,6 @@
     <div class="nav" id="nav"></div>
     <h2 id="secSummary" style="margin-top:1rem">Траты по категориям</h2>
     <div id="summary"></div>
-    <h2 id="insightsTitle">Выводы</h2>
-    <ul class="insights" id="insights"></ul>
-    <h2 id="planTitle">Планирование</h2>
-    <div id="plan"></div>
     <div id="bottom">
       <div class="tabs" id="bottomTabs"></div>
       <div class="note" id="catCreator" hidden></div>
@@ -283,6 +281,11 @@
         <div id="all"></div>
       </div>
     </div>
+    <p class="muted" id="roughNote" hidden></p>
+    <h2 id="insightsTitle">Выводы</h2>
+    <ul class="insights" id="insights"></ul>
+    <h2 id="planTitle">Планирование</h2>
+    <div id="plan"></div>
     <div id="exportBox">
       <h3>Выгрузить в таблицу</h3>
       <p class="muted">Файлы CSV открываются в Excel и Google Таблицах. Переводы между своими и «Дал в долг» в расходы не входят и помечены отдельно.</p>
@@ -341,7 +344,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.27, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.28, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <script type="module">
 /**
@@ -2626,11 +2629,14 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       const period = currentPeriod();
       const allCount = txs.filter(t => period === "all" || (t.date && t.date.startsWith(period))).length;
       const hasReview = reviewOps > 0 || reviewOther > 0;
-      if (bottomTab === null) bottomTab = hasReview ? "review" : "all";
+      if (bottomTab === null) { bottomTab = hasReview ? "review" : "all"; bottomOpen = hasReview; }   // список теперь над «Выводами»: если разбирать нечего, он свёрнут
       if (bottomTab === "income" && !incomeGroups) bottomTab = hasReview ? "review" : "all";
-      if (bottomTab === "review" && !hasReview) bottomTab = "all";   // всё разобрано: показываем все операции
+      if (bottomTab === "review" && !hasReview) { bottomTab = "all"; bottomOpen = false; }   // всё разобрано: список сворачиваем, «Все операции» открываются по кнопке
       if (!catCreatorBuilt) buildCatCreator();
       $("catCreator").hidden = !bottomOpen;
+      const rough = $("roughNote");
+      rough.hidden = !(reviewOps > 0);
+      if (reviewOps > 0) rough.textContent = `Выводы и планирование ниже приблизительные: ещё не разобрано ${reviewOps} ${opsWord(reviewOps)}. Чем больше разобрано выше, тем точнее картина.`;
       $("reviewSection").hidden = !bottomOpen || bottomTab !== "review";
       $("incomeSection").hidden = !bottomOpen || bottomTab !== "income";
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";

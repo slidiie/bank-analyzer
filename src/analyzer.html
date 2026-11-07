@@ -176,6 +176,8 @@
       .modalcard { padding: 1rem; }
       input[type=text], select { max-width: 100%; }
     }
+    /* На самых узких экранах (320 px) полоска в таблице трат отнимает место у названия категории: прячем её, цифры остаются */
+    @media (max-width: 359px) { #summary td:nth-child(4), #summary th:nth-child(4) { display: none; } }
     /* Защита от раздувания страницы (iPhone): длинное слово без пробелов не должно растягивать раскладку шире экрана,
        иначе iOS уменьшает страницу и отключает мобильные правила выше. */
     html { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
@@ -254,10 +256,6 @@
     <div class="nav" id="nav"></div>
     <h2 id="secSummary" style="margin-top:1rem">Траты по категориям</h2>
     <div id="summary"></div>
-    <h2 id="insightsTitle">Выводы</h2>
-    <ul class="insights" id="insights"></ul>
-    <h2 id="planTitle">Планирование</h2>
-    <div id="plan"></div>
     <div id="bottom">
       <div class="tabs" id="bottomTabs"></div>
       <div class="note" id="catCreator" hidden></div>
@@ -283,6 +281,11 @@
         <div id="all"></div>
       </div>
     </div>
+    <p class="muted" id="roughNote" hidden></p>
+    <h2 id="insightsTitle">Выводы</h2>
+    <ul class="insights" id="insights"></ul>
+    <h2 id="planTitle">Планирование</h2>
+    <div id="plan"></div>
     <div id="exportBox">
       <h3>Выгрузить в таблицу</h3>
       <p class="muted">Файлы CSV открываются в Excel и Google Таблицах. Переводы между своими и «Дал в долг» в расходы не входят и помечены отдельно.</p>
@@ -341,7 +344,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.27, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.28, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -859,11 +862,14 @@
       const period = currentPeriod();
       const allCount = txs.filter(t => period === "all" || (t.date && t.date.startsWith(period))).length;
       const hasReview = reviewOps > 0 || reviewOther > 0;
-      if (bottomTab === null) bottomTab = hasReview ? "review" : "all";
+      if (bottomTab === null) { bottomTab = hasReview ? "review" : "all"; bottomOpen = hasReview; }   // список теперь над «Выводами»: если разбирать нечего, он свёрнут
       if (bottomTab === "income" && !incomeGroups) bottomTab = hasReview ? "review" : "all";
-      if (bottomTab === "review" && !hasReview) bottomTab = "all";   // всё разобрано: показываем все операции
+      if (bottomTab === "review" && !hasReview) { bottomTab = "all"; bottomOpen = false; }   // всё разобрано: список сворачиваем, «Все операции» открываются по кнопке
       if (!catCreatorBuilt) buildCatCreator();
       $("catCreator").hidden = !bottomOpen;
+      const rough = $("roughNote");
+      rough.hidden = !(reviewOps > 0);
+      if (reviewOps > 0) rough.textContent = `Выводы и планирование ниже приблизительные: ещё не разобрано ${reviewOps} ${opsWord(reviewOps)}. Чем больше разобрано выше, тем точнее картина.`;
       $("reviewSection").hidden = !bottomOpen || bottomTab !== "review";
       $("incomeSection").hidden = !bottomOpen || bottomTab !== "income";
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";
