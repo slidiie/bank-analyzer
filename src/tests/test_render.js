@@ -161,6 +161,31 @@ check("один месяц: нет вкладок и сравнения", !s.inc
 check("один месяц: есть таблица с категориями", s.includes("Продукты") && s.includes("Кафе и рестораны"));
 check("один месяц: нет кнопки «Нужно разобрать», когда разбирать нечего", !textOf(byId["nav"]).includes("Нужно разобрать"));
 
+// ---- Мастер «образец выписки» ----
+vm.runInContext(`showAnon(false)`, ctx);
+check("мастер: открывается на шаге 1, «Далее» доступно", vm.runInContext(`anonStep`, ctx) === 1 && byId["anonSheet"].hidden === false && byId["anonNext"].disabled === false && byId["anonBack"].hidden === true);
+vm.runInContext(`anonGo(2)`, ctx);
+check("мастер: шаг 2 без файла: дальше нельзя", byId["anonNext"].disabled === true && textOf(byId["anonNeed"]).includes("Выберите файл"));
+vm.runInContext(`anon = { model: [[[]], [[]]], kind: "csv", page: 0, seen: new Set([0]) }; anonNextState()`, ctx);
+check("мастер: файл прочитан, шаг 2 пускает дальше", byId["anonNext"].disabled === false);
+vm.runInContext(`anonGo(3)`, ctx);
+check("мастер: шаг 3, пока не просмотрены все страницы, дальше нельзя", byId["anonNext"].disabled === true && textOf(byId["anonNeed"]).includes("осталось: 1"));
+vm.runInContext(`anon.seen.add(1); anonNextState(); anonGo(4)`, ctx);
+check("мастер: шаг 4 без подготовленного образца: дальше нельзя", byId["anonNext"].disabled === true);
+vm.runInContext(`anonMade = "file"; anonNextState(); anonGo(5)`, ctx);
+check("мастер: шаг 5, письмо и кнопка «Готово»", byId["anonNext"].textContent === "Готово" && /^mailto:bankanalyzer\.help@gmail\.com/.test(byId["anonMail"].href || ""));
+byId["anonNext"].listeners.click[0]();
+check("мастер: «Готово» закрывает шторку и стирает образец из памяти", byId["anonSheet"].hidden === true && vm.runInContext(`anon === null && anonStep === 1`, ctx));
+
+// ---- «Как получить выписку»: банки и ссылки ----
+check("справка по банкам: не меньше 15 банков, у каждого шаги и срок", vm.runInContext(`BANK_HELP.length >= 15 && BANK_HELP.every(b => b.name && b.how.length && b.wait)`, ctx));
+check("справка по банкам: ссылки только https на сайты банков", vm.runInContext(`BANK_HELP.every(b => !b.link || /^https:[/][/][a-z0-9.-]+[.]by[/]/.test(b.link[0]))`, ctx));
+check("справка по банкам: «читается сайтом» совпадает с Banks.BANKS", vm.runInContext(`BANK_HELP.filter(b => b.reads).length === Banks.BANKS.length`, ctx));
+check("справка по банкам: список показывает все банки", byId["howBanks"].children.length === vm.runInContext(`BANK_HELP.length`, ctx));
+vm.runInContext(`showHowBank("alfa")`, ctx);
+check("справка по банкам: страница банка со ссылкой на сайт банка", byId["howList"].hidden === true && byId["howDetail"].hidden === false && JSON.stringify(byId["howDetail"]).includes("help.alfabank.by") && JSON.stringify(byId["howDetail"]).includes("noopener"));
+vm.runInContext(`showHowList()`, ctx);
+
 // ---- Тема и значки ----
 check("тема по умолчанию «Авто»", document.documentElement.attrs["data-theme"] === "auto" && byId["themeAuto"].attrs["aria-pressed"] === "true");
 byId["themeLight"].listeners.click[0]();
@@ -171,6 +196,7 @@ check("theme-color следует выбору", byId["themeMetaL"].attrs["conte
 byId["themeAuto"].listeners.click[0]();
 check("«Авто» возвращает свои цвета строки браузера", document.documentElement.attrs["data-theme"] === "auto" && byId["themeMetaL"].attrs["content"] === "#EEF0F2" && byId["themeMetaD"].attrs["content"] === "#0E0F11");
 check("цвет категории постоянен и из --cat-*", vm.runInContext(`catColor("Продукты") === "var(--cat-food)" && catColor("Прочее") === "var(--cat-other)" && catColor("Моя своя") === catColor("Моя своя") && /^var\\(--cat-/.test(catColor("Моя своя"))`, ctx));
+check("диаграмма: корзины и «Не разобрано» слиты в одну долю «Нужно разобрать» (пунктир), она первая и стоит справа", vm.runInContext(`(() => { const j = JSON.stringify(pieChart({ rows: [["Продукты", 100], ["Платежи через интернет-банк", 60], ["Не разобрано", 20], ["Транспорт", 10]], total: 190 })); return (j.split("data-i=").length - 1) === 3 && !j.includes("pattern") && j.includes("stroke-dasharray") && /data-i=.{1,4}0.{1,4} style=.{1,4}fill:var[(]--surface-2/.test(j); })()`, ctx));
 check("в таблице у категории цветная точка", JSON.stringify(byId["summary"]).includes("var(--cat-"));
 check("у всех стандартных категорий есть значок", vm.runInContext(`Cat.DEFAULT_CATEGORIES.every(c => Cat.ICONS[c])`, ctx));
 check("значок своей категории сохраняется", vm.runInContext(`ensureCategory("Питомцы","paw"); iconKey("Питомцы")`, ctx) === "paw");

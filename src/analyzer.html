@@ -110,6 +110,28 @@
     #rulesList .prow .pname { flex: 1 1 12rem; }
     #plan .result { font-size: 1.1rem; margin: .5rem 0; }
     .anonpage { border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem; max-height: 22rem; overflow: auto; font-size: .85rem; }
+    /* Мастер «образец выписки»: шторка, на телефоне во весь экран; шапка и кнопки закреплены, прокручивается только середина */
+    .wizcard { display: flex; flex-direction: column; padding: 0; overflow: hidden; max-width: 38rem; max-height: min(44rem, calc(100vh - 2rem)); }
+    .wizhead { padding: 1rem 1.2rem .4rem; }
+    .wiztop { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+    .wizx { width: 2.4rem; height: 2.4rem; padding: 0; border-radius: 999px; font-size: 1.1rem; background: none; border: 0; color: var(--muted); }
+    .wizbar { height: 4px; border-radius: 2px; background: var(--surface-2); margin: .3rem 0 .8rem; }
+    .wizprog { height: 100%; border-radius: 2px; background: var(--accent); transition: width .2s; }
+    .wizhead h2 { margin: 0; font-size: 1.3rem; line-height: 1.25; }
+    .wizbody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: .4rem 1.2rem 1rem; }
+    .sheet .wizbody p { margin: .5rem 0; }
+    .wizbody .anonpage { max-height: 45vh; }
+    .wizlist { margin: .5rem 0; padding-left: 1.2rem; }
+    .wizlist li { margin: .45rem 0; }
+    .wizacts { display: flex; flex-direction: column; gap: .5rem; }
+    .wizacts button, .btnlink { display: flex; align-items: center; justify-content: center; min-height: 3rem; border-radius: var(--r-m); font-size: 1rem; }
+    .btnlink { background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; padding: .5rem 1rem; }
+    .wizfoot { padding: .6rem 1.2rem calc(.8rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
+    .wizfoot > p { margin: 0 0 .5rem; min-height: 1.2em; }
+    .wizbtns { display: flex; flex-wrap: wrap; gap: .6rem; }
+    .wizbtns button { flex: 1 1 8rem; min-height: 3rem; font-size: 1rem; border-radius: var(--r-m); }
+    .wizbtns button[hidden] { display: none; }
+    .wizbtns button:disabled { opacity: .5; cursor: default; }
     .anonpage .arow { display: flex; flex-wrap: wrap; gap: .15rem .3rem; margin: .1rem 0; }
     .anonpage .achip { cursor: pointer; border-radius: 3px; padding: 0 .2rem; overflow-wrap: anywhere; border: 1px solid transparent; }
     .anonpage .achip:hover { border-color: var(--ctl-border); }
@@ -184,6 +206,7 @@
        и не min-width: 0 для переноса. Иначе блок остаётся в той же строке в щели шириной в несколько пикселей. Проверка: tests/test_css.js. */
     .pie .legend { flex: 1 1 16rem; min-width: 0; }
     .pie .lrow { display: flex; flex-wrap: wrap; align-items: center; gap: .1rem .4rem; padding: .25rem 0; border-bottom: 1px solid var(--line); }
+    .sw.review { background: var(--surface-2); border: 1.5px dashed var(--muted); box-sizing: border-box; }
     td .sw { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .45rem; vertical-align: middle; }
     .pie .sw { width: .8rem; height: .8rem; border-radius: 3px; flex: none; }
     .pie .lname { flex: 1 1 8rem; }
@@ -225,9 +248,22 @@
     .sheet h3 { margin: 1rem 0 .2rem; font-size: 1rem; }
     .sheet p { margin: .2rem 0; }
     .sheet .modalcard:focus { outline: none; }
+    .howlist { display: flex; flex-direction: column; gap: .4rem; margin: .6rem 0 1rem; }
+    .howlist .rowcard { margin-top: 0; }
+    .rowcard > .howtag, .rowcard > .chevw { flex: none; }
+    .chevw { display: inline-flex; }
+    .howtag { flex: none; font-size: .72rem; padding: .1rem .5rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+    .howtag.ok { background: var(--accent); color: var(--on-accent); }
+    #howDetail h3 { margin: .8rem 0 .2rem; }
+    #howDetail ul { margin: .3rem 0; padding-left: 1.2rem; }
+    #howDetail li { margin: .35rem 0; }
+    .btnlink.alt { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+    .howback { margin-bottom: .4rem; }
     @media (max-width: 520px) {
-      .sheet { align-items: flex-end; padding: 0; }
+      .modal.sheet { align-items: flex-end; padding: 0; }
       .sheet .modalcard { max-width: none; border-radius: var(--r-l) var(--r-l) 0 0; max-height: 85vh; max-height: 85dvh; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+      .modal.wizsheet { align-items: stretch; }
+      .modal.wizsheet .wizcard { width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; padding: 0; }
     }
     #app > h2:first-child { margin-top: 1rem; }
     #status { white-space: pre-line; }
@@ -333,10 +369,8 @@
       <p>Если банк указывает итоги в шапке выписки, сайт сверяет с ними разобранные операции и показывает результат: зелёная галочка, если сумма сошлась. Если сверить нечем, так и написано. Категории определяются по правилам и могут ошибаться: поправьте вручную, выбор запомнится. Сайт не даёт финансовых советов, это справочный разбор ваших же данных.</p></details>
     <details><summary>Моего банка нет в списке</summary>
       <p id="faqBanks"></p>
-      <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Сайт сам файлы никуда не отправляет: вы прикладываете файл к письму сами. <a href="mailto:bankanalyzer.help@gmail.com?subject=%D0%9E%D0%B1%D1%80%D0%B0%D0%B7%D0%B5%D1%86%20%D0%B2%D1%8B%D0%BF%D0%B8%D1%81%D0%BA%D0%B8%20%D0%B4%D0%BB%D1%8F%20%D0%BD%D0%BE%D0%B2%D0%BE%D0%B3%D0%BE%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%B0&amp;body=%D0%9D%D0%B0%D0%B7%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%B0%3A%20%0A%D0%AF%20%D1%83%D0%B1%D1%80%D0%B0%D0%BB%28%D0%B0%29%20%D0%A4%D0%98%D0%9E%2C%20%D0%BD%D0%BE%D0%BC%D0%B5%D1%80%20%D1%81%D1%87%D1%91%D1%82%D0%B0%2C%20%D0%BA%D0%B0%D1%80%D1%82%D1%8B%2C%20%D0%B0%D0%B4%D1%80%D0%B5%D1%81%20%D0%B8%20%D1%82%D0%B5%D0%BB%D0%B5%D1%84%D0%BE%D0%BD%20%D0%B8%20%D1%81%D0%BE%D0%B3%D0%BB%D0%B0%D1%81%D0%B5%D0%BD%28%D0%BD%D0%B0%29%2C%20%D1%87%D1%82%D0%BE%20%D1%84%D0%B0%D0%B9%D0%BB%20%D0%B1%D1%83%D0%B4%D0%B5%D1%82%20%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D0%BD%20%D1%82%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE%20%D0%B4%D0%BB%D1%8F%20%D1%81%D0%BE%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D1%8F%20%D1%87%D1%82%D0%B5%D0%BD%D0%B8%D1%8F%20%D1%8D%D1%82%D0%BE%D0%B3%D0%BE%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%B0%2C%20%D0%BD%D0%B5%20%D0%B1%D1%83%D0%B4%D0%B5%D1%82%20%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%B8%20%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%20%D0%B1%D1%83%D0%B4%D0%B5%D1%82%20%D1%83%D0%B4%D0%B0%D0%BB%D1%91%D0%BD.%0A%0A%D0%9F%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B8%D1%82%D0%B5%20%D1%84%D0%B0%D0%B9%D0%BB%20%D0%BA%20%D0%BF%D0%B8%D1%81%D1%8C%D0%BC%D1%83.">Написать на bankanalyzer.help@gmail.com</a> (откроется письмо с готовым текстом согласия).</p>
-      <p><b>Перед отправкой уберите личное:</b> ФИО, номер счёта (IBAN), номера карт, адрес, телефон. Суммы, даты и названия магазинов оставьте: без них чтение не написать. Важно: плашка или маркер поверх текста в PDF часто оставляет текст под ней. Надёжнее сделать скриншоты страниц с закрашенным или распечатать закрашенный файл в новый PDF («Печать → Сохранить как PDF») и проверить, что закрашенное нельзя выделить мышью.</p>
-      <p>Отправляя файл, вы соглашаетесь, что он будет использован только для создания чтения вашего банка, не будет публиковаться и будет удалён после этого.</p>
-      <p><button id="anonOpen" type="button">Подготовить образец выписки здесь</button></p></details>
+      <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Мастер из пяти шагов сам закроет личное, вы проверите образец и отправите его письмом. Сайт файлы никуда не отправляет.</p>
+      <p><button id="anonOpen" type="button">Помочь добавить банк</button></p></details>
   </header>
 
   <div id="privSheet" class="modal sheet" hidden>
@@ -354,12 +388,77 @@
   <div id="howSheet" class="modal sheet" hidden>
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="howTitle" tabindex="-1">
       <h2 id="howTitle" style="margin-top:0">Как получить выписку</h2>
-      <ol>
-        <li>Откройте интернет-банк и найдите выписку по счёту или карте.</li>
-        <li>Выберите период и скачайте её в формате PDF (у Приорбанка можно и CSV).</li>
-        <li>Нажмите «Выбрать файл» выше. Банк определится автоматически.</li>
-      </ol>
+      <div id="howList">
+        <p class="muted">Выберите свой банк: подскажем, где взять выписку и нужно ли ждать. Нужен файл PDF (у Приорбанка ещё и CSV) за весь период, который хотите разобрать, лучше за 6–12 месяцев.</p>
+        <div id="howBanks" class="howlist"></div>
+        <h3>Общий подход (любой банк)</h3>
+        <ol>
+          <li>Откройте приложение или интернет-банк, найдите «Выписка» или «История операций» по карте или счёту.</li>
+          <li>Задайте период и сохраните выписку в PDF. Если в приложении период ограничен, используйте веб-версию интернет-банка или закажите выписку заявкой.</li>
+          <li>Нет онлайн-способа: выписку выдают в отделении по паспорту. Нужен электронный файл, а не фото и не скан: их сайт не читает.</li>
+          <li>В выписке есть ваши имя и номер счёта: они остаются в вашем браузере, на сервер ничего не уходит.</li>
+        </ol>
+        <p class="muted">Сведения собраны из открытых материалов банков, названия пунктов меню в приложениях могут отличаться: при расхождении ориентируйтесь на приложение или на страницу банка по ссылке.</p>
+      </div>
+      <div id="howDetail" hidden></div>
       <div class="modalbtns"><button id="howClose" type="button">Понятно</button></div>
+    </div>
+  </div>
+  <div id="anonSheet" class="modal sheet wizsheet" hidden>
+    <div class="modalcard wizcard" role="dialog" aria-modal="true" aria-labelledby="anonStepTitle" tabindex="-1">
+      <div class="wizhead">
+        <div class="wiztop"><span id="anonStepNo" class="muted">Шаг 1 из 5</span><button id="anonClose" type="button" class="wizx" aria-label="Закрыть">✕</button></div>
+        <div class="wizbar" aria-hidden="true"><div id="anonProg" class="wizprog" style="width:20%"></div></div>
+        <h2 id="anonStepTitle">Ваши данные остаются у вас</h2>
+      </div>
+      <div id="anonBody" class="wizbody">
+        <div id="anonStep1">
+          <p id="anonLead" class="note" hidden>Этот банк пока не читается. Помогите добавить его: образец готовится прямо здесь.</p>
+          <p>Чтобы научить сайт читать ваш банк, нужен образец выписки. Вот как это устроено:</p>
+          <ul class="wizlist">
+            <li><b>Файл никуда не отправляется.</b> Он читается прямо в вашем браузере.</li>
+            <li><b>Личное закроет сайт, остальное решаете вы.</b> ФИО, счета, карты, телефоны и адреса закрываются автоматически, остальное вы проверите и при желании закроете вручную.</li>
+            <li><b>Сам файл не попадает в образец</b>, только тексты и их положение на странице. Поэтому «закрашено, но выделяется» невозможно.</li>
+            <li><b>Отправляете вы сами</b>, письмом и только когда решите.</li>
+          </ul>
+        </div>
+        <div id="anonStep2" hidden>
+          <p>Выберите свою выписку (PDF или CSV) того банка, которого нет в списке.</p>
+          <p><label>Название банка (необязательно)<br><input type="text" id="anonBank" maxlength="60" autocomplete="off" placeholder="Например, Паритетбанк"></label></p>
+          <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
+          <p id="anonStatus" class="muted"></p>
+        </div>
+        <div id="anonStep3" hidden>
+          <p><span id="anonStats"></span> Нажмите на фрагмент, чтобы закрыть его (или снова открыть, если закрыли сами). Закрытое выглядит как ▮▮▮ и в образец не попадёт.</p>
+          <p class="muted">То, что сайт узнал сам (ФИО, счета, карты, телефоны, адреса), закрыто всегда и не открывается. За то, что сайт не узнал и вы не закрыли, отвечаете вы. Просмотрите все страницы.</p>
+          <p id="anonPager"></p>
+          <div id="anonPage" class="anonpage"></div>
+          <p class="muted" id="anonHint"></p>
+        </div>
+        <div id="anonStep4" hidden>
+          <p><label><input type="checkbox" id="anonOk" disabled> Я сам просмотрел все страницы образца, ФИО, номера счетов и карт, адреса и телефоны скрыты, меня всё устраивает. Я согласен, что образец будет использован только для создания чтения моего банка, не будет публиковаться и будет удалён.</label></p>
+          <p>Подготовьте образец одним из способов:</p>
+          <div class="wizacts">
+            <button id="anonShare" type="button" disabled hidden>Поделиться файлом</button>
+            <button id="anonDownload" type="button" disabled>Скачать файл</button>
+            <button id="anonCopy" type="button" disabled>Скопировать образец</button>
+          </div>
+          <p id="anonMadeMsg" class="muted"></p>
+        </div>
+        <div id="anonStep5" hidden>
+          <p id="anonSendText"></p>
+          <p><a id="anonMail" class="btnlink" href="mailto:bankanalyzer.help@gmail.com">Открыть почту</a></p>
+          <p class="muted">Адрес: <b>bankanalyzer.help@gmail.com</b> <button id="anonCopyMail" type="button">Скопировать адрес</button></p>
+          <p class="muted" id="anonMailMsg">Если почта не открылась, скопируйте адрес и отправьте письмо вручную. Сайт сам ничего не отправляет.</p>
+        </div>
+      </div>
+      <div class="wizfoot">
+        <p id="anonNeed" class="muted"></p>
+        <div class="wizbtns">
+          <button id="anonBack" type="button" hidden>Назад</button>
+          <button id="anonNext" type="button" class="primary">Далее</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -374,22 +473,6 @@
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
     </p>
     <p id="status" data-sec="overview more"></p>
-      <div id="anonBox" class="datablock" data-sec="overview more" hidden>
-        <b id="anonTitle">Подготовить безопасный образец выписки</b>
-        <p class="muted">Выберите свою выписку (PDF или CSV). Сайт найдёт и закроет личное, вы проверите и допишете. В образец попадают только тексты и их положение на странице, сам файл не попадает, поэтому «закрашено, но выделяется» невозможно. Всё считается в вашем браузере.</p>
-        <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
-        <p id="anonStatus" class="muted"></p>
-        <div id="anonWork" hidden>
-          <p><span id="anonStats"></span> Нажмите на фрагмент, чтобы закрыть его (или снова открыть, если закрыли сами). <b>Закрытое выглядит как ▮▮▮ и в образец не попадёт. То, что сайт узнал сам (ФИО, счета, карты, телефоны, адреса), закрывается всегда и не открывается; закрыть ещё что-то можно вручную. За то, что сайт не узнал и вы не закрыли, отвечаете вы.</b></p>
-          <p id="anonPager"></p>
-          <div id="anonPage" class="anonpage"></div>
-          <p><label><input type="checkbox" id="anonOk" disabled> Я сам просмотрел все страницы образца, ФИО, номера счетов и карт, адреса и телефоны скрыты, меня всё устраивает. Я согласен, что образец будет использован только для создания чтения моего банка, не будет публиковаться и будет удалён.</label></p>
-          <p class="muted" id="anonHint"></p>
-          <p><b>1.</b> Вариант А: <button id="anonDownload" type="button" disabled>Скачать файл образца</button>
-            Вариант Б: <button id="anonCopy" type="button" disabled>Скопировать образец</button></p>
-          <p id="anonMailRow" hidden><b>2.</b> <a id="anonMail" href="#">Открыть письмо для отправки</a>. В варианте А приложите скачанный файл «образец-выписки.json», в варианте Б вставьте скопированный текст в письмо.</p>
-        </div>
-      </div>
     <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
       <span><b>Демо на выдуманных данных.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
@@ -498,7 +581,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.34, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.35, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -724,12 +807,13 @@
       try { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) { $("file").files = fl; $("file").dispatchEvent(new Event("change")); toApp(); } } catch (err) { /* старый браузер: используйте кнопку */ }
     });
     // Шторки «Приватность» и «Как получить выписку»: Esc, клик по фону и кнопка «Понятно» закрывают, фокус возвращается на кнопку
-    const SHEETS = ["privSheet", "howSheet"];
+    const SHEETS = ["privSheet", "howSheet", "anonSheet"];
     let sheetOpener = null;
     function openSheet(id, opener) { sheetOpener = opener; $(id).hidden = false; try { $(id).querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ } }
     function closeSheets() { SHEETS.forEach(id => { $(id).hidden = true; }); try { if (sheetOpener) sheetOpener.focus(); } catch (e) { /* без фокуса */ } sheetOpener = null; }
     [["privBtn", "privSheet"], ["privRow", "privSheet"], ["howRow", "howSheet"]].forEach(([b, sh]) => $(b).addEventListener("click", () => openSheet(sh, $(b))));
     ["privClose", "howClose"].forEach(b => $(b).addEventListener("click", closeSheets));
+    $("howRow").addEventListener("click", () => showHowList());
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
@@ -765,6 +849,108 @@
       if (mq.addEventListener) mq.addEventListener("change", () => { if (themeMode === "auto") applyTheme(); });
     } catch (e) { /* без слежения за системной темой */ }
     applyTheme();
+
+    // ---------- «Как получить выписку»: список банков Беларуси, у каждого шаги, срок и ссылка на страницу самого банка ----------
+    // Сведения из открытых материалов банков (ноябрь 2026); reads: сайт умеет читать выписки этого банка. link: страница банка, откуда взяты шаги.
+    const BANK_HELP = [
+      { id: "belarusbank", name: "Беларусбанк", reads: true,
+        how: ["Интернет-банкинг: в списке счетов выберите счёт и нажмите значок «Получить отчёт об операциях по счёту», задайте период (не больше 90 календарных дней), отчёт можно сохранить в PDF.", "Мини-выписка по карточке: 10 операций за 7 дней (для нашего сайта мало, нужен отчёт за период).", "Ежемесячную выписку на e-mail можно подключить в интернет-банкинге (услуга «Выписка по счету»). Мобильное приложение называется M-Belarusbank."],
+        wait: "В интернет-банкинге сразу. Период больше 90 дней, вероятно, только в отделении: уточните в банке.",
+        link: ["https://belarusbank.by/fizicheskim_licam/cards/informatsiya_ob_ostatke_i_dvizhenii_denezhnykh_sredstv_po_schetu/", "Беларусбанк: информация об остатке и движении средств по счёту"] },
+      { id: "mtbank", name: "МТБанк", reads: true,
+        how: ["В приложении Moby вкладка «Операции» показывает все поступления и списания по счёту (транзакционная выписка).", "Для ряда карт («Куфар», «Кактус», «Шоппер») есть «Выписка по карте на e-mail»: приходит в начале месяца, если почта указана в Moby.", "Выписку за произвольный период в PDF ищите в интернет-банке «Мой банк» или в карточке счёта в Moby. Точное название пункта в найденных материалах банка не описано: если не нашли, спросите контакт-центр."],
+        wait: "Выписка на e-mail приходит раз в месяц; остальное в приложении: срок уточните у банка.",
+        link: ["https://www.mtbank.by/upload/docs/mybank/mob_bank_instruction.pdf", "МТБанк: инструкция по мобильному банку «Мой банк»"] },
+      { id: "vtb", name: "ВТБ (Беларусь)", reads: true,
+        how: ["Интернет-банк и М-банкинг: раздел «Выписка» по карточке или счёту. Там видны и операции, ещё не отражённые по счёту (например, заблокированные суммы), за последние 30 календарных дней.", "Банкомат: мини-выписка на чеке (10 последних операций).", "Отделение при личном обращении; ежемесячная выписка по счёту может приходить на e-mail, если это указано в заявлении. Через интернет-банк можно заказать и банковские справки."],
+        wait: "В интернет-банке и приложении сразу. В отделении по обращению: срок уточните в банке.",
+        link: ["https://www.vtb.by/chastnym-licam/internet-bank/internet-bank-new_0", "ВТБ (Беларусь): интернет-банк"] },
+      { id: "prior", name: "Приорбанк", reads: true,
+        how: ["Prior Online, раздел «История»: значок фильтра справа вверху (продукт, тип операции, период) показывает операции.", "Официальную выписку закажите так: «Еще» → «Заявки на продукты» → «Заказ документов» → «Заказ справок и выписок», тип документа «Выписка по счету». По данным банка, выписка по счёту бесплатна."],
+        wait: "Срок в найденных материалах банка не указан: он виден в заявке, при сомнении спросите банк.",
+        link: ["https://www.priorbank.by/offers/services/mobile-applications/zakaz-documentov", "Приорбанк: заказ справок и выписок в Prior Online"] },
+      { id: "bps", name: "БПС-Сбербанк", reads: false,
+        how: ["Веб-версия СберБанк Онлайн: откройте карту, выберите «Банковская выписка» и задайте период в календаре. По данным банка, выписка бесплатна.", "В мобильном приложении выписки за прошлые периоды доступны не везде: тогда обратитесь в отделение по месту открытия карт-счёта.", "Ежемесячная выписка на e-mail бесплатна. Бумажная в отделении: за текущий и предыдущий месяц бесплатно, за другой период платно."],
+        wait: "В веб-версии сразу. В отделении по обращению: срок уточните в банке.",
+        link: ["https://www.sber-bank.by/page/online-bank-whatKnow", "БПС-Сбербанк: полезная информация о СберБанк Онлайн"] },
+      { id: "belapb", name: "Белагропромбанк", reads: false,
+        how: ["Интернет-банкинг: раздел «Карточки» → «Получить выписку по карточкам», период не больше 3 месяцев. По найденным материалам, сохранить можно в Word или Excel (PDF может не быть: уточните).", "Быстро: двойной клик по карточке в виджете «Карточки» даёт выписку за последнюю календарную неделю. Мини-выписка платная.", "Ежемесячную выписку на e-mail подключают в «Карточки» → «Управление услугами»; также в отделении по месту открытия счёта."],
+        wait: "В интернет-банкинге сразу. Операции отражаются по счёту с задержкой до нескольких дней.",
+        link: ["https://www.belapb.by/upload/sprint.editor/995/4iqmvuqqpa62pa62rdaq4pc636v9db4t/IB.PDF.pdf", "Белагропромбанк: инструкция по системе «Интернет-банкинг»"] },
+      { id: "alfa", name: "Альфа-Банк", reads: false,
+        how: ["Интернет-банк «Альфа-Клик»: слева выберите счёт, затем карту в блоке «Все карты к счёту», в «Действиях с картой» нажмите «Выписка», задайте период и «Применить», затем «Скачать PDF».", "Мобильное приложение: откройте счёт, пункт выписки, период; выписку можно скачать, отправить на e-mail или поделиться (для карты шаги могут немного отличаться)."],
+        wait: "Сразу, в интернет-банке и приложении.",
+        link: ["https://help.alfabank.by/hc/ru/articles/360000303298-%D0%9A%D0%B0%D0%BA-%D0%BF%D0%BE%D0%BB%D1%83%D1%87%D0%B8%D1%82%D1%8C-%D0%B2%D1%8B%D0%BF%D0%B8%D1%81%D0%BA%D1%83-%D0%BF%D0%BE-%D0%BA%D0%B0%D1%80%D1%82%D0%B5-%D0%B2-%D0%90%D0%BB%D1%8C%D1%84%D0%B0-%D0%9A%D0%BB%D0%B8%D0%BA-", "Альфа-Банк: как получить выписку по карте в «Альфа-Клик»"] },
+      { id: "bnb", name: "БНБ-Банк", reads: false,
+        how: ["Приложение «Искра»: «Продукты» → карта → «Выписка по карте», задайте период и тип операций (все, доходы, расходы), нажмите «Сформировать».", "Выписку можно посмотреть или отправить на e-mail. По словам банка, она получает печать и статус официального документа.", "Раздел «История»: операции по всем продуктам с фильтрами по периоду, сумме, валюте."],
+        wait: "Сразу, в приложении.",
+        link: ["https://bnb.by/o-lichnom/faq/nastrojki-i-vozmozhnosti-karty-1-2-3/", "БНБ-Банк: настройки и возможности карты 1-2-3"] },
+      { id: "reshenie", name: "Банк «Решение»", reads: false,
+        how: ["Мобильное приложение: «Карточки» → «Выписка», задайте период. Мини-выписка охватывает не больше 7 календарных дней.", "Отделения банка. Выписки по зарплатным карточкам иногда приходят на e-mail бесплатно, но банк предупреждал, что рассылка за отдельные месяцы могла не работать: тогда выписку нужно взять в приложении или отделении."],
+        wait: "В приложении сразу. В отделении по обращению: срок уточните в банке.",
+        link: ["https://rbank.by/news/vnimaniyu_klientov_derzhateley_bankovskikh_kartochek_vypiska/", "Банк «Решение»: о выписках по банковским карточкам"] },
+      { id: "paritet", name: "Паритетбанк", reads: false,
+        how: ["Интернет-банкинг: раздел «История» либо выберите карточку и нажмите «Выписка».", "Любое подразделение банка с документом, удостоверяющим личность: бумажная выписка заверяется штампом.", "Ежемесячный отчёт по счёту тоже называется выпиской. В некоторых пакетах бумажная выписка за любой период бесплатна."],
+        wait: "В интернет-банкинге сразу. В подразделении по обращению: срок уточните в банке.",
+        link: ["https://www.paritetbank.by/faq/", "Паритетбанк: вопросы и ответы"] },
+      { id: "belveb", name: "Банк БелВЭБ", reads: false,
+        how: ["Выписку по карте можно получить в приложении UP Online (для карт, выпущенных в Беларуси, также в приложении UP).", "В сервисном офисе банка по документу, удостоверяющему личность, или в отделениях Белпочты.", "Через контакт-центр или банкомат: услуга платная (по данным банка). Для некоторых пенсионных карт выписка по счёту бесплатна."],
+        wait: "В приложении сразу. В офисе или на почте по обращению: срок уточните в банке.",
+        link: ["https://www.belveb.by/questions/", "Банк БелВЭБ: вопросы и ответы"] },
+      { id: "bsb", name: "БСБ Банк", reads: false,
+        how: ["Интернет-банк или мобильный банк: самостоятельно. В мобильном банке раздел «Выписка» показывает последние 10 операций по карточке.", "В подразделении, где ведётся счёт, или на e-mail по обращению. Ежемесячная выписка может приходить на почту, указанную в заявлении (по одному из договоров не позднее 5-го рабочего дня после месяца)."],
+        wait: "В приложении сразу. По обращению в подразделение: срок уточните в банке.",
+        link: ["https://www.bsb.by/files/ruleuse.pdf", "БСБ Банк: правила услуги «Мобильный банк»"] },
+      { id: "tb", name: "Технобанк", reads: false,
+        how: ["Выписку по карточкам, счетам и вкладам можно смотреть в интернет-банке и мобильном приложении.", "Ежемесячная выписка на e-mail (зависит от карты). На бумаге в подразделении при предъявлении документа."],
+        wait: "В интернет-банке и приложении сразу. В подразделении по обращению: срок уточните в банке.",
+        link: ["https://wap.tb.by/upload/downloads/terms-of-service-new.pdf", "Технобанк: общие условия обслуживания физических лиц"] },
+      { id: "belinvest", name: "Белинвестбанк", reads: false,
+        how: ["Интернет-банкинг: выписка по операциям по картам, можно подключить выписку на e-mail. В мобильном банкинге регистрация идёт через интернет-банкинг.", "SMS-банкинг: мини-выписка по карточке (до 14 операций).", "Материалы банка, на которые я опирался, старые: названия пунктов могли измениться."],
+        wait: "В интернет-банкинге сразу.",
+        link: ["https://www.belinvestbank.by/be/individual/page/internet-banking", "Белинвестбанк: интернет-банкинг"] },
+      { id: "bgpb", name: "Белгазпромбанк", reads: false,
+        how: ["Пошаговой инструкции в найденных материалах банка нет. Откройте интернет-банк для физических лиц или приложение и ищите в разделах «Карты» и «Счета» пункт «Выписка» или «История операций»."],
+        wait: "Уточните в приложении или в банке.",
+        link: ["https://pfm.bgpb.by/", "Белгазпромбанк: интернет-банк (вход)"] },
+      { id: "dabrabyt", name: "Банк Дабрабыт", reads: false,
+        how: ["Инструкция на сайте банка не нашлась. Откройте приложение или интернет-банк и ищите «Выписку» или «История операций» по карте или счёту, а если нет, обратитесь в отделение."],
+        wait: "Уточните в приложении или в банке.",
+        link: null }
+    ];
+    function showHowList() {
+      $("howList").hidden = false; $("howDetail").hidden = true;
+      $("howBanks").replaceChildren(...BANK_HELP.map(b => h("button", { type: "button", class: "rowcard", onclick: () => showHowBank(b.id) },
+        h("span", {}, b.name), h("span", { class: "howtag" + (b.reads ? " ok" : "") }, b.reads ? "читается сайтом" : "пока нет"), chevSvg())));
+      try { $("howSheet").querySelector(".modalcard").scrollTop = 0; } catch (e) { /* без прокрутки */ }
+    }
+    function chevSvg() {
+      const sp = document.createElement("span");
+      sp.className = "chevw";
+      sp.innerHTML = '<svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+      return sp;
+    }
+    function showHowBank(id) {
+      const b = BANK_HELP.find(x => x.id === id);
+      if (!b) return;
+      $("howList").hidden = true; $("howDetail").hidden = false;
+      const kids = [
+        h("button", { type: "button", class: "howback", onclick: () => showHowList() }, "← Все банки"),
+        h("h3", {}, b.name),
+        h("p", {}, h("span", { class: "howtag" + (b.reads ? " ok" : "") }, b.reads ? "Сайт читает выписки этого банка" : "Сайт пока не читает выписки этого банка")),
+        h("h3", {}, "Где взять выписку"),
+        h("ul", {}, b.how.map(t => h("li", {}, t))),
+        h("h3", {}, "Нужно ли ждать"),
+        h("p", {}, b.wait)
+      ];
+      if (b.link) kids.push(h("p", {}, h("a", { class: "btnlink alt", href: b.link[0], target: "_blank", rel: "noopener noreferrer" }, "Страница банка: " + b.link[1] + " ↗")),
+        h("p", { class: "muted" }, "Ссылка откроет сайт банка в новой вкладке. Пункты меню в приложении могут называться иначе."));
+      if (!b.reads) kids.push(h("p", { class: "muted" }, "Выписку этого банка сайт пока не умеет разбирать. Если хотите помочь добавить банк, подготовьте безопасный образец:"),
+        h("button", { type: "button", onclick: () => { closeSheets(); showAnon(false); } }, "Помочь добавить банк"));
+      $("howDetail").replaceChildren(...kids);
+      try { $("howSheet").querySelector(".modalcard").scrollTop = 0; } catch (e) { /* без прокрутки */ }
+    }
+    showHowList();
 
     // Значки: простые линии одного цвета (берут цвет текста). Для стандартных категорий свои, для своих выбирает пользователь
     const ICON_SVG = {
@@ -1261,6 +1447,9 @@
       [Cat.OWN]: "transfer", [Cat.LOAN]: "transfer", [Cat.SAVINGS]: "transfer", [Cat.FEES]: "transfer",
       [Cat.BUCKETS[0]]: "other", [Cat.BUCKETS[1]]: "other"
     };
+    // «Нужно разобрать»: корзины (интернет-банк, ЕРИП) и «Не разобрано» на диаграмме сливаются в одну долю справа:
+    // нейтральная заливка с пунктирной рамкой (как плашка «Нужно разобрать»), чтобы не путать с цветными категориями и серой группой мелких
+    const REVIEW_CATS = new Set([...Cat.BUCKETS, "Не разобрано"]);
     const CUSTOM_KEYS = ["food", "cafe", "transport", "home", "subs", "health", "shop", "fun"];
     const catVar = cat => "--cat-" + (CAT_COLOR[cat] || CUSTOM_KEYS[[...String(cat)].reduce((a, c) => a + c.charCodeAt(0), 0) % CUSTOM_KEYS.length]);
     const catColor = cat => `var(${catVar(cat)})`;
@@ -1284,12 +1473,17 @@
       const MIN = 0.03;
       const slices = [];
       const small = [];
-      st.rows.forEach(([cat, sum], i) => {
+      // «Нужно разобрать» идёт первой и ставится по центру правой стороны кольца (в 3 часа)
+      const review = st.rows.filter(([cat]) => REVIEW_CATS.has(cat));
+      const reviewSum = review.reduce((a, [, v]) => a + v, 0);
+      if (review.length) slices.push({ cats: review, sum: reviewSum, color: "var(--surface-2)", v: "--surface-2", group: true, review: true });
+      st.rows.forEach(([cat, sum]) => {
+        if (REVIEW_CATS.has(cat)) return;
         if (sum / st.total < MIN) small.push([cat, sum]);
         else slices.push({ cats: [[cat, sum]], sum, color: catColor(cat), v: catVar(cat) });
       });
       const sliceOf = new Map();               // категория -> номер доли
-      slices.forEach((sl, i) => sliceOf.set(sl.cats[0][0], i));
+      slices.forEach((sl, i) => sl.cats.forEach(([c]) => sliceOf.set(c, i)));
       if (small.length) {
         const sum = small.reduce((a, [, v]) => a + v, 0);
         slices.push({ cats: small, sum, color: small.length > 1 ? "var(--cat-other)" : catColor(small[0][0]), v: small.length > 1 ? "--cat-other" : catVar(small[0][0]), group: small.length > 1 });
@@ -1298,7 +1492,7 @@
 
       const CX = 50, CY = 50, R = 47, r = 24, M = (R + r) / 2;
       const pt = (rad, ang) => [CX + rad * Math.cos(ang), CY + rad * Math.sin(ang)];
-      let acc = 0, parts = "";
+      let acc = review.length && st.total ? 0.25 - reviewSum / st.total / 2 : 0, parts = "";
       slices.forEach((sl, i) => {
         const f = sl.sum / st.total;
         const a0 = -Math.PI / 2 + acc * 2 * Math.PI, a1 = a0 + f * 2 * Math.PI;
@@ -1309,7 +1503,7 @@
         } else {
           const [x0, y0] = pt(R, a0), [x1, y1] = pt(R, a1), [x2, y2] = pt(r, a1), [x3, y3] = pt(r, a0);
           const big = f > 0.5 ? 1 : 0;
-          shape = `<path class="slice" data-i="${i}" style="fill:${sl.color}" d="M${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}L${x2.toFixed(2)} ${y2.toFixed(2)}A${r} ${r} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z"/>`;
+          shape = `<path class="slice" data-i="${i}" style="fill:${sl.color}${sl.review ? ";stroke:var(--muted);stroke-dasharray:1.6 1.2;stroke-width:.7" : ""}" d="M${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}L${x2.toFixed(2)} ${y2.toFixed(2)}A${r} ${r} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z"/>`;
         }
         parts += shape;
         const ink = inkFor(sl.v);
@@ -1328,10 +1522,10 @@
       const tipNodes = i => {
         const sl = slices[i];
         const pct = Math.round(sl.sum / st.total * 100);
-        const sw = h("span", { class: "sw" });
-        sw.style.background = sl.color;
+        const sw = h("span", { class: sl.review ? "sw review" : "sw" });
+        if (!sl.review) sw.style.background = sl.color;
         const head = sl.group
-          ? h("div", {}, sw, h("b", {}, "Мелкие категории"), ` · ${fmt(sl.sum)} BYN · ${pct}%`)
+          ? h("div", {}, sw, h("b", {}, sl.review ? "Нужно разобрать" : "Мелкие категории"), ` · ${fmt(sl.sum)} BYN · ${pct}%`)
           : h("div", {}, sw, iconEl(iconKey(sl.cats[0][0])), h("b", {}, sl.cats[0][0]), ` · ${fmt(sl.sum)} BYN · ${pct}%`);
         const nodes = [head];
         if (sl.group) nodes.push(h("div", { class: "muted" }, sl.cats.map(([c, v]) => `${c}: ${fmt(v)}`).join("; ")));
@@ -1353,8 +1547,8 @@
       const legend = h("div", { class: "legend" });
       st.rows.forEach(([cat, sum], i) => {
         const si = sliceOf.get(cat);
-        const sw = h("span", { class: "sw" });
-        sw.style.background = slices[si].color;
+        const sw = h("span", { class: slices[si].review ? "sw review" : "sw" });
+        if (!slices[si].review) sw.style.background = slices[si].color;
         const row = h("div", { class: "lrow" }, sw, h("span", { class: "lname" }, iconEl(iconKey(cat)), cat),
           h("span", { class: "num" }, fmt(sum) + " · " + Math.round(sum / st.total * 100) + "%"));
         row.addEventListener("mouseenter", () => { show(si); markSlice(si); });
@@ -1403,7 +1597,7 @@
         parts.push(h("table", {},
           h("tr", {}, h("th", {}, "Категория"), h("th", { class: "num" }, "Сумма, BYN"), h("th", { class: "num" }, "Доля"), h("th", { style: "width:35%" }, "")),
           st.rows.map(([cat, sum]) => h("tr", {},
-            h("td", {}, h("span", { class: "sw", style: `background:${catColor(cat)}` }), iconEl(iconKey(cat)), cat),
+            h("td", {}, h("span", { class: REVIEW_CATS.has(cat) ? "sw review" : "sw", style: REVIEW_CATS.has(cat) ? "" : `background:${catColor(cat)}` }), iconEl(iconKey(cat)), cat),
             h("td", { class: "num" }, fmt(sum)),
             h("td", { class: "num" }, st.total ? Math.round(sum / st.total * 100) + "%" : ""),
             h("td", {}, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${sum / max * 100}%;background:${catColor(cat)}` }))))),
@@ -2060,7 +2254,7 @@
       if (file.size > 20 * 1024 * 1024) throw new Error("файл слишком большой для выписки");
       const text = PriorCsvParser.decode(new Uint8Array(await file.arrayBuffer()));
       const res = Banks.parseCsv(text);
-      if (!res) throw Object.assign(new Error("CSV не похож на выписку Приорбанка. Если это другой банк, ниже можно подготовить образец и отправить нам"), { unsupported: true });
+      if (!res) throw Object.assign(new Error("CSV не похож на выписку Приорбанка. Если это другой банк, можно подготовить образец и отправить нам (откроется пошаговое окно)"), { unsupported: true });
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
@@ -2096,7 +2290,7 @@
         throw new Error("в PDF нет текста: похоже на скан или фотографию. Нужна выписка, скачанная из интернет-банка, а не сфотографированная");
       }
       const res = Banks.parse(pages);
-      if (!res) throw Object.assign(new Error("этот банк пока не поддерживается (сейчас читаются: " + bankNames + "). Ниже можно за минуту подготовить образец без личных данных и отправить нам: тогда банк добавим. Файл пока никуда не отправлялся"), { unsupported: true });
+      if (!res) throw Object.assign(new Error("этот банк пока не поддерживается (сейчас читаются: " + bankNames + "). Можно за пару минут подготовить образец без личных данных и отправить нам (откроется пошаговое окно): тогда банк добавим. Файл пока никуда не отправлялся"), { unsupported: true });
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось. Возможно, за выбранный период их не было, или банк изменил формат файла");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
@@ -2306,9 +2500,33 @@
       $("backupMsg").textContent = "Категории и выбор по операциям сброшены.";
       if (txs.length) render(); else renderRules();
     });
-    // ---------- Анонимайзер: безопасный образец выписки ----------
+    // ---------- Анонимайзер: мастер «безопасный образец выписки» (5 шагов в шторке, страница не прокручивается) ----------
     let anon = null;   // { model, kind, page, seen }
+    let anonStep = 1;
+    let anonMade = null;   // как подготовлен образец: "file" | "copy" | "share" (пока null, дальше идти нельзя)
+    const ANON_MAIL = "bankanalyzer.help@gmail.com";
     const ANON_CONSENT = "Я сам просмотрел все страницы образца, личные данные скрыты, меня всё устраивает; образец используется только для создания чтения моего банка, не публикуется и удаляется.";
+    const ANON_TITLES = ["Ваши данные остаются у вас", "Выберите выписку", "Проверьте, что скрыто", "Согласие и образец", "Отправьте письмо"];
+    function anonNextState() {
+      const left = anon ? anon.model.length - anon.seen.size : 0;
+      const need = anonStep === 2 && !anon ? "Выберите файл, чтобы продолжить."
+        : anonStep === 3 && left > 0 ? `Просмотрите все страницы, чтобы продолжить (осталось: ${left}).`
+        : anonStep === 4 && !anonMade ? "Отметьте согласие и подготовьте образец, чтобы продолжить." : "";
+      $("anonNeed").textContent = need;
+      $("anonNext").disabled = !!need;
+    }
+    function anonRenderStep() {
+      for (let i = 1; i <= 5; i++) $("anonStep" + i).hidden = i !== anonStep;
+      $("anonStepNo").textContent = `Шаг ${anonStep} из 5`;
+      $("anonStepTitle").textContent = ANON_TITLES[anonStep - 1];
+      $("anonProg").style.width = anonStep * 20 + "%";
+      $("anonBack").hidden = anonStep === 1;
+      $("anonNext").textContent = anonStep === 5 ? "Готово" : "Далее";
+      if (anonStep === 5) anonPrepareMail();
+      anonNextState();
+      try { $("anonBody").scrollTop = 0; } catch (e) { /* без прокрутки */ }
+    }
+    const anonGo = n => { anonStep = Math.max(1, Math.min(5, n)); anonRenderStep(); };
     function anonRenderPage() {
       const pg = anon.model[anon.page];
       anon.seen.add(anon.page);
@@ -2332,13 +2550,14 @@
       const ok = $("anonOk");
       ok.disabled = left > 0;
       if (left > 0) ok.checked = false;
-      $("anonHint").textContent = left > 0 ? `Галочка станет доступна, когда вы просмотрите все страницы (осталось: ${left}).` : "";
+      $("anonHint").textContent = "";
       anonUpdateButtons();
     }
     function anonUpdateButtons() {
       const on = $("anonOk").checked && !$("anonOk").disabled;
-      $("anonDownload").disabled = !on; $("anonCopy").disabled = !on;
-      if (!on) $("anonMailRow").hidden = true;
+      $("anonDownload").disabled = !on; $("anonCopy").disabled = !on; $("anonShare").disabled = !on;
+      if (!on) { anonMade = null; $("anonMadeMsg").textContent = ""; }
+      anonNextState();
     }
     $("anonOk").addEventListener("change", anonUpdateButtons);
     $("anonPage").addEventListener("click", e => {
@@ -2354,19 +2573,30 @@
     });
     const r2 = v => Math.round(v * 100) / 100;
     $("anonFile").addEventListener("change", () => anonLoad($("anonFile").files[0]));
-    $("anonOpen").addEventListener("click", () => showAnon());
-    function showAnon() {
-      $("anonBox").hidden = false;
-      $("anonBox").scrollIntoView({ behavior: "smooth", block: "start" });
+    // Открыть мастер: новый заход начинается с первого шага, незавершённый продолжается
+    function showAnon(lead) {
+      $("anonLead").hidden = !lead;
+      if (!anon) anonStep = 1;
+      anonRenderStep();
+      openSheet("anonSheet", $("anonOpen"));
     }
-    // Банк не поддерживается: сразу готовим образец из этого же файла, без повторного выбора
+    $("anonOpen").addEventListener("click", () => showAnon(false));
+    // Банк не поддерживается: сразу читаем этот же файл для образца, без повторного выбора
     function offerSample(file) {
-      $("anonTitle").textContent = "Этот банк пока не читается. Помогите добавить его: образец готовится прямо здесь";
-      showAnon();
+      anonStep = 1;
+      showAnon(true);
       anonLoad(file);
     }
+    function anonReset() {
+      anon = null; anonMade = null; anonStep = 1;
+      $("anonFile").value = ""; $("anonBank").value = ""; $("anonOk").checked = false;
+      $("anonStatus").textContent = ""; $("anonMadeMsg").textContent = ""; $("anonLead").hidden = true;
+      $("anonPage").replaceChildren();
+    }
     async function anonLoad(f) {
-      anon = null; $("anonWork").hidden = true;
+      anon = null; anonMade = null;
+      $("anonOk").checked = false;
+      anonNextState();
       if (!f) return;
       $("anonStatus").textContent = "Читаю файл…";
       try {
@@ -2394,44 +2624,67 @@
         }
         if (!model.length) throw new Error("файл пустой");
         anon = { model, kind: isCsv ? "csv" : "pdf", page: 0, seen: new Set() };
-        $("anonStatus").textContent = "Готово. Файл никуда не отправлялся.";
-        $("anonWork").hidden = false;
-        $("anonOk").checked = false;
-        $("anonMail").hidden = true;
+        $("anonStatus").textContent = "Готово: файл прочитан, он никуда не отправлялся. Нажмите «Далее».";
         anonRenderPage();
+        anonNextState();
       } catch (err) {
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.34", consent: ANON_CONSENT })); }
-    function anonShowMail(how) {
-      const m = $("anonMail");
-      m.href = "mailto:bankanalyzer.help@gmail.com?subject=" + encodeURIComponent("Образец выписки для нового банка") +
-        "&body=" + encodeURIComponent("Название банка: \n\n" + (how === "file" ? "Приложите файл «образец-выписки.json» (он скачался в папку загрузок)." : "Вставьте сюда скопированный образец (долгое нажатие → Вставить).") + "\n\n" + ANON_CONSENT);
-      $("anonMailRow").hidden = false;
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.35", consent: ANON_CONSENT })); }
+    // Копирование в буфер: современный способ, при отказе запасной
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
+      const ta = h("textarea", { style: "position:fixed;opacity:0" }); ta.value = text; document.body.append(ta); ta.select();
+      let done = false;
+      try { done = document.execCommand("copy"); } catch (e) { /* копирование недоступно */ }
+      ta.remove();
+      return done;
     }
+    const anonMade_ = (how, msg) => { anonMade = how; $("anonMadeMsg").textContent = msg; anonNextState(); };
     $("anonDownload").addEventListener("click", () => {
       if (!anon || !$("anonOk").checked) return;
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([anonSampleJson()], { type: "application/json" }));
       a.download = "образец-выписки.json";
       a.click();
-      anonShowMail("file");
-      $("anonHint").textContent = "Файл «образец-выписки.json» скачан. Откройте письмо и приложите его: сайт сам ничего не отправляет.";
+      anonMade_("file", "Готово: файл «образец-выписки.json» скачан (папка «Загрузки», на iPhone: «Файлы»). Нажмите «Далее».");
     });
     $("anonCopy").addEventListener("click", async () => {
       if (!anon || !$("anonOk").checked) return;
-      const text = anonSampleJson();
-      let done = false;
-      try { await navigator.clipboard.writeText(text); done = true; } catch (e) { /* пробуем запасной путь */ }
-      if (!done) {
-        const ta = h("textarea", { style: "position:fixed;opacity:0" }); ta.value = text; document.body.append(ta); ta.select();
-        try { done = document.execCommand("copy"); } catch (e) { /* копирование недоступно */ }
-        ta.remove();
-      }
-      if (done) anonShowMail("copy");
-      $("anonHint").textContent = done ? "Образец скопирован. Откройте письмо и вставьте его в текст письма." : "Не удалось скопировать: скачайте файл (вариант А).";
+      if (await copyText(anonSampleJson())) anonMade_("copy", "Готово: образец скопирован. Нажмите «Далее».");
+      else $("anonMadeMsg").textContent = "Не удалось скопировать: скачайте файл.";
     });
+    // «Поделиться»: на телефоне файл сразу уходит в выбранное приложение (почту) вложением
+    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare) $("anonShare").hidden = false;
+    $("anonShare").addEventListener("click", async () => {
+      if (!anon || !$("anonOk").checked) return;
+      try {
+        const f = new File([anonSampleJson()], "образец-выписки.json", { type: "application/json" });
+        if (!navigator.canShare({ files: [f] })) throw new Error("не поддерживается");
+        await navigator.share({ files: [f], title: "Образец выписки для нового банка", text: "Образец выписки для нового банка. Отправьте на " + ANON_MAIL });
+        anonMade_("share", "Готово: файл отправлен через меню «Поделиться». Нажмите «Далее».");
+      } catch (e) {
+        if (!(e && e.name === "AbortError")) $("anonMadeMsg").textContent = "Поделиться не получилось: скачайте файл или скопируйте образец.";
+      }
+    });
+    // Шаг 5: письмо с названием банка; подсказка зависит от способа
+    function anonPrepareMail() {
+      const bank = $("anonBank").value.trim();
+      const how = anonMade;
+      const todo = how === "file" ? "Приложите файл «образец-выписки.json» (он скачался в папку загрузок)."
+        : how === "copy" ? "Вставьте сюда скопированный образец (долгое нажатие → Вставить)."
+        : "Образец отправлен файлом из меню «Поделиться».";
+      $("anonMail").href = "mailto:" + ANON_MAIL + "?subject=" + encodeURIComponent("Образец выписки для нового банка" + (bank ? ": " + bank : "")) +
+        "&body=" + encodeURIComponent("Название банка: " + bank + "\n\n" + todo + "\n\n" + ANON_CONSENT);
+      $("anonSendText").textContent = how === "file" ? "Откройте письмо и приложите скачанный файл «образец-выписки.json» (скрепка в почтовой программе). Почтовая программа файл сама не подтянет."
+        : how === "copy" ? "Откройте письмо и вставьте скопированный образец в текст письма (долгое нажатие → Вставить)."
+        : "Если вы выбрали почту в меню «Поделиться», остаётся ввести адрес и отправить. Или откройте новое письмо ниже и приложите файл.";
+    }
+    $("anonCopyMail").addEventListener("click", async () => { $("anonMailMsg").textContent = (await copyText(ANON_MAIL)) ? "Адрес скопирован." : "Не удалось скопировать: выделите адрес и скопируйте вручную."; });
+    $("anonBack").addEventListener("click", () => anonGo(anonStep - 1));
+    $("anonNext").addEventListener("click", () => { if (anonStep === 5) { anonReset(); closeSheets(); } else anonGo(anonStep + 1); });
+    $("anonClose").addEventListener("click", closeSheets);
 
     // Разделы-экраны: один показан, остальные скрыты CSS по body[data-view]; «Ещё» объединяет данные, правила и выгрузку
     const TAB_ICONS = {
