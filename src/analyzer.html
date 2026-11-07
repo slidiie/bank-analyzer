@@ -71,6 +71,12 @@
     #rulesList .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
     #rulesList .prow .pname { flex: 1 1 12rem; }
     #plan .result { font-size: 1.1rem; margin: .5rem 0; }
+    .anonpage { border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem; max-height: 22rem; overflow: auto; font-size: .85rem; }
+    .anonpage .arow { display: flex; flex-wrap: wrap; gap: .15rem .3rem; margin: .1rem 0; }
+    .anonpage .achip { cursor: pointer; border-radius: 3px; padding: 0 .2rem; overflow-wrap: anywhere; border: 1px solid transparent; }
+    .anonpage .achip:hover { border-color: var(--ctl-border); }
+    .anonpage .achip.hid { background: #000; color: #888; }
+    @media (prefers-color-scheme: dark) { .anonpage .achip.hid { background: #555; color: #bbb; } }
     details.sect { margin: 1.2rem 0 0; }
     details.sect > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: .5rem; }
     details.sect > summary::-webkit-details-marker { display: none; }
@@ -245,7 +251,22 @@
       <p id="faqBanks"></p>
       <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Сайт сам файлы никуда не отправляет: вы прикладываете файл к письму сами. <a href="mailto:bankanalyzer.help@gmail.com?subject=%D0%9E%D0%B1%D1%80%D0%B0%D0%B7%D0%B5%D1%86%20%D0%B2%D1%8B%D0%BF%D0%B8%D1%81%D0%BA%D0%B8%20%D0%B4%D0%BB%D1%8F%20%D0%BD%D0%BE%D0%B2%D0%BE%D0%B3%D0%BE%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%B0&amp;body=%D0%9D%D0%B0%D0%B7%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%B0%3A%20%0A%D0%AF%20%D1%83%D0%B1%D1%80%D0%B0%D0%BB%28%D0%B0%29%20%D0%A4%D0%98%D0%9E%2C%20%D0%BD%D0%BE%D0%BC%D0%B5%D1%80%20%D1%81%D1%87%D1%91%D1%82%D0%B0%2C%20%D0%BA%D0%B0%D1%80%D1%82%D1%8B%2C%20%D0%B0%D0%B4%D1%80%D0%B5%D1%81%20%D0%B8%20%D1%82%D0%B5%D0%BB%D0%B5%D1%84%D0%BE%D0%BD%20%D0%B8%20%D1%81%D0%BE%D0%B3%D0%BB%D0%B0%D1%81%D0%B5%D0%BD%28%D0%BD%D0%B0%29%2C%20%D1%87%D1%82%D0%BE%20%D1%84%D0%B0%D0%B9%D0%BB%20%D0%B1%D1%83%D0%B4%D0%B5%D1%82%20%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D0%BD%20%D1%82%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE%20%D0%B4%D0%BB%D1%8F%20%D1%81%D0%BE%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D1%8F%20%D1%87%D1%82%D0%B5%D0%BD%D0%B8%D1%8F%20%D1%8D%D1%82%D0%BE%D0%B3%D0%BE%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%B0%2C%20%D0%BD%D0%B5%20%D0%B1%D1%83%D0%B4%D0%B5%D1%82%20%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%B8%20%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%20%D0%B1%D1%83%D0%B4%D0%B5%D1%82%20%D1%83%D0%B4%D0%B0%D0%BB%D1%91%D0%BD.%0A%0A%D0%9F%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B8%D1%82%D0%B5%20%D1%84%D0%B0%D0%B9%D0%BB%20%D0%BA%20%D0%BF%D0%B8%D1%81%D1%8C%D0%BC%D1%83.">Написать на bankanalyzer.help@gmail.com</a> (откроется письмо с готовым текстом согласия).</p>
       <p><b>Перед отправкой уберите личное:</b> ФИО, номер счёта (IBAN), номера карт, адрес, телефон. Суммы, даты и названия магазинов оставьте: без них чтение не написать. Важно: плашка или маркер поверх текста в PDF часто оставляет текст под ней. Надёжнее сделать скриншоты страниц с закрашенным или распечатать закрашенный файл в новый PDF («Печать → Сохранить как PDF») и проверить, что закрашенное нельзя выделить мышью.</p>
-      <p>Отправляя файл, вы соглашаетесь, что он будет использован только для создания чтения вашего банка, не будет публиковаться и будет удалён после этого.</p></details>
+      <p>Отправляя файл, вы соглашаетесь, что он будет использован только для создания чтения вашего банка, не будет публиковаться и будет удалён после этого.</p>
+      <div id="anonBox" class="datablock">
+        <b>Анонимайзер: подготовить безопасный образец прямо здесь</b>
+        <p class="muted">Выберите свою выписку (PDF или CSV). Сайт найдёт и закроет личное, вы проверите и допишете. В образец попадают только тексты и их положение на странице, сам файл не попадает, поэтому «закрашено, но выделяется» невозможно. Всё считается в вашем браузере.</p>
+        <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
+        <p id="anonStatus" class="muted"></p>
+        <div id="anonWork" hidden>
+          <p><span id="anonStats"></span> Нажмите на фрагмент, чтобы закрыть или показать его. <b>Закрытое выглядит как ▮▮▮ и в образец не попадёт.</b></p>
+          <p id="anonPager"></p>
+          <div id="anonPage" class="anonpage"></div>
+          <p><label><input type="checkbox" id="anonOk" disabled> Я сам просмотрел все страницы образца, ФИО, номера счетов и карт, адреса и телефоны скрыты, меня всё устраивает. Я согласен, что образец будет использован только для создания чтения моего банка, не будет публиковаться и будет удалён.</label></p>
+          <p class="muted" id="anonHint"></p>
+          <p><button id="anonDownload" type="button" disabled>Скачать образец</button>
+            <a id="anonMail" href="#" hidden>Написать письмо и приложить файл</a></p>
+        </div>
+      </div></details>
   </header>
 
   <main id="app">
@@ -381,6 +402,7 @@
   <script src="export.js"></script>
   <script src="planner.js"></script>
   <script src="backup.js"></script>
+  <script src="anonymize.js"></script>
   <script>
     // Чтение PDF: библиотека pdf.js встроена в страницу (build.py), из интернета ничего не подгружается.
     // Читаем в отдельном потоке (Worker из встроенного кода); если браузер или «песочница» его не даёт, читаем в основном потоке.
@@ -2120,6 +2142,101 @@
       $("backupMsg").textContent = "Категории и выбор по операциям сброшены.";
       if (txs.length) render(); else renderRules();
     });
+    // ---------- Анонимайзер: безопасный образец выписки ----------
+    let anon = null;   // { model, kind, page, seen }
+    const ANON_CONSENT = "Я сам просмотрел все страницы образца, личные данные скрыты, меня всё устраивает; образец используется только для создания чтения моего банка, не публикуется и удаляется.";
+    function anonRenderPage() {
+      const pg = anon.model[anon.page];
+      anon.seen.add(anon.page);
+      const frag = document.createDocumentFragment();
+      pg.forEach((row, ri) => {
+        const r = h("div", { class: "arow" });
+        row.forEach((it, ci) => r.append(h("span", { class: "achip" + (Anon.isHidden(it) ? " hid" : ""), "data-r": ri, "data-c": ci }, Anon.effective(it))));
+        frag.append(r);
+      });
+      $("anonPage").replaceChildren(frag);
+      anonRefresh();
+    }
+    function anonRefresh() {
+      const st = Anon.stats(anon.model);
+      $("anonStats").textContent = `Закрыто фрагментов: ${st.hidden} из ${st.total}.`;
+      const n = anon.model.length, left = n - anon.seen.size;
+      $("anonPager").replaceChildren(
+        h("button", Object.assign({ type: "button", onclick: () => { anon.page--; anonRenderPage(); } }, anon.page <= 0 ? { disabled: "" } : {}), "←"),
+        ` Страница ${anon.page + 1} из ${n} `,
+        h("button", Object.assign({ type: "button", onclick: () => { anon.page++; anonRenderPage(); } }, anon.page >= n - 1 ? { disabled: "" } : {}), "→"));
+      const ok = $("anonOk");
+      ok.disabled = left > 0;
+      if (left > 0) ok.checked = false;
+      $("anonHint").textContent = left > 0 ? `Галочка станет доступна, когда вы просмотрите все страницы (осталось: ${left}).` : "";
+      anonUpdateButtons();
+    }
+    function anonUpdateButtons() { $("anonDownload").disabled = !($("anonOk").checked && !$("anonOk").disabled); }
+    $("anonOk").addEventListener("change", anonUpdateButtons);
+    $("anonPage").addEventListener("click", e => {
+      const c = e.target.closest ? e.target.closest(".achip") : null;
+      if (!c || !anon) return;
+      const it = anon.model[anon.page][+c.dataset.r][+c.dataset.c];
+      it.manual = !Anon.isHidden(it);
+      $("anonOk").checked = false;
+      c.className = "achip" + (Anon.isHidden(it) ? " hid" : "");
+      c.textContent = Anon.effective(it);
+      anonRefresh();
+    });
+    const r2 = v => Math.round(v * 100) / 100;
+    $("anonFile").addEventListener("change", async () => {
+      const f = $("anonFile").files[0];
+      anon = null; $("anonWork").hidden = true;
+      if (!f) return;
+      $("anonStatus").textContent = "Читаю файл…";
+      try {
+        const isCsv = /\.csv$/i.test(f.name) || f.type === "text/csv";
+        const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+        if (!isCsv && !isPdf) throw new Error("нужен PDF или CSV");
+        if (f.size > 20 * 1024 * 1024) throw new Error("файл слишком большой");
+        let model;
+        if (isCsv) {
+          model = Anon.fromCsvText(PriorCsvParser.decode(new Uint8Array(await f.arrayBuffer())));
+        } else {
+          const pdf = await openPdf(new Uint8Array(await f.arrayBuffer()));
+          const pages = [];
+          for (let p = 1; p <= pdf.numPages; p++) {
+            const page = await pdf.getPage(p);
+            const t = page.getViewport({ scale: 1 }).transform;
+            const content = await page.getTextContent();
+            pages.push(content.items.map(i => {
+              const x = i.transform[4], y = i.transform[5];
+              return { x: r2(x), y: r2(y), vx: r2(t[0] * x + t[2] * y + t[4]), vy: r2(t[1] * x + t[3] * y + t[5]), text: i.str };
+            }));
+          }
+          if (!pages.some(pg => pg.some(i => i.text.trim()))) throw new Error("в PDF нет текста (скан или фото)");
+          model = Anon.fromPdfPages(pages);
+        }
+        if (!model.length) throw new Error("файл пустой");
+        anon = { model, kind: isCsv ? "csv" : "pdf", page: 0, seen: new Set() };
+        $("anonStatus").textContent = "Готово. Файл никуда не отправлялся.";
+        $("anonWork").hidden = false;
+        $("anonOk").checked = false;
+        $("anonMail").hidden = true;
+        anonRenderPage();
+      } catch (err) {
+        $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
+      }
+    });
+    $("anonDownload").addEventListener("click", () => {
+      if (!anon || !$("anonOk").checked) return;
+      const sample = Anon.toSample(anon.model, anon.kind, { app: "v4.32", consent: ANON_CONSENT });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(sample)], { type: "application/json" }));
+      a.download = "образец-выписки.json";
+      a.click();
+      const m = $("anonMail");
+      m.href = "mailto:bankanalyzer.help@gmail.com?subject=" + encodeURIComponent("Образец выписки для нового банка") +
+        "&body=" + encodeURIComponent("Название банка: \n\nПриложите файл «образец-выписки.json» (он скачался в папку загрузок).\n\n" + ANON_CONSENT);
+      m.hidden = false;
+      $("anonHint").textContent = "Файл «образец-выписки.json» скачан. Приложите его к письму сами: сайт ничего не отправляет.";
+    });
+
     // Сворачиваемые «Выводы» и «Планирование»: выбор запоминается; на телефоне «Планирование» по умолчанию свёрнуто
     const SECT_KEY = "ba_sect_v1";
     const sectSaved = loadJSON(SECT_KEY, {});
