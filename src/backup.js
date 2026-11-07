@@ -82,6 +82,7 @@
       rules: cleanStrMap(data.rules, 80),
       txRules: cleanStrMap(data.txRules, 80),
       icons: cleanStrMap(data.icons, 30),
+      acctNames: cleanStrMap(data.acctNames, 40),
       budgets: cleanBudgets(data.budgets),
       calc: cleanCalc(data.calc),
       cats: Array.isArray(data.cats) ? data.cats.slice(0, LIMITS.cats).map(c => str(c, 40)).filter(Boolean) : [],

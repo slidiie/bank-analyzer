@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-ROvMKr6BJDB2xrGpSrQ/SdSOXGRFRCCWw1+tu0Lb9uo=' 'sha256-/Wd52TkPdxdh4pwhRY+i/Mh/fJOsxixalMxYRCfa37w='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-0EMYNTvjPqlgG5huQV14MJWs3nkGRVn59mab/iXEmQk=' 'sha256-rAtzh+fNXsAsd7JWApe9cMeN9ftxvkGXjqDbFvhZ8qM='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
   <title>Анализ банковской выписки</title>
   <style>
@@ -257,6 +257,7 @@
     <h2 id="secSummary" style="margin-top:1rem">Траты по категориям</h2>
     <div id="summary"></div>
     <div id="bottom">
+      <div id="undoBar"></div>
       <div class="tabs" id="bottomTabs"></div>
       <div class="note" id="catCreator" hidden></div>
       <div id="reviewSection">
@@ -344,7 +345,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.29, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.30, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <script type="module">
 /**
@@ -2103,6 +2104,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       rules: cleanStrMap(data.rules, 80),
       txRules: cleanStrMap(data.txRules, 80),
       icons: cleanStrMap(data.icons, 30),
+      acctNames: cleanStrMap(data.acctNames, 40),
       budgets: cleanBudgets(data.budgets),
       calc: cleanCalc(data.calc),
       cats: Array.isArray(data.cats) ? data.cats.slice(0, LIMITS.cats).map(c => str(c, 40)).filter(Boolean) : [],
@@ -2204,6 +2206,8 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     let customCats = loadJSON("ba_cats_v1", []);   // добавленные пользователем категории
     let txRules = loadJSON("ba_txrules_v1", {});   // выбор для одной конкретной операции
     let customIcons = loadJSON("ba_icons_v1", {}); // значки своих категорий
+    let acctNames = loadJSON("ba_acctnames_v1", {}); // подписи счетов получателей: «последние 4 цифры-хэш» -> название (только в браузере)
+    const ownUndo = [];                              // недавно отмеченные «Это мой счёт»: их можно отменить, пока страница открыта
     let budgets = loadJSON("ba_budget_v1", {});    // лимиты на месяц по категориям
     let calc = loadJSON("ba_calc_v1", {});         // значения, которые пользователь ввёл в «Сколько остаётся»
     const openKeys = new Set();                    // группы, где пользователь раскрыл «Операции по отдельности» (по умолчанию свёрнуты, чтобы список был короче)
@@ -2290,10 +2294,11 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
 
     function enterDemo() {
       const wasDemo = demoMode;
-      if (!demoMode) stash = { userRules, txRules, customCats, customIcons, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab };
+      if (!demoMode) stash = { userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab };
       demoMode = true;
       document.body.classList.add("demo"); $("demoBtn").textContent = "Показать другой пример";
-      userRules = {}; txRules = {}; customCats = []; customIcons = {}; budgets = {}; calc = {};
+      userRules = {}; txRules = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
+      ownUndo.length = 0;
       const d = Demo.make(Math.floor(Math.random() * 4294967296), new Date());
       txs = d.txs; header = d.header;
       // В демо перевод на накопительный счёт отмечен как «Накопления», а план накоплений выставлен в 10% (чтобы блок был наполнен)
@@ -2310,8 +2315,9 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       if (!demoMode) return;
       demoMode = false;
       document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо на выдуманных данных";
-      ({ userRules, txRules, customCats, customIcons, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab } = stash);
+      ({ userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab } = stash);
       stash = null;
+      ownUndo.length = 0;
       openKeys.clear();
       if (txs.length) render();
       else { $("report").hidden = true; $("demoBar").hidden = true; $("dataRules").hidden = false; $("shareBox").hidden = true; $("clearBtn").hidden = true; }
@@ -2563,7 +2569,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
 
     // ---------- «Мои правила»: что запомнено и сколько операций затрагивает ----------
     function ruleLabel(key) {
-      const text = key.slice(key.indexOf("|") + 1).replace(/СЧЁТ (\d{4})-[0-9a-z]+/i, "Счёт …$1").trim();
+      const text = key.slice(key.indexOf("|") + 1).replace(/СЧЁТ (\d{4})-([0-9a-z]+)/i, (m, d4, hs) => acctNames[d4 + "-" + hs] ? `«${acctNames[d4 + "-" + hs]}» (…${d4})` : "Счёт …" + d4).trim();
       return (text || "(без названия)").slice(0, 70);
     }
     // Заголовок группы в «Нужно разобрать»: сначала то, что понятно человеку (что за операция), цифры счёта и карты потом.
@@ -2571,7 +2577,10 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     const sentence = s => { const t = String(s || "").trim().toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); };
     function friendlyTitle(tx) {
       const rc = Cat.recipient(tx);
-      if (rc) return (rc.op ? sentence(rc.op) : "Платёж в интернет-банке") + ` → счёт …${rc.last4}`;
+      if (rc) {
+        const name = acctNames[rc.last4 + "-" + rc.hash];
+        return (rc.op ? sentence(rc.op) : "Платёж в интернет-банке") + (name ? ` → «${name}» (…${rc.last4})` : ` → счёт …${rc.last4}`);
+      }
       if (Cat.isErip(tx)) return `Платёж через ЕРИП, ${fmt(Math.abs(tx.amount))} BYN`;
       if (/списание при переводе/i.test(tx.details || "")) return "Списание при переводе";
       // Остальное: название места без хвоста «MINSK BY» и без общей фразы «Оплата товаров и услуг»
@@ -2584,6 +2593,63 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       const days = items.map(t => parseInt((t.date || "").slice(8, 10), 10)).filter(Number.isFinite).sort((a, b) => a - b);
       const day = days.length ? days[Math.floor(days.length / 2)] : null;
       return `в ${months.size} мес.` + (day ? `, обычно около ${day}-го числа` : "");
+    }
+    // ---------- «Это мой счёт» и подпись счёта ----------
+    const acctId = tx => { const rc = Cat.recipient(tx); return rc ? rc.last4 + "-" + rc.hash : null; };
+    // Все операции на этот же счёт (по любым «Наименованиям операции»), которые сейчас идут по правилу группы
+    function acctOps(id) {
+      const keys = new Set(txs.filter(t => acctId(t) === id).map(t => Cat.merchantKey(t)));
+      return { keys, ops: txs.filter(t => keys.has(Cat.merchantKey(t)) && !txRules[txId(t)] && !t.pair) };
+    }
+    function markOwnAccount(tx, title) {
+      const { keys, ops } = acctOps(acctId(tx));
+      const entry = { title, n: ops.length, sum: ops.reduce((a, t) => a + Math.abs(t.amount), 0), prev: [...keys].map(k => [k, userRules[k]]) };
+      ownUndo.unshift(entry); ownUndo.splice(5);
+      keys.forEach(k => { userRules[k] = Cat.OWN; });
+      saveJSON("ba_rules_v1", userRules);
+      render();
+    }
+    function undoOwn(entry) {
+      entry.prev.forEach(([k, was]) => { if (was === undefined) delete userRules[k]; else userRules[k] = was; });
+      saveJSON("ba_rules_v1", userRules);
+      ownUndo.splice(ownUndo.indexOf(entry), 1);
+      render();
+    }
+    // Кнопка с подтверждением: сначала вопрос с суммой, действие только после «Да»
+    function ownAccountControl(tx, title) {
+      const { ops } = acctOps(acctId(tx));
+      if (!ops.length) return "";
+      const sum = ops.reduce((a, t) => a + Math.abs(t.amount), 0);
+      const box = h("div", { style: "margin-top:.35rem" });
+      const ask = h("button", { type: "button", title: "Переводы на ваш собственный счёт не считаются тратами" }, "Это мой счёт");
+      ask.addEventListener("click", () => {
+        box.replaceChildren(h("div", { class: "note" },
+          h("b", {}, "Это точно ваш счёт? "),
+          `Из расходов уйдёт ${fmt(sum)} BYN (${ops.length} ${opsWord(ops.length)} во всех месяцах), будущие платежи на него тоже не будут считаться тратами. Сразу после этого появится кнопка «Отменить». `,
+          h("button", { type: "button", class: "primary", onclick: () => markOwnAccount(tx, title) }, "Да, это мой счёт"), " ",
+          h("button", { type: "button", onclick: () => box.replaceChildren(ask) }, "Отмена")));
+      });
+      box.append(ask);
+      return box;
+    }
+    // Плашка «отмечено, можно отменить»: остаётся на странице, даже когда группа уже ушла из списка
+    function renderUndo() {
+      const box = $("undoBar");
+      box.replaceChildren();
+      for (const e of ownUndo) {
+        box.append(h("div", { class: "ok", style: "margin:.4rem 0" },
+          `✓ «${e.title}» отмечено как ваш счёт: ${e.n} ${opsWord(e.n)}, ${fmt(e.sum)} BYN убраны из расходов. `,
+          h("button", { type: "button", onclick: () => undoOwn(e) }, "Отменить"), " ",
+          h("button", { type: "button", onclick: () => { ownUndo.splice(ownUndo.indexOf(e), 1); renderUndo(); } }, "Скрыть")));
+      }
+    }
+    // Подпись счёта: чтобы через полгода было видно, что это за счёт
+    function labelEditor(tx) {
+      const id = acctId(tx);
+      const input = h("input", { type: "text", maxlength: "40", placeholder: "Как назвать этот счёт (например: Мама)", "aria-label": "Название счёта", value: acctNames[id] || "", autocomplete: "off" });
+      const save = () => { const v = input.value.trim(); if (v) acctNames[id] = v; else delete acctNames[id]; saveJSON("ba_acctnames_v1", acctNames); render(); };
+      input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
+      return h("div", {}, input, " ", h("button", { type: "button", onclick: save }, "Сохранить название"));
     }
     function renderRules() {
       const box = $("rulesList");
@@ -2651,6 +2717,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       if (bottomTab === null) { bottomTab = hasReview ? "review" : "all"; bottomOpen = hasReview; }   // список теперь над «Выводами»: если разбирать нечего, он свёрнут
       if (bottomTab === "income" && !incomeGroups) bottomTab = hasReview ? "review" : "all";
       if (bottomTab === "review" && !hasReview) { bottomTab = "all"; bottomOpen = false; }   // всё разобрано: список сворачиваем, «Все операции» открываются по кнопке
+      renderUndo();
       if (!catCreatorBuilt) buildCatCreator();
       $("catCreator").hidden = !bottomOpen;
       const rough = $("roughNote");
@@ -3314,7 +3381,8 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
           rec ? h("div", { class: "muted" }, `Получатель: счёт …${rec.last4}` + (rec.op ? ` (${rec.op})` : "") + ".") : "",
           Cat.isErip(g.tx) ? h("div", { class: "muted" }, "Платёж через ЕРИП: по выписке не видно, за что заплачено.") : "",
-          sc > 1 ? h("div", { class: "muted" }, `Выбор применится ко всем ${sc} операциям этого получателя (во всех месяцах) и к будущим выпискам. Отменить можно в разделе «Мои правила» внизу страницы.`) : "");
+          sc > 1 ? h("div", { class: "muted" }, `Выбор применится ко всем ${sc} операциям этого получателя (во всех месяцах) и к будущим выпискам. Отменить можно в разделе «Мои правила» внизу страницы.`) : "",
+          rec ? labelEditor(g.tx) : "");
         if (many) {
           // Каждую операцию группы можно разобрать отдельно (по умолчанию свёрнуто)
           const det = h("details", { style: "margin-top:.5rem" },
@@ -3337,6 +3405,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
           h("div", { class: "revhead" }, h("b", {}, title), h("span", { class: "revsum" }, `${fmt(g.sum)} BYN · ${items.length} ${opsWord(items.length)}` + (recurCount ? " · ↻" : ""))),
           rhythm ? h("div", { class: "muted" }, rhythm) : "",
           h("div", { style: "margin-top:.3rem" }, chooser(scopeText(sc), (cat, icon) => setRule(g.tx, cat, icon))),
+          rec ? ownAccountControl(g.tx, title) : "",
           more);
         box.append(card);
       }
@@ -3641,6 +3710,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       Object.assign(userRules, data.rules || {});
       Object.assign(txRules, data.txRules || {});
       Object.assign(customIcons, data.icons || {});
+      Object.assign(acctNames, data.acctNames || {}); saveJSON("ba_acctnames_v1", acctNames);
       Object.assign(budgets, data.budgets || {}); Object.assign(calc, data.calc || {}); savePlan();
       (data.cats || []).forEach(c => { if (!customCats.includes(c)) customCats.push(c); });
       mergeDuplicateCats(); renderMergeNote();
@@ -3662,7 +3732,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       }
     }
     const backupData = () => ({ app: "bank-analyzer", version: 3, saved: new Date().toISOString(),
-      rules: userRules, txRules: txRules, cats: customCats, icons: customIcons, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
+      rules: userRules, txRules: txRules, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
     $("exportBtn").addEventListener("click", () => {
       const data = backupData();
       const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
@@ -3788,7 +3858,8 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") $("resetBox").hidden = true; });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
     $("resetYes").addEventListener("click", () => {
-      userRules = {}; customCats = []; txRules = {}; customIcons = {}; budgets = {}; calc = {};
+      userRules = {}; customCats = []; txRules = {}; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
+      ownUndo.length = 0; saveJSON("ba_acctnames_v1", acctNames);
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
       saveJSON("ba_rules_v1", userRules); saveJSON("ba_cats_v1", customCats); saveJSON("ba_txrules_v1", txRules); saveJSON("ba_icons_v1", customIcons);
