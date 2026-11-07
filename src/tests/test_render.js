@@ -1,0 +1,423 @@
+// Проверка отрисовки отчёта без браузера: подставляем «заглушку» вместо страницы (DOM),
+// запускаем скрипт из analyzer.html и смотрим, что в отчёте появились нужные блоки.
+// Запуск из папки проекта:  node tests/test_render.js
+
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+
+const SP = require("../parser.js");
+const Cat = require("../categories.js");
+const Banks = require("../banks.js");
+const Demo = require("../demo.js");
+const Merge = require("../merge.js");
+const Exporter = require("../export.js");
+const Planner = require("../planner.js");
+const Backup = require("../backup.js");
+const lsWrites = [];
+
+// ---- Заглушка страницы ----
+class Node {}
+class El extends Node {
+  constructor(tag) {
+    super();
+    this.tag = tag; this.children = []; this.attrs = {}; this.listeners = {};
+    this.className = ""; this.textContent = ""; this.hidden = false; this.style = {};
+    this.open = false; this.selected = false; this.value = "";
+  }
+  append(...kids) { this.children.push(...kids); }
+  replaceChildren(...kids) { this.children = [...kids]; }
+  setAttribute(k, v) { this.attrs[k] = v; }
+  scrollIntoView() {}
+  addEventListener(type, fn) { (this.listeners[type] = this.listeners[type] || []).push(fn); }
+}
+const byId = {};
+const document = {
+  getElementById: id => (byId[id] = byId[id] || new El("#" + id)),
+  createElement: tag => new El(tag),
+  documentElement: new El("html"),
+  body: Object.assign(new El("body"), { classList: { _s: new Set(), add(c) { this._s.add(c); }, remove(c) { this._s.delete(c); }, contains(c) { return this._s.has(c); } } }),
+};
+const textOf = n => (typeof n === "string" ? n : [n.textContent, ...n.children.map(textOf)].join(" "));
+// Находит кнопку по тексту и «нажимает» на неё
+function clickButton(root, label) {
+  const stack = [root];
+  while (stack.length) {
+    const n = stack.pop();
+    if (typeof n === "string") continue;
+    if (n.tag === "button" && textOf(n).includes(label)) { n.listeners.click[0](); return true; }
+    stack.push(...n.children);
+  }
+  return false;
+}
+
+const html = fs.readFileSync(path.join(__dirname, "..", "analyzer.html"), "utf8");
+const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+
+const ctx = vm.createContext({
+  document, Node, console,
+  localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
+  pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup,
+});
+vm.runInContext(script, ctx);
+
+let failed = 0;
+function check(name, ok) {
+  if (!ok) failed++;
+  console.log((ok ? "OK    " : "FAIL  ") + name);
+}
+const summaryText = () => textOf(byId["summary"]);
+const hasTotal = (s, n) => new RegExp("Итого\\s+" + n.replace(".", "\\.")).test(s);
+
+// ---- Выписка на три месяца (последний неполный) ----
+vm.runInContext(`
+  header = { from: "2026-09-01", to: "2026-11-02" };
+  txs = [
+    { date: "2026-09-10", time: "10:00:00", amount: -50,   mcc: "5411", details: "SHOP A", balance: 1 },
+    { date: "2026-09-15", time: "10:00:00", amount: -200,  mcc: "5812", details: "CAFE B", balance: 2 },
+    { date: "2026-10-05", time: "10:00:00", amount: -300,  mcc: "5411", details: "SHOP A", balance: 3 },
+    { date: "2026-10-12", time: "10:00:00", amount: 1000,  mcc: null,   details: "Пополнение счета", balance: 4 },
+    { date: "2026-10-20", time: "10:00:00", amount: -100,  mcc: null,   details: "Погашение комиссии", balance: 5 },
+    { date: "2026-10-25", time: "10:00:00", amount: -500,  mcc: null,   details: "Оплата в Интернет-банке, перевод", balance: 6 },
+    { date: "2026-11-02", time: "10:00:00", amount: -20,   mcc: "5411", details: "SHOP A", balance: 7 },
+  ];
+  render();
+`, ctx);
+
+// По умолчанию открыта вкладка «За весь период»: видны общие итоги и сравнение месяцев
+let s = summaryText();
+check("есть вкладки: весь период и три месяца",
+  ["За весь период", "Сентябрь 2026", "Октябрь 2026", "Ноябрь 2026"].every(t => s.includes(t)));
+check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноябрь 2026 *"));
+check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170.00"));
+check("на вкладке «весь период» есть «Сравнение месяцев»", s.includes("Сравнение месяцев"));
+check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250.00"));
+
+// Отмечаем 500 как «Дал в долг»: уходит из трат и показывается отдельной строкой
+vm.runInContext(`setTxRule(txs[5], "Дал в долг");`, ctx);
+s = summaryText();
+check("после «Дал в долг» итого за период 670", hasTotal(s, "670.00"));
+check("строка «дал в долг: 500.00»", s.includes("дал в долг: 500.00"));
+
+// Переключаем вкладки
+check("нажатие на вкладку «Сентябрь»", clickButton(byId["summary"], "Сентябрь 2026"));
+s = summaryText();
+check("сентябрь: итого 250", hasTotal(s, "250.00"));
+check("сентябрь: нет сравнения месяцев", !s.includes("Сравнение месяцев"));
+check("выводы сменились на сентябрь", textOf(byId["insightsTitle"]).includes("Сентябрь 2026"));
+
+check("нажатие на вкладку «Октябрь»", clickButton(byId["summary"], "Октябрь 2026"));
+s = summaryText();
+check("октябрь без долга: итого 400", hasTotal(s, "400.00"));
+
+check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноябрь 2026"));
+s = summaryText();
+check("ноябрь: пометка о неполном месяце (с 1 по 2 число)", s.includes("неполный месяц: данные с 1 по 2 число"));
+check("ноябрь: итого 20", hasTotal(s, "20.00"));
+
+// Вкладка запоминается при перерисовке (например, после выбора категории)
+vm.runInContext(`render();`, ctx);
+check("после перерисовки осталась вкладка «Ноябрь»", hasTotal(summaryText(), "20.00"));
+
+// ---- Таблица «Все операции»: фильтр по месяцу ----
+vm.runInContext(`activeTab = "all"; renderAll();`, ctx);
+let all = textOf(byId["all"]);
+check("все операции: по умолчанию видны и сентябрь, и октябрь", all.includes("CAFE B") && all.includes("Погашение комиссии"));
+vm.runInContext(`activeTab = "2026-10"; renderAll();`, ctx);
+all = textOf(byId["all"]);
+check("фильтр «Октябрь»: операции сентября скрыты", !all.includes("CAFE B") && all.includes("Погашение комиссии"));
+check("заголовок раздела показывает месяц", textOf(byId["allSummary"]).includes("Октябрь"));
+vm.runInContext(`activeTab = "all"; renderAll();`, ctx);
+check("на вкладке «За весь период» заголовок показывает общее число операций", textOf(byId["allSummary"]).includes("(7)"));
+
+// Клик по вкладке месяца сразу меняет и таблицу внизу
+clickButton(byId["summary"], "Сентябрь");
+check("клик по вкладке «Сентябрь»: внизу только сентябрь", textOf(byId["all"]).includes("CAFE B") && !textOf(byId["all"]).includes("Погашение комиссии"));
+clickButton(byId["summary"], "За весь период");
+check("клик по «За весь период»: внизу снова все месяцы", textOf(byId["all"]).includes("CAFE B") && textOf(byId["all"]).includes("Погашение комиссии"));
+
+// ---- Кнопки быстрого перехода ----
+let nav = textOf(byId["nav"]);
+check("кнопки перехода: траты и все операции", nav.includes("Траты") && nav.includes("Все операции"));
+check("пока всё разобрано, кнопки «Нужно разобрать» нет", !nav.includes("Нужно разобрать"));
+vm.runInContext(`
+  txs.push({ date: "2026-10-28", time: "11:00:00", amount: -70, mcc: null, details: "Неизвестный платёж", balance: 9 });
+  render();
+`, ctx);
+nav = textOf(byId["nav"]);
+check("появилась неопознанная операция: кнопка «Нужно разобрать (1)»", nav.includes("Нужно разобрать (1)"));
+check("неопознанная операция попала в блок «Нужно разобрать»", textOf(byId["review"]).includes("Неизвестный платёж"));
+
+// ---- Выписка на один месяц: вкладок быть не должно ----
+vm.runInContext(`
+  header = { from: "2026-09-01", to: "2026-09-30" };
+  txs = txs.filter(t => t.date.startsWith("2026-09"));
+  activeTab = "all";
+  render();
+`, ctx);
+s = summaryText();
+check("один месяц: нет вкладок и сравнения", !s.includes("За весь период") && !s.includes("Сравнение месяцев"));
+check("один месяц: есть таблица с категориями", s.includes("Продукты") && s.includes("Кафе и рестораны"));
+check("один месяц: нет кнопки «Нужно разобрать», когда разбирать нечего", !textOf(byId["nav"]).includes("Нужно разобрать"));
+
+// ---- Тема и значки ----
+check("тема по умолчанию тёмная", document.documentElement.attrs["data-theme"] === "dark");
+byId["themeBtn"].listeners.click[0]();
+check("кнопка переключает на светлую", document.documentElement.attrs["data-theme"] === "light");
+byId["themeBtn"].listeners.click[0]();
+check("и обратно на тёмную", document.documentElement.attrs["data-theme"] === "dark");
+check("у всех стандартных категорий есть значок", vm.runInContext(`Cat.DEFAULT_CATEGORIES.every(c => Cat.ICONS[c])`, ctx));
+check("значок своей категории сохраняется", vm.runInContext(`ensureCategory("Питомцы","paw"); iconKey("Питомцы")`, ctx) === "paw");
+check("без значка — запасной", vm.runInContext(`ensureCategory("Без значка"); iconKey("Без значка")`, ctx) === "tag");
+check("у каждого значка есть рисунок", vm.runInContext(`Object.values(Cat.ICONS).concat(PICK_ICONS).every(k => ICON_SVG[k])`, ctx));
+check("в таблице категорий есть значки", JSON.stringify(byId["summary"]).includes('<svg'));
+
+// ---- Загрузка разбора из файла ----
+vm.runInContext(`applyBackup({app:"bank-analyzer",rules:{"k1":"Продукты"},txRules:{"t1":"Прочее"},cats:["Тест"],icons:{"Тест":"gift"}})`, ctx);
+check("разбор из файла применился", vm.runInContext(`userRules.k1==="Продукты" && txRules.t1==="Прочее" && customCats.includes("Тест") && iconKey("Тест")==="gift"`, ctx));
+check("чужой файл отклоняется", vm.runInContext(`try{applyBackup({x:1});false}catch(e){true}`, ctx));
+
+// ---- Сквозной сценарий: разбор из файла применяется к уже загруженной выписке ----
+vm.runInContext(`
+  txs = [{ date: "2026-10-28", time: "11:00:00", amount: -70, mcc: null, details: "Загадочный магазин", balance: 9 }];
+  header = { from: "2026-10-01", to: "2026-10-31" };
+  userRules = {}; txRules = {}; customCats = []; customIcons = {};
+  render();
+`, ctx);
+check("до загрузки разбора операция в «Нужно разобрать»", vm.runInContext(`reviewOps`, ctx) === 1);
+vm.runInContext(`applyBackup({app:"bank-analyzer",txRules:{[txId(txs[0])]:"Здоровье"}}); render();`, ctx);
+check("после загрузки разбора операция разобрана", vm.runInContext(`reviewOps === 0 && categoryOf(txs[0]) === "Здоровье"`, ctx));
+
+// ---- Загрузка только разбора, без выписки ----
+const snapshot = vm.runInContext(`JSON.stringify(backupData())`, ctx);
+vm.runInContext(`txs = []; header = {}; userRules = {}; txRules = {}; customCats = []; customIcons = {};`, ctx);
+vm.runInContext(`applyBackup(JSON.parse(${JSON.stringify(snapshot)})); render();`, ctx);
+check("разбор без выписки: операции вернулись", vm.runInContext(`txs.length === 1 && header.from === "2026-10-01"`, ctx));
+check("разбор без выписки: категории на месте", vm.runInContext(`reviewOps === 0 && categoryOf(txs[0]) === "Здоровье"`, ctx));
+
+// ---- Круговая диаграмма ----
+vm.runInContext(`txs = [{ date: "2026-10-05", time: "10:00:00", amount: -30, mcc: "5411", details: "Магазин", balance: 1 }, { date: "2026-10-06", time: "10:00:00", amount: -70, mcc: "5812", details: "Кафе", balance: 2 }]; header = { from: "2026-10-01", to: "2026-10-31" }; summaryView = "pie"; render();`, ctx);
+const pieText = JSON.stringify(byId["summary"]);
+check("диаграмма: нарисован круг и есть легенда", pieText.includes("donut") && pieText.includes("Продукты") && pieText.includes("70%"));
+vm.runInContext(`summaryView = "table"; render();`, ctx);
+check("таблица возвращается", !JSON.stringify(byId["summary"]).includes("donut") && JSON.stringify(byId["summary"]).includes("Сумма, BYN"));
+
+// ---- Все операции: категория и порядок ----
+vm.runInContext(`
+  userRules = {}; txRules = {}; customCats = []; customIcons = {};
+  txs = [
+    { date: "2026-10-05", time: "10:00:00", amount: -30, mcc: "5411", details: "ПРОДУКТЫ-А", balance: 1 },
+    { date: "2026-10-06", time: "10:00:00", amount: -300, mcc: "5812", details: "КАФЕ-Б", balance: 2 },
+    { date: "2026-10-07", time: "10:00:00", amount: -90, mcc: "5411", details: "ПРОДУКТЫ-В", balance: 3 },
+    { date: "2026-10-08", time: "10:00:00", amount: -5, mcc: null, details: "НЕИЗВЕСТНО-Г", balance: 4 },
+  ];
+  header = { from: "2026-10-01", to: "2026-10-31" };
+  activeTab = "all"; allCat = "all"; allSort = "date-desc"; render();
+`, ctx);
+const allText = () => textOf(byId["all"]);
+check("все операции: по умолчанию сначала новые", allText().indexOf("НЕИЗВЕСТНО-Г") < allText().indexOf("ПРОДУКТЫ-А"));
+vm.runInContext(`allCat = "Продукты"; renderAll();`, ctx);
+check("категория наверху: операции продуктов идут первыми", allText().indexOf("ПРОДУКТЫ-В") < allText().indexOf("НЕИЗВЕСТНО-Г") && allText().indexOf("ПРОДУКТЫ-А") < allText().indexOf("КАФЕ-Б"));
+check("категория наверху: остальные операции остаются в списке", allText().includes("КАФЕ-Б") && allText().includes("НЕИЗВЕСТНО-Г"));
+vm.runInContext(`allSort = "sum-desc"; renderAll();`, ctx);
+check("сортировка по сумме: сначала крупные", allText().indexOf("ПРОДУКТЫ-В") < allText().indexOf("ПРОДУКТЫ-А"));
+vm.runInContext(`allSort = "sum-asc"; renderAll();`, ctx);
+check("сортировка по сумме: сначала мелкие", allText().indexOf("ПРОДУКТЫ-А") < allText().indexOf("ПРОДУКТЫ-В"));
+vm.runInContext(`allCat = "Не разобрано"; renderAll();`, ctx);
+check("«Не разобрано» можно поднять наверх", allText().indexOf("НЕИЗВЕСТНО-Г") < allText().indexOf("ПРОДУКТЫ-А") && allText().includes("ПРОДУКТЫ-А"));
+vm.runInContext(`allCat = "all"; allSort = "date-asc"; renderAll();`, ctx);
+check("сортировка по дате: сначала старые", allText().indexOf("ПРОДУКТЫ-А") < allText().indexOf("НЕИЗВЕСТНО-Г"));
+
+// ---- Сортировка кликом по заголовкам и подтверждение сброса ----
+function clickTh(root, label) {
+  const stack = [root];
+  while (stack.length) {
+    const n = stack.pop();
+    if (typeof n === "string") continue;
+    if (n.tag === "th" && textOf(n).trim().startsWith(label) && n.listeners.click) { n.listeners.click[0](); return true; }
+    stack.push(...n.children);
+  }
+  return false;
+}
+vm.runInContext(`allCat = "all"; allSort = "date-desc"; renderAll();`, ctx);
+clickTh(byId["all"], "Сумма");
+check("клик по «Сумма»: сначала крупные", vm.runInContext(`allSort`, ctx) === "sum-desc");
+clickTh(byId["all"], "Сумма");
+check("второй клик по «Сумма»: сначала мелкие", vm.runInContext(`allSort`, ctx) === "sum-asc");
+clickTh(byId["all"], "Дата");
+check("клик по «Дата»: сначала новые", vm.runInContext(`allSort`, ctx) === "date-desc");
+clickTh(byId["all"], "Дата");
+check("второй клик по «Дата»: сначала старые", vm.runInContext(`allSort`, ctx) === "date-asc");
+check("на активном столбце есть стрелка", textOf(byId["all"]).includes("Дата ▲"));
+vm.runInContext(`ensureCategory("Временная"); setTxRule(txs[0], "Временная");`, ctx);
+byId["reset"].listeners.click[0]();
+check("сброс: сначала только предупреждение", vm.runInContext(`txRules[txId(txs[0])]`, ctx) === "Временная" && byId["resetBox"].hidden === false);
+byId["resetNo"].listeners.click[0]();
+check("отмена сброса ничего не стирает", vm.runInContext(`txRules[txId(txs[0])]`, ctx) === "Временная" && byId["resetBox"].hidden === true);
+byId["reset"].listeners.click[0]();
+byId["resetYes"].listeners.click[0]();
+check("подтверждённый сброс стирает выбор", vm.runInContext(`Object.keys(txRules).length === 0 && customCats.length === 0`, ctx));
+
+// ---- «Нужно разобрать» следует за вкладкой месяца и стоит первым ----
+vm.runInContext(`
+  userRules = {}; txRules = {}; customCats = []; customIcons = {};
+  txs = [
+    { date: "2026-09-05", time: "10:00:00", amount: -30, mcc: "5411", details: "ИЗВЕСТНО", balance: 1 },
+    { date: "2026-09-06", time: "10:00:00", amount: -11, mcc: null, details: "СЕНТЯБРЬ-НЕИЗВЕСТНО", balance: 2 },
+    { date: "2026-10-07", time: "10:00:00", amount: -22, mcc: null, details: "ОКТЯБРЬ-НЕИЗВЕСТНО", balance: 3 },
+    { date: "2026-10-08", time: "10:00:00", amount: -44, mcc: "5411", details: "ЕЩЁ-ИЗВЕСТНО", balance: 4 },
+  ];
+  header = { from: "2026-09-01", to: "2026-10-31" };
+  activeTab = "all"; allCat = "all"; render();
+`, ctx);
+check("разбор: на вкладке «За весь период» видны оба месяца", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
+clickButton(byId["summary"], "Сентябрь");
+check("разбор: на вкладке «Сентябрь» только сентябрьские", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && !textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
+check("разбор: есть ссылка на неразобранные в октябре", textOf(byId["reviewOther"]).includes("Октябрь 2026: 1"));
+check("разбор: в заголовке указан месяц", textOf(byId["reviewCount"]).includes("Сентябрь"));
+check("разбор: в навигации счётчик по выбранному месяцу", textOf(byId["nav"]).includes("Нужно разобрать (1)"));
+clickButton(byId["reviewOther"], "Октябрь");
+check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
+check("плашка «Ждут разбора» первая в отчёте, вкладки внизу", html.indexOf('id="reviewBanner"') < html.indexOf('id="check"') && html.indexOf('id="insightsTitle"') < html.indexOf('id="bottomTabs"'));
+check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Ждут разбора") && textOf(byId["reviewBanner"]).includes("Разобрать"));
+check("есть нижние вкладки «Все операции» и «Нужно разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
+vm.runInContext(`bottomTab = null; render();`, ctx);
+check("если есть неразобранное, открыта вкладка «Нужно разобрать»", byId["reviewSection"].hidden === false && byId["allPanel"].hidden === true);
+clickButton(byId["bottomTabs"], "Все операции");
+check("клик по вкладке «Все операции» переключает панель", byId["reviewSection"].hidden === true && byId["allPanel"].hidden === false);
+clickButton(byId["reviewBanner"], "Разобрать");
+check("кнопка на плашке открывает «Нужно разобрать»", byId["reviewSection"].hidden === false);
+// Разбираем всё: операция уходит из «Нужно разобрать» и попадает в «Все операции»
+vm.runInContext(`txs.filter(t => !categoryOf(t)).forEach(t => setTxRule(t, "Прочее"));`, ctx);
+check("всё разобрано: плашки и вкладки «Нужно разобрать» нет", byId["reviewBanner"].hidden === true && !textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
+check("всё разобрано: показана вкладка «Все операции»", byId["allPanel"].hidden === false && byId["reviewSection"].hidden === true);
+
+// ---- Сворачивание списка внизу: только кликом по вкладке ----
+vm.runInContext(`bottomOpen = true; bottomTab = "all"; render();`, ctx);
+check("список внизу по умолчанию развёрнут", byId["allPanel"].hidden === false);
+check("отдельной кнопки «Свернуть список» нет", !textOf(byId["bottomTabs"]).includes("Свернуть") && !textOf(byId["bottomTabs"]).includes("Развернуть"));
+clickButton(byId["bottomTabs"], "Все операции");
+check("клик по открытой вкладке сворачивает список", byId["allPanel"].hidden === true && byId["reviewSection"].hidden === true);
+clickButton(byId["bottomTabs"], "Все операции");
+check("клик по вкладке снова разворачивает", byId["allPanel"].hidden === false);
+
+// ---- Категории по кругу и поиск: выбранная категория поднимается наверх, остальные остаются ----
+function findEl(root, pred) {
+  const stack = [root];
+  while (stack.length) {
+    const n = stack.pop();
+    if (typeof n === "string") continue;
+    if (pred(n)) return n;
+    stack.push(...n.children);
+  }
+  return null;
+}
+vm.runInContext(`
+  userRules = {}; txRules = {}; customCats = []; customIcons = {};
+  txs = [
+    { date: "2026-10-05", time: "10:00:00", amount: -30, mcc: "5411", details: "ПРОДУКТЫ-А", balance: 1 },
+    { date: "2026-10-06", time: "10:00:00", amount: -300, mcc: "5812", details: "КАФЕ-Б", balance: 2 },
+    { date: "2026-10-07", time: "10:00:00", amount: -90, mcc: "5411", details: "ПРОДУКТЫ-В", balance: 3 },
+    { date: "2026-10-08", time: "10:00:00", amount: -5, mcc: null, details: "НЕИЗВЕСТНО-Г", balance: 4 },
+  ];
+  header = { from: "2026-10-01", to: "2026-10-31" };
+  allCat = "all"; allSort = "date-desc"; activeTab = "all"; render();
+`, ctx);
+const cats = vm.runInContext(`[...new Set(txs.map(t => categoryOf(t) || "Не разобрано"))].sort((x, y) => x === "Не разобрано" ? -1 : y === "Не разобрано" ? 1 : x.localeCompare(y, "ru"))`, ctx);
+const seen = [];
+for (let i = 0; i < cats.length; i++) { clickTh(byId["all"], "Категория"); seen.push(vm.runInContext(`allCat`, ctx)); }
+check("каждый клик по «Категория» поднимает следующую категорию", JSON.stringify(seen) === JSON.stringify(cats));
+check("при этом все операции остаются в списке", ["ПРОДУКТЫ-А", "ПРОДУКТЫ-В", "КАФЕ-Б", "НЕИЗВЕСТНО-Г"].every(x => allText().includes(x)));
+clickTh(byId["all"], "Категория");
+check("после последней категории круг начинается заново", vm.runInContext(`allCat`, ctx) === "all");
+clickTh(byId["all"], "Категория");
+check("и снова первая категория", vm.runInContext(`allCat`, ctx) === cats[0]);
+const box = findEl(byId["all"], n => n.tag === "input" && n.attrs.placeholder === "найти категорию");
+check("поле поиска стоит в заголовке «Категория» и показывает текущую", box && box.value === cats[0]);
+box.value = "кафе";
+box.listeners.input[0]();
+check("поиск: начало названия поднимает категорию наверх", vm.runInContext(`allCat`, ctx) === "Кафе и рестораны" && allText().indexOf("КАФЕ-Б") < allText().indexOf("ПРОДУКТЫ-А") && allText().includes("ПРОДУКТЫ-А"));
+box.value = "";
+box.listeners.input[0]();
+check("пустой поиск возвращает обычный порядок", vm.runInContext(`allCat`, ctx) === "all");
+vm.runInContext(`allCat = "all"; renderAll();`, ctx);
+
+// ---- Пары «пришло и сразу ушло» (ВТБ): видны в списке, но не считаются ----
+vm.runInContext(`
+  header = { from: "2026-03-01", to: "2026-03-31", bank: "vtb" };
+  txs = [
+    { date: "2026-03-02", time: "10:00:00", amount: 500,  mcc: null, details: "ЗАЧИСЛЕНИЕ-ПАРА", balance: 500, pair: 1 },
+    { date: "2026-03-02", time: "11:00:00", amount: -500, mcc: null, details: "ЕРИП-ПАРА", balance: 0, pair: 1 },
+    { date: "2026-03-03", time: "11:00:00", amount: -40,  mcc: "5411", details: "МАГАЗИН-ОБЫЧНЫЙ", balance: -40 },
+    { date: "2026-03-04", time: "11:00:00", amount: 100,  mcc: null, details: "ЗАРПЛАТА-ОБЫЧНАЯ", balance: 60 },
+  ];
+  allCat = "all"; allSort = "date-desc"; activeTab = "all"; render();
+`, ctx);
+const allAfter = textOf(byId["all"]);
+check("пара остаётся в списке операций", allAfter.includes("ЗАЧИСЛЕНИЕ-ПАРА") && allAfter.includes("ЕРИП-ПАРА"));
+check("у пары заметная пометка «между своими»", (allAfter.match(/между своими/g) || []).length >= 2);
+check("пара в тратах не учитывается: итого 40", hasTotal(summaryText(), "40.00"));
+const infoLine = textOf(byId["allFilter"]);
+check("в строке итогов расходы 40, поступления 100 (без пары)", infoLine.includes("расходы: 40.00") && infoLine.includes("поступления: 100.00"));
+check("в строке итогов отдельно показаны переводы между своими", infoLine.includes("между своими (не в счёт): 2"));
+vm.runInContext(`setTxRule(txs[1], "Прочее"); renderAll();`, ctx);
+check("выбор пользователя для операции сильнее пометки пары", vm.runInContext(`categoryOf(txs[1]) === "Прочее"`, ctx));
+vm.runInContext(`txs.forEach(t => delete t.pair); txRules = {}; allCat = "all"; renderAll();`, ctx);
+
+// ---- Демо на выдуманных данных ----
+vm.runInContext(`
+  userRules = { realkey: "Здоровье" }; txRules = { realtx: "Прочее" }; customCats = ["Моя"]; customIcons = {};
+  header = { from: "2026-03-01", to: "2026-03-31", bank: "vtb" };
+  txs = [{ date: "2026-03-03", time: "11:00:00", amount: -40, mcc: "5411", details: "НАСТОЯЩАЯ-ОПЕРАЦИЯ", balance: 1 }];
+  render();
+`, ctx);
+lsWrites.length = 0;
+vm.runInContext(`enterDemo();`, ctx);
+check("демо: начальная страница на месте, плашка «Демо» показана", !(byId["landing"] && byId["landing"].hidden) && byId["demoBar"].hidden === false);
+check("демо: блок сохранения разбора спрятан", byId["dataRules"].hidden === true && byId["resetRow"].hidden === true);
+check("демо: выдуманные операции", vm.runInContext(`header.bank === "demo" && txs.length > 50 && !txs.some(t => /НАСТОЯЩАЯ/.test(t.details))`, ctx));
+check("демо: есть что разбирать и есть пары «между своими»", vm.runInContext(`reviewOps > 0 && txs.some(t => t.pair)`, ctx));
+check("демо: в траты попали категории", textOf(byId["summary"]).includes("Продукты") && !textOf(byId["summary"]).includes("НАСТОЯЩАЯ"));
+vm.runInContext(`setTxRule(txs.find(t => !categoryOf(t)), "Прочее");`, ctx);
+check("демо: выбор категории ничего не пишет в хранилище", lsWrites.filter(k => k.startsWith("ba_rules") || k.startsWith("ba_txrules") || k.startsWith("ba_cats") || k.startsWith("ba_icons")).length === 0);
+vm.runInContext(`leaveDemo();`, ctx);
+check("выход из демо возвращает настоящие данные и разбор", vm.runInContext(`txs.length === 1 && txs[0].details === "НАСТОЯЩАЯ-ОПЕРАЦИЯ" && userRules.realkey === "Здоровье" && txRules.realtx === "Прочее" && customCats[0] === "Моя"`, ctx));
+check("после выхода плашка демо спрятана, блок разбора виден", byId["demoBar"].hidden === true && byId["dataRules"].hidden === false);
+vm.runInContext(`txs = []; header = {}; enterDemo(); leaveDemo();`, ctx);
+check("выход из демо без своих данных прячет отчёт, начальная страница на месте", !(byId["landing"] && byId["landing"].hidden) && byId["report"].hidden === true);
+
+// ---- Несколько выписок, выгрузка, очистка ----
+vm.runInContext(`
+  userRules = {}; txRules = {}; customCats = []; customIcons = {};
+  txs = [
+    { date: "2026-03-02", time: "10:00:00", amount: 100, mcc: null, details: "ЗАРПЛАТА", balance: 100, bank: "vtb", src: 0 },
+    { date: "2026-03-03", time: "11:00:00", amount: -40, mcc: "5411", details: "МАГАЗИН", balance: 60, bank: "mtb", src: 1 },
+  ];
+  statements = [
+    { bank: "vtb", bankName: "ВТБ (Беларусь)", from: "2026-03-01", to: "2026-03-31", count: 1, added: 1, skipped: 0, check: { headerIncome: 100, headerExpense: 0, income: 100, expense: 0, incomeOk: true, expenseOk: true, ok: true } },
+    { bank: "mtb", bankName: "МТБанк", from: "2026-03-01", to: "2026-03-31", count: 2, added: 1, skipped: 1, check: null },
+  ];
+  header = Merge.mergedHeader(statements);
+  allCat = "all"; activeTab = "all"; render();
+`, ctx);
+const chk = textOf(byId["check"]);
+check("сверка показана для каждой выписки", chk.includes("ВТБ (Беларусь): 1 операций") && chk.includes("МТБанк: 2 операций") && chk.includes("повторов пропущено: 1"));
+check("у выписки с итогами видны галочки, общее число операций", chk.includes("найдено 100.00 ✓") && chk.includes("Всего операций: 2"));
+check("кнопка «Убрать выписки» видна", byId["clearBtn"].hidden === false);
+byId["expSumText"].listeners.click[0]();
+check("выгрузка итогов текстом: заголовок таблицы с месяцем", byId["exportText"].value.startsWith("Категория;Март 2026;Итого") && byId["exportText"].value.includes("Продукты;40,00;40,00"));
+byId["expOpsText"].listeners.click[0]();
+check("выгрузка операций текстом: банк и тип", byId["exportText"].value.includes("ВТБ (Беларусь);100,00;BYN;Пополнения;доход;ЗАРПЛАТА") && byId["exportText"].value.includes("МТБанк;-40,00;BYN;Продукты;расход;МАГАЗИН"));
+// резервная копия: список выписок сохраняется и возвращается
+const snap3 = vm.runInContext(`JSON.stringify(backupData())`, ctx);
+check("в резервной копии версия 3 и список выписок", JSON.parse(snap3).version === 3 && JSON.parse(snap3).statements.length === 2);
+vm.runInContext(`txs = []; header = {}; statements = []; applyBackup(JSON.parse(${JSON.stringify(snap3)})); render();`, ctx);
+check("список выписок восстановлен из копии", vm.runInContext(`statements.length === 2 && header.bank === "multi" && txs.length === 2`, ctx));
+vm.runInContext(`txs = []; header = {}; statements = []; applyBackup({app:"bank-analyzer", txs:[{date:"2026-01-01",time:"1",amount:-5,balance:1,details:"X"}], header:{from:"2026-01-01",to:"2026-01-31",bank:"mtb"}}); render();`, ctx);
+check("старая копия без списка выписок: одна запись из шапки", vm.runInContext(`statements.length === 1 && statements[0].bankName === "МТБанк" && statements[0].count === 1`, ctx));
+byId["clearBtn"].listeners.click[0]();
+check("«Убрать выписки»: операции и отчёт убраны, разбор остался", vm.runInContext(`txs.length === 0 && statements.length === 0`, ctx) && byId["report"].hidden === true);
+
+console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
+process.exit(failed === 0 ? 0 : 1);
