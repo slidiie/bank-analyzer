@@ -67,6 +67,32 @@ check("ЕРИП-зачисление: между своими", Cat.categorize(b
 check("комиссия: комиссии банка", Cat.categorize(by("fee")[0]) === Cat.FEES);
 check("проценты: комиссии банка", Cat.categorize(by("interest")[0]) === Cat.FEES);
 
+// ---------- Шаблон «Выписка по карте» (направление словами, сумма без знака) ----------
+const cardOp = (y, num, date, time, dir, amt, st = "Завершено") => [
+  it(45, y, num), it(122, y - 5, date), it(122, y + 4, time), it(191, y - 5, dir), it(191, y + 4, "средств"),
+  it(264, y - 5, st), it(264, y + 4, "успешно"), it(355, y, amt + " BYN"), it(481, y, "BLR"),
+  it(427, y - 5, "ONLINE"), it(428, y + 4, "SERVIC"), it(512, y - 5, "TRANSFERS"), it(524, y + 4, "AK AM"),
+];
+const cardPage = [
+  it(458, 54, 'ЗАКРЫТОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО "АЛЬФА-БАНК"'),
+  it(42, 319, "Выписка по карте за период 31.10.2026 - 07.11.2026"),
+  it(65, 345, "Номер"), it(139, 345, "Время"), it(280, 345, "Статус"), it(195, 349, "Тип операции"), it(354, 354, "операции"),
+  ...cardOp(376, "7010000000000001", "2026-11-07", "22:16:26", "Отправление", "3.96"),
+  ...cardOp(403, "7010000000000002", "2026-11-07", "22:12:23", "Получение", "3.96"),
+  ...cardOp(431, "7010000000000003", "2026-11-07", "22:11:54", "Отправление", "2.00"),
+  ...cardOp(459, "7010000000000004", "2026-11-06", "10:00:00", "Отправление", "5.00", "Отклонено"),
+];
+const cp = [cardPage];
+check("карточный шаблон определяется как Альфа-Банк", Banks.detect(cp) && Banks.detect(cp).id === "alfa");
+const cr = Banks.parse(cp);
+check("карта: период из шапки", cr.header.from === "2026-10-31" && cr.header.to === "2026-11-07");
+check("карта: 3 завершённые операции, отклонённая пропущена", cr.txs.length === 3 && cr.header.notCompleted === 1 && cr.header.broken === 0);
+check("карта: знак по словам «Получение/Отправление»", cr.txs.filter(t => t.amount > 0).length === 1 && cr.txs.filter(t => t.amount < 0).length === 2);
+check("карта: дата и время", cr.txs[0].date === "2026-11-07" && cr.txs[0].time === "22:16:26");
+check("карта: описание из мест и детализации", /ONLINE SERVIC/.test(cr.txs[0].details) && /TRANSFERS AK AM/.test(cr.txs[0].details));
+check("карта: пришло и сразу ушло найдено как пара", cr.header.pairs === 1 && cr.txs.filter(t => t.pair).length === 2);
+check("карта: проверка состава пройдена", cr.bank.validate(cr.txs, cr.header).ok === true);
+
 const v = AL.validate(txs, header);
 check("проверка состава пройдена", v.ok === true && v.outside === 0 && v.count === 9);
 check("приход и расход посчитаны", v.income === 321.78 && Math.abs(v.expense - 350.92) < 0.005);

@@ -77,7 +77,11 @@
     id: "alfa",
     name: "Альфа-Банк",
     detect: pages => AL.detect(pages),
-    parse: pages => AL.parse(pages),
+    parse(pages) {
+      const res = AL.parse(pages);
+      res.header.pairs = TR.mark(res.txs, tx => tx.kind === "card_out" && /transfers|popolnenie/i.test(tx.details || ""));
+      return res;
+    },
     validate: (txs, header) => AL.validate(txs, header),
   };
 

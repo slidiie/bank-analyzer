@@ -581,7 +581,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.36, Альфа-Банк (кредитная карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.37, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -2632,7 +2632,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.36", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.37", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
