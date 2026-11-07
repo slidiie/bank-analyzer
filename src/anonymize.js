@@ -46,14 +46,13 @@
   }
   const hide = s => s.replace(/\S/g, BLOCK);
 
-  // Текст элемента в образце: manual === true: скрыт целиком; false: показан как есть; иначе по автоматике
+  // Текст элемента в образце. Найденное автоматикой скрывается ВСЕГДА (отменить нельзя); вручную можно только добавить скрытие.
   function effective(it) {
     if (it.manual === true) return hide(it.text);
-    if (it.manual === false) return it.text;
     return it.parts.map(p => (p.m ? hide(p.t) : p.t)).join("");
   }
-  const isHidden = it => it.manual === true || (it.manual == null && it.parts.some(p => p.m));
   const isAutoHidden = it => it.parts.some(p => p.m);
+  const isHidden = it => it.manual === true || isAutoHidden(it);
 
   function makeItem(text, extra) {
     return Object.assign({ text, parts: maskParts(text), manual: null }, extra);
@@ -107,7 +106,7 @@
   function toPlainText(model) {
     return model.map((pg, i) => `--- страница ${i + 1} ---\n` + pg.map(row => row.map(effective).join("  ")).join("\n")).join("\n");
   }
-  const api = { maskParts, effective, isHidden, groupRows, fromPdfPages, fromCsvText, stats, toSample, toPlainText, BLOCK };
+  const api = { maskParts, effective, isHidden, isAutoHidden, groupRows, fromPdfPages, fromCsvText, stats, toSample, toPlainText, BLOCK };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Anon = api;
 })(typeof self !== "undefined" ? self : this);
