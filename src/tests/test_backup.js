@@ -5,6 +5,10 @@ let failed = 0;
 const check = (name, ok) => { if (!ok) failed++; console.log((ok ? "OK    " : "FAIL  ") + name); };
 const throws = f => { try { f(); return false; } catch (e) { return true; } };
 
+const evil2 = JSON.parse('{"app":"bank-analyzer","acctNames":{"7933-abc":"Мама","__proto__":"Хак","-":5,"k":"' + "x".repeat(60) + '"}}');
+const c2 = B.sanitize(evil2);
+check("подписи счетов: берутся только строки до 40 знаков, опасные ключи отброшены", Object.keys(c2.acctNames).join() === "7933-abc" && Object.getPrototypeOf(c2.acctNames) === Object.prototype && ({}).Хак === undefined);
+check("без подписей счетов в файле получается пустой словарь", Object.keys(B.sanitize({ app: "bank-analyzer" }).acctNames).length === 0);
 check("чужой файл отклоняется", throws(() => B.sanitize({ app: "x" })) && throws(() => B.sanitize(null)) && throws(() => B.sanitize([])));
 const evil = JSON.parse('{"app":"bank-analyzer","rules":{"__proto__":"Хак","-1|A":"Продукты","-2|B":5,"constructor":"x"},"txRules":{"k":"Кафе"},"icons":{"Продукты":"cart"},"budgets":{"Продукты":100,"Кафе":-5,"Х":"abc","__proto__":7},"calc":{"income":3000,"saveMode":"pct","evil":1,"other":"x"},"cats":["Моя",5,null,"__x"],"txs":[{"date":"2026-01-05","amount":-10.5,"details":"Магазин","mcc":"5411","extra":"1","__proto__":{"a":1}},{"date":"плохо","amount":1,"details":"x"},{"date":"2026-01-06","amount":"1","details":"x"},"строка",null],"statements":[{"bank":"mtb","bankName":"МТБанк","from":"2026-01-01","to":"2026-01-31","count":1,"check":{"ok":true,"income":5,"bad":{"a":1}}},7]}');
 const c = B.sanitize(evil);
