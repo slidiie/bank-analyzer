@@ -16,6 +16,7 @@
   const PR = need("PriorParser", "./prior.js");
   const PRCSV = need("PriorCsvParser", "./priorcsv.js");
   const AL = need("AlfaParser", "./alfa.js");
+  const SB = need("SberParser", "./sber.js");
 
   const MTB = {
     id: "mtb",
@@ -77,12 +78,28 @@
     id: "alfa",
     name: "Альфа-Банк",
     detect: pages => AL.detect(pages),
-    parse: pages => AL.parse(pages),
+    parse(pages) {
+      const res = AL.parse(pages);
+      res.header.pairs = TR.mark(res.txs, tx => tx.kind === "card_out" && /transfers|popolnenie/i.test(tx.details || ""));
+      return res;
+    },
     validate: (txs, header) => AL.validate(txs, header),
   };
 
+  const SBER = {
+    id: "sber",
+    name: "БПС-Сбербанк (Сбер Банк)",
+    detect: pages => SB.detect(pages),
+    parse(pages) {
+      const res = SB.parse(pages);
+      res.header.pairs = TR.mark(res.txs, tx => tx.amount < 0 && /p2p|р2р/i.test(tx.details || ""));
+      return res;
+    },
+    validate: (txs, header) => SB.validate(txs, header),
+  };
+
   // Порядок важен: сначала более узкие признаки (у МТБ признак «Период выписки» есть и у Приорбанка)
-  const BANKS = [ALFA, VTBANK, BELARUSBANK, PRIOR, MTB];
+  const BANKS = [ALFA, SBER, VTBANK, BELARUSBANK, PRIOR, MTB];
 
   // CSV-выписки (кроме PDF): пока только Приорбанк. text: уже расшифрованный текст файла.
   const CSV_BANKS = [{ bank: PRIOR, detect: PRCSV.detect, parse: PRCSV.parse }];

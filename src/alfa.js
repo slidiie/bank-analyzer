@@ -36,13 +36,13 @@
   function detect(pages) {
     if (!pages.length) return false;
     const t = squash(pageText(clean(pages.slice(0, 1))[0]));
-    return t.includes("альфа-банк") && t.includes("выпискапокредиту");
+    return t.includes("альфа-банк") && (t.includes("выпискапокредиту") || t.includes("выпискапокартеза"));
   }
 
   function parseHeader(pages) {
     const h = { bank: "alfa" };
     const first = clean(pages)[0] || [];
-    const m = pageText(first).match(/Выписка по кредиту за период\s+(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/i);
+    const m = pageText(first).match(/Выписка по (?:кредиту|карте) за период\s+(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/i);
     if (m) { h.from = toIso(m[1]); h.to = toIso(m[2]); }
     return h;
   }
@@ -84,8 +84,51 @@
     return rows;
   }
 
+  // ---------- Шаблон «Выписка по карте»: одна строка на операцию, направление словами, сумма без знака ----------
+  const CARD = { type: [185, 260], status: [260, 330], amt: [330, 420], place: [420, 480], detail: [505, 700] };
+  const NUM_RE = /^\d{12,}$/;
+  const isCardTemplate = pages => /выпискапокартеза/.test(squash(pageText(clean(pages.slice(0, 1))[0] || [])));
+
+  function cardOps(items) {
+    const anchors = items.filter(i => i.x < 100 && NUM_RE.test(i.text)).sort((a, b) => a.y - b.y);
+    const groups = anchors.map(a => ({ a, items: [] }));
+    for (const it of items) {
+      if (it === undefined || groups.some(g => g.a === it)) continue;
+      let best = null, bd = Infinity;
+      for (const g of groups) { const d = Math.abs(it.y - g.a.y); if (d < bd) { bd = d; best = g; } }
+      if (best && bd <= 16) best.items.push(it);
+    }
+    return groups;
+  }
+  const colText = (items, c) => items.filter(i => inCol(i.x, c)).sort((a, b) => a.y - b.y || a.x - b.x).map(i => i.text).join(" ").replace(/\s+/g, " ").trim();
+
+  function parseCard(pages, header) {
+    const txs = [];
+    let broken = 0, skipped = 0;
+    clean(pages).forEach(items => cardOps(items).forEach(g => {
+      const date = g.items.find(i => /^\d{4}-\d\d-\d\d$/.test(i.text));
+      const time = g.items.find(i => /^\d\d:\d\d:\d\d$/.test(i.text));
+      const amt = g.items.find(i => inCol(i.x, CARD.amt) && AMT_RE.test(i.text));
+      const type = squash(colText(g.items, CARD.type));
+      const status = squash(colText(g.items, CARD.status));
+      if (!date || !amt) { broken++; return; }
+      if (!status.includes("завершено")) { skipped++; return; }          // отклонённые и незавершённые не считаем
+      const sign = type.includes("получениесредств") ? 1 : type.includes("отправлениесредств") ? -1 : 0;
+      if (!sign) { broken++; return; }
+      const a = amt.text.match(AMT_RE);
+      const label = sign > 0 ? "Получение средств" : "Отправление средств";
+      const details = [label, colText(g.items, CARD.place), colText(g.items, CARD.detail)].filter(Boolean).join(" · ");
+      txs.push({ date: date.text, time: time ? time.text : null, type: null, amount: sign * parseFloat(a[1]), currency: a[2], mcc: null, details, kind: sign > 0 ? "card_in" : "card_out" });
+    }));
+    header.broken = broken;
+    header.notCompleted = skipped;
+    header.currency = txs.length ? txs[0].currency : null;
+    return { header, txs };
+  }
+
   function parse(pages) {
     const header = parseHeader(pages);
+    if (isCardTemplate(pages)) return parseCard(pages, header);
     const txs = [];
     let broken = 0;
     clean(pages).forEach(items => pageRows(items).forEach(r => {
