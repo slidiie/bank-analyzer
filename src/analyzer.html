@@ -582,13 +582,14 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.38, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.39, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
   <script src="categories.js"></script>
   <script src="vtb.js"></script>
   <script src="alfa.js"></script>
+  <script src="sber.js"></script>
   <script src="belarusbank.js"></script>
   <script src="prior.js"></script>
   <script src="priorcsv.js"></script>
@@ -871,7 +872,7 @@
         how: ["Prior Online, раздел «История»: значок фильтра справа вверху (продукт, тип операции, период) показывает операции.", "Официальную выписку закажите так: «Еще» → «Заявки на продукты» → «Заказ документов» → «Заказ справок и выписок», тип документа «Выписка по счету». По данным банка, выписка по счёту бесплатна."],
         wait: "Срок в найденных материалах банка не указан: он виден в заявке, при сомнении спросите банк.",
         link: ["https://www.priorbank.by/offers/services/mobile-applications/zakaz-documentov", "Приорбанк: заказ справок и выписок в Prior Online"] },
-      { id: "bps", name: "БПС-Сбербанк", reads: false,
+      { id: "bps", name: "БПС-Сбербанк", reads: true,
         how: ["Веб-версия СберБанк Онлайн: откройте карту, выберите «Банковская выписка» и задайте период в календаре. По данным банка, выписка бесплатна.", "В мобильном приложении выписки за прошлые периоды доступны не везде: тогда обратитесь в отделение по месту открытия карт-счёта.", "Ежемесячная выписка на e-mail бесплатна. Бумажная в отделении: за текущий и предыдущий месяц бесплатно, за другой период платно."],
         wait: "В веб-версии сразу. В отделении по обращению: срок уточните в банке.",
         link: ["https://www.sber-bank.by/page/online-bank-whatKnow", "БПС-Сбербанк: полезная информация о СберБанк Онлайн"] },
@@ -2637,7 +2638,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.38", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.39", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
