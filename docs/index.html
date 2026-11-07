@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-ROvMKr6BJDB2xrGpSrQ/SdSOXGRFRCCWw1+tu0Lb9uo=' 'sha256-2/F6k5CC5o1L9c3uQWGUrKjRs4dJdfiBb350vjuBYgQ='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-OWn0S75Ci0+a30IwTrAaF88dgRoXs9rsLgWmEIr5TsA=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-pALYMwKI9aROHqvBDYmBERCuBjxK6WQr6tivWSua+Vc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-ROvMKr6BJDB2xrGpSrQ/SdSOXGRFRCCWw1+tu0Lb9uo=' 'sha256-UHHViG+0nGMEELSkLVEwoj8Y8BZJT0DaYQySLJxaZ8Q='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
   <title>Анализ банковской выписки</title>
   <style>
@@ -88,6 +88,15 @@
     .picker button { padding: .15rem; line-height: 1; }
     .picker button .ico { margin: 0; width: 1.2em; height: 1.2em; }
     .picker button.sel { background: var(--bar); color: var(--active-text); outline: 2px solid var(--bar); outline-offset: 1px; }
+    .picker[hidden] { display: none; }
+    #catCreator { margin: .6rem 0; padding: .5rem .8rem; }
+    #catCreator input[type=text] { width: 14rem; }
+    .revcard { padding: .55rem .8rem; }
+    .revhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .1rem .8rem; }
+    .revhead b { flex: 1 1 10rem; }
+    .revsum { flex: 0 0 auto; }
+    .revmore > summary { font-weight: 400; color: var(--muted); font-size: .9rem; }
+    .revmore > div, .revmore > p { margin-top: .35rem; }
     .viewswitch { display: inline-flex; border: 1px solid var(--ctl-border); border-radius: 6px; overflow: hidden; margin: .3rem 0 .8rem; }
     .viewswitch button { border: 0; border-radius: 0; background: transparent; }
     .viewswitch button.active { background: var(--bar); color: var(--active-text); }
@@ -251,14 +260,14 @@
     <div id="plan"></div>
     <div id="bottom">
       <div class="tabs" id="bottomTabs"></div>
+      <div class="note" id="catCreator" hidden></div>
       <div id="reviewSection">
         <h3 style="margin-top:0">Нужно разобрать <span id="reviewCount"></span></h3>
         <div id="reviewOther" class="muted" style="margin-bottom:.6rem"></div>
         <div id="reviewTools" style="margin-bottom:.8rem"></div>
-        <p class="muted">Эти операции не удалось отнести к категории автоматически. Похожие собраны в группы,
-          самые крупные сверху. Можно выбрать категорию для всей группы или разобрать операции по отдельности.
-          Значок ↻ значит, что такая же сумма повторялась в разные месяцы (похоже на аренду, связь или подписку).
-          Если непонятно, что это, а сумма небольшая, нажмите «В «Прочее»». Разобранная операция переходит во вкладку «Все операции».</p>
+        <p class="muted">Похожие операции собраны в группы, самые крупные сверху. Выберите категорию для всей группы; детали и операции по отдельности
+          под «Подробнее». Своя категория создаётся в панели «Новая категория» выше. ↻: такая сумма повторялась в разные месяцы (аренда, связь, подписка).
+          Непонятное и мелкое: «В «Прочее»». Разобранное переходит во вкладку «Все операции».</p>
         <div id="review"></div>
       </div>
       <div id="incomeSection">
@@ -332,7 +341,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.26, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.27, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <script type="module">
 /**
@@ -2194,7 +2203,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     let customIcons = loadJSON("ba_icons_v1", {}); // значки своих категорий
     let budgets = loadJSON("ba_budget_v1", {});    // лимиты на месяц по категориям
     let calc = loadJSON("ba_calc_v1", {});         // значения, которые пользователь ввёл в «Сколько остаётся»
-    const closedKeys = new Set();                  // группы, которые пользователь свернул (чтобы не раскрывались при обновлении)
+    const openKeys = new Set();                    // группы, где пользователь раскрыл «Операции по отдельности» (по умолчанию свёрнуты, чтобы список был короче)
     let recurring = new Map();                     // повторяющиеся суммы (см. findRecurring)
     let bottomOpen = true;                         // список внизу развёрнут (можно свернуть)
     let bottomTab = null;                          // нижняя вкладка: "review" или "all" (null: выбрать при первой отрисовке)
@@ -2205,9 +2214,9 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
     let activeTab = "all";                         // выбранная вкладка трат: "all" или месяц вида "2026-09"
     let summaryView = loadJSON("ba_view_v1", "table"); // «table» или «pie»
     let allCat = "all";                            // категория, поднятая наверх списка ("all": ничего не поднято)
-    const PAGE_ROWS = 200, PAGE_GROUPS = 20;        // сколько строк и групп показываем сразу (остальное по кнопке): так страница не тормозит на больших выписках
+    const PAGE_ROWS = 200, PAGE_GROUPS = 20, REVIEW_GROUPS = 10;       // сколько строк и групп показываем сразу (остальное по кнопке): так страница не тормозит на больших выписках
     let allLimit = PAGE_ROWS, allLimitKey = "";
-    let reviewLimit = PAGE_GROUPS, reviewLimitKey = null;
+    let reviewLimit = REVIEW_GROUPS, reviewLimitKey = null;
     let incomeLimit = PAGE_GROUPS, incomeLimitKey = null;
     let allSort = "date-desc";                     // порядок строк там же
 
@@ -2290,7 +2299,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       statements = [{ bank: "demo", bankName: "Демо", from: d.header.from, to: d.header.to, count: d.txs.length, added: d.txs.length, skipped: 0, check: null }];
       allCat = "all"; allSort = "date-desc"; bottomTab = null;
       if (!wasDemo) activeTab = "all";   // при повторном нажатии выбранный месяц остаётся (если такого месяца нет, render сам вернёт «весь период»)
-      closedKeys.clear();
+      openKeys.clear();
       render();
     }
     // Выход из демо: возвращаем то, что было открыто до него (или начальный экран)
@@ -2300,7 +2309,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо на выдуманных данных";
       ({ userRules, txRules, customCats, customIcons, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab } = stash);
       stash = null;
-      closedKeys.clear();
+      openKeys.clear();
       if (txs.length) render();
       else { $("report").hidden = true; $("demoBar").hidden = true; $("dataRules").hidden = false; $("shareBox").hidden = true; $("clearBtn").hidden = true; }
     }
@@ -2471,33 +2480,61 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       render();
     }
 
-    // Выпадающий список + поле «своя категория» с выбором значка + кнопка
+    // Выпадающий список + кнопки. Свою категорию создают один раз в панели над списком («Новая категория»), а не в каждой операции:
+    // так карточки короткие. В списке последним пунктом стоит «＋ Новая категория…», он переводит к этой панели.
+    const NEW_CAT = "__new__";
     function chooser(buttonText, onApply) {
       let chosen = "";
-      const sel = categorySelect("", v => { chosen = v; });
-      const custom = h("input", { type: "text", placeholder: "или своя категория", "aria-label": "Своя категория" });
-      let pickedIcon = "";
-      const picker = h("span", { class: "picker", role: "group", "aria-label": "Значок для своей категории" });
-      PICK_ICONS.forEach(k => {
-        const btn = h("button", { type: "button", "aria-label": ICON_NAMES[k] || k });
-        btn.append(iconEl(k));
-        btn.addEventListener("click", () => {
-          pickedIcon = k;
-          Array.from(picker.children).forEach(x => { const on = x === btn; x.className = on ? "sel" : ""; x.setAttribute("aria-pressed", on ? "true" : "false"); });
-        });
-        picker.append(btn);
-      });
-      const apply = () => {
-        const name = custom.value.trim();
-        if (name) onApply(name, pickedIcon);
-        else if (chosen) onApply(chosen, "");
-      };
-      return h("span", {}, sel, " ", custom, " Значок: ", picker, " ", h("button", { onclick: apply }, buttonText), " ",
+      const sel = categorySelect("", v => {
+        if (v === NEW_CAT) { sel.value = ""; chosen = ""; focusCreator(); } else chosen = v;
+      }, "Категория", { value: NEW_CAT, text: "＋ Новая категория…" });
+      const apply = () => { if (chosen) onApply(chosen, ""); };
+      return h("span", {}, sel, " ", h("button", { onclick: apply }, buttonText), " ",
         h("button", { onclick: () => onApply("Прочее"), title: "Если непонятно, что это, и сумма небольшая" }, "В «Прочее»"));
+    }
+    function focusCreator() {
+      const box = $("catCreator");
+      box.hidden = false;
+      try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { /* без прокрутки */ }
+      const input = box.querySelector("input");
+      if (input) input.focus();
+    }
+    // Панель «Новая категория»: название, значок (по умолчанию «ценник», остальные под кнопкой) и «Создать». Строится один раз.
+    let catCreatorBuilt = false;
+    function buildCatCreator() {
+      catCreatorBuilt = true;
+      const box = $("catCreator");
+      const name = h("input", { type: "text", placeholder: "Название новой категории", "aria-label": "Название новой категории", maxlength: "40", autocomplete: "off" });
+      let icon = "tag";
+      const iconBtn = h("button", { type: "button", "aria-label": "Выбрать значок", title: "Выбрать значок" });
+      const showIcon = () => iconBtn.replaceChildren(iconEl(icon));
+      showIcon();
+      const picker = h("span", { class: "picker", role: "group", "aria-label": "Значок новой категории" });
+      picker.hidden = true;
+      PICK_ICONS.forEach(k => {
+        const b = h("button", { type: "button", "aria-label": ICON_NAMES[k] || k, title: ICON_NAMES[k] || k, class: k === icon ? "sel" : "" });
+        b.append(iconEl(k));
+        b.addEventListener("click", () => { icon = k; Array.from(picker.children).forEach(x => { x.className = x === b ? "sel" : ""; }); showIcon(); picker.hidden = true; });
+        picker.append(b);
+      });
+      iconBtn.addEventListener("click", () => { picker.hidden = !picker.hidden; });
+      const msg = h("div", { class: "muted", role: "status" });
+      const create = () => {
+        const raw = name.value.trim();
+        if (!raw) { msg.textContent = "Введите название категории."; return; }
+        const n = Cat.canonical(raw);
+        if (allCategories().includes(n)) { msg.textContent = `Категория «${n}» уже есть: выберите её в списке.`; return; }
+        ensureCategory(n, icon);
+        name.value = "";
+        render();
+        msg.textContent = `Категория «${n}» создана, теперь она есть во всех списках ниже.`;
+      };
+      name.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); create(); } });
+      box.append(h("b", {}, "Новая категория: "), name, " Значок: ", iconBtn, " ", h("button", { type: "button", onclick: create }, "Создать"), picker, msg);
     }
 
     // Список категорий наполняется только когда его открывают: так в таблице на тысячу строк не создаются десятки тысяч лишних элементов
-    function categorySelect(current, onChange, label) {
+    function categorySelect(current, onChange, label, extra) {
       const sel = h("select", { onchange: e => onChange(e.target.value), "aria-label": label || "Категория" });
       if (current) sel.append(h("option", { value: current, selected: true }, current));
       else sel.append(h("option", { value: "" }, "— выбрать —"));
@@ -2507,6 +2544,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         full = true;
         sel.replaceChildren();
         if (!current) sel.append(h("option", { value: "" }, "— выбрать —"));
+        if (extra) sel.append(h("option", { value: extra.value }, extra.text));
         for (const c of allCategories()) {
           const o = h("option", { value: c }, c);
           if (c === current) o.selected = true;
@@ -2591,6 +2629,8 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       if (bottomTab === null) bottomTab = hasReview ? "review" : "all";
       if (bottomTab === "income" && !incomeGroups) bottomTab = hasReview ? "review" : "all";
       if (bottomTab === "review" && !hasReview) bottomTab = "all";   // всё разобрано: показываем все операции
+      if (!catCreatorBuilt) buildCatCreator();
+      $("catCreator").hidden = !bottomOpen;
       $("reviewSection").hidden = !bottomOpen || bottomTab !== "review";
       $("incomeSection").hidden = !bottomOpen || bottomTab !== "income";
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";
@@ -3216,7 +3256,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       }
       const box = $("review");
       box.replaceChildren();
-      if (reviewLimitKey !== period) { reviewLimitKey = period; reviewLimit = PAGE_GROUPS; }
+      if (reviewLimitKey !== period) { reviewLimitKey = period; reviewLimit = REVIEW_GROUPS; }
       for (const g of list.slice(0, reviewLimit)) {
         const many = g.items.length > 1;
         // Операции внутри группы по порядку дат
@@ -3235,29 +3275,24 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         const amountsText = [...amountCounts.entries()].map(([a, n]) => (n > 1 ? `${a} × ${n}` : a)).slice(0, 8).join(", ");
         const recurCount = items.filter(t => recurLabel(t)).length;
 
-        const card = h("div", { class: "warn", style: "margin-bottom:.6rem" },
-          h("div", { style: "font-size:1.1rem" }, h("b", {}, `${fmt(g.sum)} BYN`),
-            ` · операций: ${items.length}` + (g.tx.mcc ? ` · MCC ${g.tx.mcc}` : "")),
-          h("div", { class: "muted" }, `${range}${range ? " · " : ""}суммы: ${amountsText}`),
+        const sc = ruleScope(g.tx);
+        const title = ruleLabel(Cat.merchantKey(g.tx));
+        const rec = Cat.recipient(g.tx);
+        // Всё второстепенное спрятано под «Подробнее»: на виду название, сумма и выбор категории (две строки)
+        const more = h("details", { class: "revmore" },
+          h("summary", {}, "Подробнее"),
+          h("div", { class: "muted" }, `${range}${range ? " · " : ""}суммы: ${amountsText}` + (g.tx.mcc ? ` · MCC ${g.tx.mcc}` : "")),
           recurCount
             ? h("div", {}, `↻ Похоже на регулярные платежи (аренда, связь, подписка, коммуналка): повторяющихся сумм здесь ${recurCount} из ${items.length}.`)
             : "",
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
-          Cat.recipient(g.tx)
-            ? h("div", { class: "muted" }, `Получатель: счёт …${Cat.recipient(g.tx).last4}` + (Cat.recipient(g.tx).op ? ` (${Cat.recipient(g.tx).op})` : "") +
-                "." + (many ? " Все платежи на этот счёт собраны вместе: если это, например, оплата аренды или перевод близким, достаточно выбрать категорию один раз." : ""))
-            : "",
-          Cat.isErip(g.tx)
-            ? h("div", { class: "muted" }, "Платёж через ЕРИП: по выписке не видно, за что заплачено." +
-                (many ? " Платежи на одну и ту же сумму собраны вместе: если сумма повторяется каждый месяц, это обычно один и тот же счёт." : ""))
-            : "",
-          h("div", { style: "margin-top:.4rem" }, chooser(scopeText(ruleScope(g.tx)), (cat, icon) => setRule(g.tx, cat, icon)),
-            ruleScope(g.tx) > 1 ? h("div", { class: "muted" }, `Выбор сразу применится ко всем ${ruleScope(g.tx)} операциям такого получателя (во всех месяцах) и к будущим выпискам. Только к одной операции: выберите категорию ниже, в списке «Операции по отдельности». Отменить можно в разделе «Мои правила» внизу страницы.`) : ""));
-
+          rec ? h("div", { class: "muted" }, `Получатель: счёт …${rec.last4}` + (rec.op ? ` (${rec.op})` : "") + ".") : "",
+          Cat.isErip(g.tx) ? h("div", { class: "muted" }, "Платёж через ЕРИП: по выписке не видно, за что заплачено.") : "",
+          sc > 1 ? h("div", { class: "muted" }, `Выбор применится ко всем ${sc} операциям этого получателя (во всех месяцах) и к будущим выпискам. Отменить можно в разделе «Мои правила» внизу страницы.`) : "");
         if (many) {
-          // Внутри группы каждую операцию можно разобрать отдельно (список по умолчанию раскрыт)
+          // Каждую операцию группы можно разобрать отдельно (по умолчанию свёрнуто)
           const det = h("details", { style: "margin-top:.5rem" },
-            h("summary", {}, "Операции по отдельности"),
+            h("summary", {}, `Операции по отдельности (${items.length})`),
             items.map(tx => {
               const rl = recurLabel(tx);
               return h("div", { class: "oprow" },
@@ -3268,15 +3303,19 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
                 h("div", { class: "details" }, tx.details),
                 h("div", { style: "margin-top:.3rem" }, chooser("Только эта", (cat, icon) => setTxRule(tx, cat, icon))));
             }));
-          det.open = !closedKeys.has(g.key);
-          det.addEventListener("toggle", () => { if (det.open) closedKeys.delete(g.key); else closedKeys.add(g.key); });
-          card.append(det);
+          det.open = openKeys.has(g.key);
+          det.addEventListener("toggle", () => { if (det.open) openKeys.add(g.key); else openKeys.delete(g.key); });
+          more.append(det);
         }
+        const card = h("div", { class: "warn revcard", style: "margin-bottom:.5rem" },
+          h("div", { class: "revhead" }, h("b", {}, title), h("span", { class: "revsum" }, `${fmt(g.sum)} BYN · ${items.length} ${opsWord(items.length)}` + (recurCount ? " · ↻" : ""))),
+          h("div", { style: "margin-top:.3rem" }, chooser(scopeText(sc), (cat, icon) => setRule(g.tx, cat, icon))),
+          more);
         box.append(card);
       }
       if (list.length > reviewLimit) {
         box.append(h("p", {}, `Показаны первые ${reviewLimit} групп из ${list.length}: самые крупные сверху. `,
-          h("button", { type: "button", onclick: () => { reviewLimit += PAGE_GROUPS; renderReview(); } }, `Показать ещё ${Math.min(PAGE_GROUPS, list.length - reviewLimit)}`)));
+          h("button", { type: "button", onclick: () => { reviewLimit += REVIEW_GROUPS; renderReview(); } }, `Показать ещё ${Math.min(REVIEW_GROUPS, list.length - reviewLimit)}`)));
       }      renderIncome();
     }
 
