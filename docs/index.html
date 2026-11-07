@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-huo34h9LmeBIHKra1kUxlk8qLwj8Fd75tq3KZXUchH4=' 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-3RvB6z2Bhw/xp44VLTJv/CwbaciJGRukP6eSYAStKvE=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-8uapMn8+laWlQU9legupF5vKTUgt5WtIbPeIM/rcyxs=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-iCNJuB8ZNUOLWdWqatTyVetsW7UP1sKqvG4xQ9701Uc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-0EMYNTvjPqlgG5huQV14MJWs3nkGRVn59mab/iXEmQk=' 'sha256-VZsz1i9wb1SmdNWm03w8X8KMHJx/iDPmu2+Odl4DBaM=' 'sha256-8wiSIVjg3oOqFoy/9G8CMTDTHQ8Po1OWY5+fo0pDXlI='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-huo34h9LmeBIHKra1kUxlk8qLwj8Fd75tq3KZXUchH4=' 'sha256-knzdqX8Lcxrkma7USPkQO12P7Mbv+IrPtrY35sQcSEg=' 'sha256-G9T4Vd5zyTx2FiqsBxgpu2wnGn5EAEJcYLYuO7gkO7k=' 'sha256-IjmTeZeOmYaHUfqH5kA5ju/EKw624imWXozLdfRY1mU=' 'sha256-3RvB6z2Bhw/xp44VLTJv/CwbaciJGRukP6eSYAStKvE=' 'sha256-1XrjvbNcTCFPmFIuDm9Ro0U7x7nM/gRt7Sl4YOp7abo=' 'sha256-8uapMn8+laWlQU9legupF5vKTUgt5WtIbPeIM/rcyxs=' 'sha256-tyRjz2MzmudzaEzwSuvItbt9ka3hsDIf+VN+HtJRWek=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-geew4STRHj/zQ3wEWqGL9iAnKSPitrxAwS4XtH2EazQ=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-iCNJuB8ZNUOLWdWqatTyVetsW7UP1sKqvG4xQ9701Uc=' 'sha256-iiVuv980i+bfjmrNvO0BJGkwKbhBHkYr3vgR5EeUdy0=' 'sha256-oXeoDTEC2uq+pyp45ygoAZkAUONQWPgS0VcXRCM44sk=' 'sha256-vN5ajm5vsTfLifRUyrgrnnexVd/5wPT1fxGg+zv6cJ8=' 'sha256-vP4td8VPbrqt647r0KNobVhYQ2b+19pDA7V0ZflNTyY=' 'sha256-0EMYNTvjPqlgG5huQV14MJWs3nkGRVn59mab/iXEmQk=' 'sha256-VZsz1i9wb1SmdNWm03w8X8KMHJx/iDPmu2+Odl4DBaM=' 'sha256-BZPqu9o6ScezrLlI0OCwj2LBvt5WHHH/kOpl7jsWsrw='; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover">
   <meta name="theme-color" id="themeMetaL" content="#EEF0F2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" id="themeMetaD" content="#0E0F11" media="(prefers-color-scheme: dark)">
@@ -87,6 +87,7 @@
     select, input[type=text] { padding: .25rem; max-width: 14rem; }
     button { padding: .3rem .8rem; cursor: pointer; }
     .muted { color: var(--muted); font-size: .85rem; }
+    .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
     ul.insights li { margin-bottom: .3rem; }
     #plan details { margin: .6rem 0; border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem .8rem; }
     #plan summary { cursor: pointer; font-weight: 600; }
@@ -581,7 +582,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.37, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.38, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <script type="module">
 /**
@@ -3452,7 +3453,11 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
       // Сверка свёрнута: если всё сошлось, хватает одной строки; при расхождении раскрыта сразу
       const sum = ok ? `Сверка итогов с выпиской: всё сходится ✓ (выписок: ${statements.length}, операций: ${txs.length})` : "Сверка итогов с выпиской: есть расхождения ✗";
       const det = h("details", ok ? {} : { open: "" }, h("summary", { style: "cursor:pointer" }, sum), ...lines);
-      box.replaceChildren(det);
+      // Банки, у которых мало образцов: честно предупреждаем, что возможны ошибки
+      const fresh = statements.some(st => st.bank === "alfa") ? [h("p", { class: "muted", style: "margin:.6rem 0 0" },
+        "Альфа-Банк подключён недавно, образцов выписок пока мало (проверены кредитная карта и карта с несколькими операциями), поэтому чтение может быть неточным. Если заметили ошибку или пропущенную операцию, ",
+        h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "отправьте образец выписки"), ".")] : [];
+      box.replaceChildren(det, ...fresh);
     }
 
     // ---------- Траты по категориям: за весь период и по месяцам ----------
@@ -4702,7 +4707,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.37", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.38", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }

@@ -87,6 +87,7 @@
     select, input[type=text] { padding: .25rem; max-width: 14rem; }
     button { padding: .3rem .8rem; cursor: pointer; }
     .muted { color: var(--muted); font-size: .85rem; }
+    .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
     ul.insights li { margin-bottom: .3rem; }
     #plan details { margin: .6rem 0; border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem .8rem; }
     #plan summary { cursor: pointer; font-weight: 600; }
@@ -581,7 +582,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.37, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.38, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1382,7 +1383,11 @@
       // Сверка свёрнута: если всё сошлось, хватает одной строки; при расхождении раскрыта сразу
       const sum = ok ? `Сверка итогов с выпиской: всё сходится ✓ (выписок: ${statements.length}, операций: ${txs.length})` : "Сверка итогов с выпиской: есть расхождения ✗";
       const det = h("details", ok ? {} : { open: "" }, h("summary", { style: "cursor:pointer" }, sum), ...lines);
-      box.replaceChildren(det);
+      // Банки, у которых мало образцов: честно предупреждаем, что возможны ошибки
+      const fresh = statements.some(st => st.bank === "alfa") ? [h("p", { class: "muted", style: "margin:.6rem 0 0" },
+        "Альфа-Банк подключён недавно, образцов выписок пока мало (проверены кредитная карта и карта с несколькими операциями), поэтому чтение может быть неточным. Если заметили ошибку или пропущенную операцию, ",
+        h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "отправьте образец выписки"), ".")] : [];
+      box.replaceChildren(det, ...fresh);
     }
 
     // ---------- Траты по категориям: за весь период и по месяцам ----------
@@ -2632,7 +2637,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.37", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.38", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
