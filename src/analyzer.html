@@ -258,7 +258,7 @@
         <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
         <p id="anonStatus" class="muted"></p>
         <div id="anonWork" hidden>
-          <p><span id="anonStats"></span> Нажмите на фрагмент, чтобы закрыть или показать его. <b>Закрытое выглядит как ▮▮▮ и в образец не попадёт.</b></p>
+          <p><span id="anonStats"></span> Нажмите на фрагмент, чтобы закрыть его (или снова открыть, если закрыли сами). <b>Закрытое выглядит как ▮▮▮ и в образец не попадёт. То, что сайт узнал сам (ФИО, счета, карты, телефоны, адреса), закрывается всегда и не открывается; закрыть ещё что-то можно вручную. За то, что сайт не узнал и вы не закрыли, отвечаете вы.</b></p>
           <p id="anonPager"></p>
           <div id="anonPage" class="anonpage"></div>
           <p><label><input type="checkbox" id="anonOk" disabled> Я сам просмотрел все страницы образца, ФИО, номера счетов и карт, адреса и телефоны скрыты, меня всё устраивает. Я согласен, что образец будет использован только для создания чтения моего банка, не будет публиковаться и будет удалён.</label></p>
@@ -2177,6 +2177,7 @@
       const c = e.target.closest ? e.target.closest(".achip") : null;
       if (!c || !anon) return;
       const it = anon.model[anon.page][+c.dataset.r][+c.dataset.c];
+      if (Anon.isAutoHidden(it)) { $("anonHint").textContent = "Это сайт закрыл сам (ФИО, счёт, карта, телефон, адрес и т.п.): такие данные в образце скрываются всегда. Можно только закрыть ещё что-то."; return; }
       it.manual = !Anon.isHidden(it);
       $("anonOk").checked = false;
       c.className = "achip" + (Anon.isHidden(it) ? " hid" : "");

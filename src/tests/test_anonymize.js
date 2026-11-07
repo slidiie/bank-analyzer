@@ -45,11 +45,15 @@ const it = rows[1][1];
 it.manual = true;
 ok(A.effective(it) === B.repeat(7), "ручное скрытие заменяет буквы знаками, длина сохраняется");
 it.manual = false;
-ok(A.effective(it) === "EVROOPT", "ручное «показать» возвращает текст");
+ok(A.effective(it) === "EVROOPT", "ручное «показать» возвращает обычный текст");
 ok(A.effective(rows[0][1]) === "Тест Т. Т.".replace(/\S/g, B), "автоскрытое значение заменено знаками");
 rows[0][1].manual = false;
-ok(A.effective(rows[0][1]) === "Тест Т. Т.", "автоскрытое можно показать вручную");
+ok(A.effective(rows[0][1]) === "Тест Т. Т.".replace(/\S/g, B), "автоскрытое открыть нельзя, даже если manual=false");
 rows[0][1].manual = null;
+const forced = A.groupRows([{ x: 1, y: 1, vx: 1, vy: 1, text: iban }])[0][0];
+forced.manual = false;
+ok(A.effective(forced) === hideAll(iban) && A.isAutoHidden(forced), "IBAN нельзя открыть никак");
+function hideAll(x) { return x.replace(/\S/g, B); }
 
 // Образец: исходного текста скрытого нет нигде
 const model = [[[A_item(iban), A_item("Сумма 10.00")]]];
