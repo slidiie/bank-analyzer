@@ -71,6 +71,20 @@
     #rulesList .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
     #rulesList .prow .pname { flex: 1 1 12rem; }
     #plan .result { font-size: 1.1rem; margin: .5rem 0; }
+    details.sect { margin: 1.2rem 0 0; }
+    details.sect > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: .5rem; }
+    details.sect > summary::-webkit-details-marker { display: none; }
+    details.sect > summary::before { content: "▸"; transition: transform .15s; }
+    details.sect[open] > summary::before { transform: rotate(90deg); }
+    details.sect > summary h2 { margin: 0; display: inline; }
+    #tabbar { display: none; }
+    @media (max-width: 768px) {
+      #tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--bg, Canvas); border-top: 1px solid var(--ctl-border); padding-bottom: env(safe-area-inset-bottom); }
+      #tabbar button { flex: 1 1 0; min-width: 0; border: 0; border-radius: 0; background: none; color: inherit; padding: .7rem .2rem; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      #tabbar button.active { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+      main { padding-bottom: 4.5rem; }
+    }
+    @media (max-width: 380px) { #tabbar button { font-size: .72rem; padding: .7rem 0; } }
     .nav { margin: .75rem 0; }
     .nav a { margin-right: 1.2rem; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
     .nav a:hover { text-decoration-thickness: 2px; }
@@ -234,14 +248,13 @@
   <main id="app">
     <h2 id="appTitle">Ваш анализ</h2>
     <p class="note">
-      Выписки обрабатываются <b>только в вашем браузере</b> и никуда не отправляются.
-      Ваш выбор категорий запоминается в этом же браузере.
+      Выписки обрабатываются <b>только в вашем браузере</b> и никуда не отправляются; выбор категорий запоминается там же.
+      Можно выбрать сразу несколько файлов или добавлять по одному: повторы пропускаются.
     </p>
     <p>
       <input type="file" id="file" accept="application/pdf,.pdf,.csv,text/csv" multiple aria-label="Выберите файлы выписок (PDF или CSV)">
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
     </p>
-    <p class="muted">Можно выбрать сразу несколько файлов или добавлять выписки по одной: повторы пропускаются.</p>
     <p id="status"></p>
     <div id="mergeNote" class="note" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
@@ -251,6 +264,7 @@
 
 
   <div id="report" hidden>
+    <nav id="tabbar" aria-label="Разделы"></nav>
     <div id="reviewBanner" class="warn" hidden style="margin-bottom:.8rem"></div>
     <div id="check"></div>
     <div class="nav" id="nav"></div>
@@ -264,9 +278,8 @@
         <h3 style="margin-top:0">Нужно разобрать <span id="reviewCount"></span></h3>
         <div id="reviewOther" class="muted" style="margin-bottom:.6rem"></div>
         <div id="reviewTools" style="margin-bottom:.8rem"></div>
-        <p class="muted">Похожие операции собраны в группы, самые крупные сверху. Выберите категорию для всей группы; детали и операции по отдельности
-          под «Подробнее». Своя категория создаётся в панели «Новая категория» выше. ↻: такая сумма повторялась в разные месяцы (аренда, связь, подписка).
-          Непонятное и мелкое: «В «Прочее»». Разобранное переходит во вкладку «Все операции».</p>
+        <p class="muted">Похожие операции собраны в группы, крупные сверху: выберите категорию сразу для всей группы. ↻ — сумма повторялась в разные месяцы.
+          Непонятное и мелкое отправляйте «В «Прочее»».</p>
         <div id="review"></div>
       </div>
       <div id="incomeSection">
@@ -277,16 +290,20 @@
       </div>
       <div id="allPanel">
         <h3 id="allSummary" style="margin-top:0">Все операции</h3>
-        <p class="muted">Категорию любой операции можно изменить: изменение касается только этой операции.</p>
+        <p class="muted">Категория меняется только у выбранной операции.</p>
         <div id="allFilter"></div>
         <div id="all"></div>
       </div>
     </div>
     <p class="muted" id="roughNote" hidden></p>
-    <h2 id="insightsTitle">Выводы</h2>
-    <ul class="insights" id="insights"></ul>
-    <h2 id="planTitle">Планирование</h2>
-    <div id="plan"></div>
+    <details class="sect" id="insightsBox" open>
+      <summary><h2 id="insightsTitle">Выводы</h2></summary>
+      <ul class="insights" id="insights"></ul>
+    </details>
+    <details class="sect" id="planBox" open>
+      <summary><h2 id="planTitle">Планирование</h2></summary>
+      <div id="plan"></div>
+    </details>
     <div id="exportBox">
       <h3>Выгрузить в таблицу</h3>
       <p class="muted">Файлы CSV открываются в Excel и Google Таблицах. Переводы между своими и «Дал в долг» в расходы не входят и помечены отдельно.</p>
@@ -954,7 +971,7 @@
       $("catCreator").hidden = !bottomOpen;
       const rough = $("roughNote");
       rough.hidden = !(reviewOps > 0);
-      if (reviewOps > 0) rough.textContent = `Выводы и планирование ниже приблизительные: ещё не разобрано ${reviewOps} ${opsWord(reviewOps)}. Чем больше разобрано выше, тем точнее картина.`;
+      if (reviewOps > 0) rough.textContent = `Выводы и планирование приблизительные: не разобрано ${reviewOps} ${opsWord(reviewOps)}.`;
       $("reviewSection").hidden = !bottomOpen || bottomTab !== "review";
       $("incomeSection").hidden = !bottomOpen || bottomTab !== "income";
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";
@@ -990,6 +1007,7 @@
         link("#secSummary", "Траты", () => $("secSummary").scrollIntoView({ behavior: "smooth", block: "start" })),
         reviewOps || reviewOther ? link("#bottom", `Нужно разобрать (${reviewOps})`, () => openBottom("review")) : "",
         link("#bottom", "Все операции", () => openBottom("all")));
+      if (typeof renderTabbar === "function") renderTabbar();
     }
 
     function renderCheck() {
@@ -2099,6 +2117,29 @@
       $("backupMsg").textContent = "Категории и выбор по операциям сброшены.";
       if (txs.length) render(); else renderRules();
     });
+    // Сворачиваемые «Выводы» и «Планирование»: выбор запоминается; на телефоне «Планирование» по умолчанию свёрнуто
+    const SECT_KEY = "ba_sect_v1";
+    const sectSaved = loadJSON(SECT_KEY, {});
+    const narrow = () => typeof window !== "undefined" && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+    for (const id of ["insightsBox", "planBox"]) {
+      const d = $(id);
+      d.open = id in sectSaved ? !!sectSaved[id] : !(id === "planBox" && narrow());
+      d.addEventListener("toggle", () => { sectSaved[id] = d.open; saveJSON(SECT_KEY, sectSaved); renderTabbar(); });
+    }
+    // Нижняя панель разделов (только телефон, CSS); подсвечивает раздел, который сейчас на экране
+    function goSect(id) {
+      const el = $(id);
+      if (el.tagName === "DETAILS") el.open = true;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function renderTabbar() {
+      const bar = $("tabbar");
+      const btn = (label, action) => h("button", { type: "button", onclick: action }, label);
+      const items = [btn("Траты", () => goSect("secSummary"))];
+      if (reviewOps || reviewOther) items.push(btn("Разобрать", () => openBottom("review")));
+      items.push(btn("Операции", () => openBottom("all")), btn("Выводы", () => goSect("insightsBox")), btn("План", () => goSect("planBox")));
+      bar.replaceChildren(...items);
+    }
     renderRules();
     renderMergeNote();
   </script>
