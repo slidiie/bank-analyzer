@@ -321,7 +321,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.19, поддержка Беларусбанка (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.22, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -344,17 +344,20 @@
       const lib = window.pdfjsLib;
       if (!lib) throw new Error("не удалось запустить чтение PDF: обновите браузер");
       const opts = { isEvalSupported: false };
-      let port = null;
+      let port = null, task = null, timer = null;
       try {
         const src = document.getElementById("pdfWorkerModule").textContent;
         port = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })), { type: "module" });
         const dead = new Promise((_, reject) => port.addEventListener("error", () => reject({ workerFailed: true }), { once: true }));
-        const task = lib.getDocument({ ...opts, data: bytes.slice(), worker: new lib.PDFWorker({ port }) });
-        return await Promise.race([task.promise, dead]);
+        // На iPhone и в «песочницах» Worker иногда не запускается молча, без ошибки: через 6 с переходим на чтение в основном потоке.
+        const slow = new Promise((_, reject) => { timer = setTimeout(() => reject({ workerFailed: true }), 6000); });
+        task = lib.getDocument({ ...opts, data: bytes.slice(), worker: new lib.PDFWorker({ port }) });
+        return await Promise.race([task.promise, dead, slow]);
       } catch (err) {
         if (!(err && err.workerFailed) && !(err instanceof DOMException)) throw err;   // настоящая ошибка PDF (пароль, повреждён)
+        try { if (task) task.destroy(); } catch (e) { /* уже закрыто */ }
         try { if (port) port.terminate(); } catch (e) { /* уже закрыт */ }
-      }
+      } finally { clearTimeout(timer); }
       return lib.getDocument({ ...opts, data: bytes }).promise;
     }
 
@@ -1699,6 +1702,7 @@
       if (isCsv) return readCsv(file);
       if (!isPdf) throw new Error("формат не поддерживается. Скачайте выписку из интернет-банка в формате PDF (CSV сейчас читается только у Приорбанка, Excel и Word не поддерживаются)");
       let pdf;
+      $("status").textContent = `${label}Открываю PDF…`;
       try {
         pdf = await openPdf(new Uint8Array(await file.arrayBuffer()));
       } catch (err) {
