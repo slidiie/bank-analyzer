@@ -161,6 +161,8 @@
       .details { max-width: 100%; }
       #all { overflow-x: auto; }
       .pie .legend, .pieleft { min-width: 0; }
+      .pie .legend { flex: 1 1 100%; }   /* легенда всегда под диаграммой, а не в щели шириной 8 px рядом с ней (iPhone 390 px) */
+      .pie svg.donut { margin: 0 auto; display: block; }
       .suggest { max-width: calc(100vw - 2rem); }
       .modalcard { padding: 1rem; }
       input[type=text], select { max-width: 100%; }
@@ -169,7 +171,8 @@
        иначе iOS уменьшает страницу и отключает мобильные правила выше. */
     html { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
     body { overflow-wrap: anywhere; }
-    .pie .lname, .pname, .pnote, .lrow > span, summary, td, th { overflow-wrap: anywhere; min-width: 0; }
+    .pname, .pnote, summary, td, th { overflow-wrap: anywhere; min-width: 0; }
+    .pie .lname, .lrow > span { overflow-wrap: break-word; min-width: 0; }
     button, .tab { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
   </style>
 </head>
@@ -327,7 +330,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.24, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.25, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <script type="module">
 /**
