@@ -344,7 +344,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.28, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted" id="build">Версия страницы: v4.29, ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -798,6 +798,25 @@
     function ruleLabel(key) {
       const text = key.slice(key.indexOf("|") + 1).replace(/СЧЁТ (\d{4})-[0-9a-z]+/i, "Счёт …$1").trim();
       return (text || "(без названия)").slice(0, 70);
+    }
+    // Заголовок группы в «Нужно разобрать»: сначала то, что понятно человеку (что за операция), цифры счёта и карты потом.
+    // Было «Счёт …3456 ПОПОЛНЕНИЕ КАРТОЧКИ», стало «Пополнение карточки → счёт …3456».
+    const sentence = s => { const t = String(s || "").trim().toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); };
+    function friendlyTitle(tx) {
+      const rc = Cat.recipient(tx);
+      if (rc) return (rc.op ? sentence(rc.op) : "Платёж в интернет-банке") + ` → счёт …${rc.last4}`;
+      if (Cat.isErip(tx)) return `Платёж через ЕРИП, ${fmt(Math.abs(tx.amount))} BYN`;
+      if (/списание при переводе/i.test(tx.details || "")) return "Списание при переводе";
+      // Остальное: название места без хвоста «MINSK BY» и без общей фразы «Оплата товаров и услуг»
+      return ruleLabel(Cat.merchantKey(tx)).replace(/\s+(MINSK|МИНСК)\s+BY\b/i, " ").replace(/\s*ОПЛАТА ТОВАРОВ И УСЛУГ\s*$/i, "").replace(/\s+BY\s*$/i, "").replace(/\s+/g, " ").trim() || "Без названия";
+    }
+    // Когда и как часто повторяется группа: по этому часто видно, что это (аренда, связь, подписка)
+    function rhythmText(items) {
+      const months = new Set(items.map(t => (t.date || "").slice(0, 7)).filter(Boolean));
+      if (items.length < 2 || months.size < 2) return "";
+      const days = items.map(t => parseInt((t.date || "").slice(8, 10), 10)).filter(Number.isFinite).sort((a, b) => a - b);
+      const day = days.length ? days[Math.floor(days.length / 2)] : null;
+      return `в ${months.size} мес.` + (day ? `, обычно около ${day}-го числа` : "");
     }
     function renderRules() {
       const box = $("rulesList");
@@ -1515,7 +1534,8 @@
         const recurCount = items.filter(t => recurLabel(t)).length;
 
         const sc = ruleScope(g.tx);
-        const title = ruleLabel(Cat.merchantKey(g.tx));
+        const title = friendlyTitle(g.tx);
+        const rhythm = rhythmText(items);
         const rec = Cat.recipient(g.tx);
         // Всё второстепенное спрятано под «Подробнее»: на виду название, сумма и выбор категории (две строки)
         const more = h("details", { class: "revmore" },
@@ -1548,6 +1568,7 @@
         }
         const card = h("div", { class: "warn revcard", style: "margin-bottom:.5rem" },
           h("div", { class: "revhead" }, h("b", {}, title), h("span", { class: "revsum" }, `${fmt(g.sum)} BYN · ${items.length} ${opsWord(items.length)}` + (recurCount ? " · ↻" : ""))),
+          rhythm ? h("div", { class: "muted" }, rhythm) : "",
           h("div", { style: "margin-top:.3rem" }, chooser(scopeText(sc), (cat, icon) => setRule(g.tx, cat, icon))),
           more);
         box.append(card);
