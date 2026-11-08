@@ -9,9 +9,9 @@
   // Результат: left (осталось, может быть < 0), daysLeft, perDay (сколько можно тратить в день, null если лимит уже выбран или месяц кончился),
   // projected (прогноз на конец месяца при том же темпе, null если данных мало или месяц закончился), level: ok / warn / over / risk.
   // risk: пока в рамках лимита, но при том же темпе выйдем за него.
-  function pace({ limit, spent, day, dim }) {
+  function pace({ limit, spent, day, dim, closed }) {
     if (!(limit > 0)) return null;
-    const s = Math.max(0, spent || 0), daysLeft = Math.max(0, dim - day), left = limit - s;
+    const s = Math.max(0, spent || 0), daysLeft = closed ? 0 : Math.max(0, dim - day), left = limit - s;   // closed: месяц по календарю уже прошёл, даже если выписка обрывается раньше
     const pct = s / limit * 100;
     const finished = daysLeft === 0;
     const projected = !finished && day >= MIN_DAYS && s > 0 ? r2(s / day * dim) : null;
@@ -47,11 +47,20 @@
   const ORDER = { over: 0, risk: 1, warn: 2, ok: 3 };
   // Строки для блока: по каждому лимиту темп, самые тревожные сверху.
   // spentBy: { категория: сумма за месяц }, budgets: { категория: лимит }.
-  function rows({ budgets, spentBy, day, dim }) {
+  function rows({ budgets, spentBy, day, dim, closed }) {
     return Object.keys(budgets || {}).map(cat => {
-      const p = pace({ limit: budgets[cat], spent: (spentBy || {})[cat] || 0, day, dim });
+      const p = pace({ limit: budgets[cat], spent: (spentBy || {})[cat] || 0, day, dim, closed });
       return p ? Object.assign({ cat }, p) : null;
     }).filter(Boolean).sort((a, b) => ORDER[a.level] - ORDER[b.level] || b.pct - a.pct);
+  }
+
+  // Короткая сводка для строки на обзоре: сколько лимитов превышено / близко / в норме.
+  function summary(list, closed) {
+    const n = list.length, over = list.filter(r => r.level === "over").length;
+    const near = list.filter(r => r.level === "warn" || r.level === "risk").length;
+    if (over) return { level: "over", over, near, n };
+    if (near && !closed) return { level: "warn", over, near, n };
+    return { level: "ok", over, near, n };
   }
 
   // Общая сумма лимитов и трат по ним, чтобы показать «вложились в общий бюджет или нет»
@@ -60,7 +69,7 @@
     return { limit: r2(limit), spent: r2(spent), left: r2(limit - spent) };
   }
 
-  const api = { pace, suggestLimit, historyValues, rows, totals, MIN_DAYS };
+  const api = { pace, suggestLimit, historyValues, rows, totals, summary, MIN_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Goals = api;
 })(typeof self !== "undefined" ? self : this);

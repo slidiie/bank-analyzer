@@ -37,4 +37,14 @@ check("строки: сначала превышено, потом по доле
 const tt = G.totals(rs);
 check("итоги по лимитам", tt.limit === 450 && tt.spent === 275 && tt.left === 175);
 check("пустые лимиты: пусто", G.rows({ budgets: {}, spentBy: {}, day: 5, dim: 30 }).length === 0);
+// Прошедший по календарю месяц: выписка оборвалась на 8-м числе, но месяц закрыт (closed)
+const pc = G.pace({ limit: 100, spent: 150, day: 8, dim: 28, closed: true });
+check("прошедший месяц: закончен, без «осталось дней» и прогноза", pc.finished === true && pc.daysLeft === 0 && pc.projected === null && pc.perDay === null && pc.level === "over");
+const po = G.pace({ limit: 100, spent: 150, day: 8, dim: 28 });
+check("идущий месяц: не закончен", po.finished === false && po.daysLeft === 20);
+check("прошедший месяц в рамках лимита остаётся ok", G.pace({ limit: 100, spent: 50, day: 8, dim: 28, closed: true }).level === "ok");
+const rc = G.rows({ budgets: { "Кафе": 50, "Такси": 100 }, spentBy: { "Кафе": 80, "Такси": 10 }, day: 8, dim: 28, closed: true });
+check("сводка: превышено 1 из 2", JSON.stringify(G.summary(rc, true)) === JSON.stringify({ level: "over", over: 1, near: 0, n: 2 }));
+check("сводка: всё в норме", G.summary(G.rows({ budgets: { "Кафе": 50 }, spentBy: { "Кафе": 10 }, day: 8, dim: 28, closed: true }), true).level === "ok");
+check("сводка: близко к лимиту в идущем месяце", G.summary(G.rows({ budgets: { "Кафе": 50 }, spentBy: { "Кафе": 45 }, day: 20, dim: 30 }), false).level === "warn");
 process.exit(failed ? 1 : 0);
