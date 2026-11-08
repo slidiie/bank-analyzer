@@ -38,11 +38,57 @@
       out.push({
         amount: Number(k), count: list.length, months: months.size,
         day: days[Math.floor(days.length / 2)],
+        dates: [...new Set(list.map(t => t.date))].sort(),
         perMonth: Number(k) * list.length / months.size,
         name: top(list.map(t => t.name || "")), cat: top(list.map(t => t.cat)),
       });
     }
     return out.sort((a, b) => b.perMonth - a.perMonth);
+  }
+
+  // ---------- Расписание списаний: шаг между прошлыми платежами и дата следующего ----------
+  const DAY_MS = 86400000;
+  const ms = d => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10));
+  const iso = t => new Date(t).toISOString().slice(0, 10);
+  const daysBetween = (a, b) => Math.round((ms(b) - ms(a)) / DAY_MS);
+  const addDays = (d, n) => iso(ms(d) + n * DAY_MS);
+  const daysInMonth = ym => new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).getUTCDate();
+  const median = a => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+  // Платёж r из findRegular: даты берём у всех операций той же суммы (items), в том числе в неполных месяцах вне окна.
+  // «Раз в месяц»: медиана промежутков 20–40 дней и не меньше 60% промежутков от 15 до 46 дней (число «плавает» из-за выходных, лишнее списание не мешает).
+  //   Следующая дата: число последних платежей (медиана трёх последних) в следующем месяце, а в коротком месяце последний день.
+  // «Каждые N дней»: шаг (медиана промежутков) меньше 36 дней, не меньше 60% промежутков в пределах ±25% от него.
+  // Иначе kind = "irregular": это частая покупка на одну сумму, а не расписание, даты next нет.
+  // dataEnd: последняя дата в выписке. Если ожидаемая дата уже прошла внутри выписки (с запасом 3 дня), а платежа не было, skipped = true.
+  // Меньше двух дат: null.
+  function schedule(r, items, dataEnd, skipCats) {
+    const skip = skipCats || [];
+    const key = r.amount.toFixed(2);
+    const set = new Set(r.dates || []);
+    for (const t of items || []) {
+      if (t.amount < 0 && t.date && (-t.amount).toFixed(2) === key && !skip.includes(t.cat)) set.add(t.date);
+    }
+    const dates = [...set].sort();
+    if (dates.length < 2) return null;
+    const gaps = [];
+    for (let i = 1; i < dates.length; i++) gaps.push(daysBetween(dates[i - 1], dates[i]));
+    const step = median(gaps);
+    const last = dates[dates.length - 1];
+    const monthly = step >= 20 && step <= 40 && gaps.filter(g => g >= 15 && g <= 46).length >= gaps.length * 0.6;
+    const even = step >= 1 && step < 36 && gaps.filter(g => g >= step * 0.75 && g <= step * 1.25).length >= gaps.length * 0.6;
+    let next, kind;
+    if (monthly) {
+      kind = "month";
+      const ym = addMonths(last.slice(0, 7), 1);
+      const days = dates.slice(-3).map(d => +d.slice(8));
+      const day = Math.min(days.length < 3 ? days[days.length - 1] : median(days), daysInMonth(ym));
+      next = ym + "-" + String(day).padStart(2, "0");
+    } else if (even) {
+      kind = "days";
+      next = addDays(last, step);
+    } else return { kind: "irregular", step, last, next: null, dates, skipped: false };
+    return { kind, step, last, next, dates, skipped: !!dataEnd && daysBetween(next, dataEnd) > 3 };
   }
 
   // Прогноз на основе полных месяцев: средние траты и разброс. Меньше двух полных месяцев: null.
@@ -85,7 +131,7 @@
     return { base, scenario, delta: hasScenario ? scenario - base : null };
   }
 
-  const api = { addMonths, findRegular, forecast, budgetStatus, savingsPlan, savingsCheck, leftover };
+  const api = { addMonths, findRegular, schedule, daysBetween, forecast, budgetStatus, savingsPlan, savingsCheck, leftover };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Planner = api;
 })(typeof self !== "undefined" ? self : this);

@@ -334,7 +334,7 @@ clickButton(byId["bottomTabs"], "Все операции");
 check("клик по вкладке снова: список открыт", byId["allPanel"].hidden === false);
 
 // ---- Разделы-экраны и панель разделов ----
-check("панель: пять разделов", ["Обзор", "Разобрать", "Выводы", "Планирование", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)));
+check("панель: шесть разделов", ["Обзор", "Разобрать", "Выводы", "Подписки", "Планирование", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)));
 vm.runInContext(`curSection = "overview"; render();`, ctx);
 check("панель: у «Обзора» отмечен текущий раздел", vm.runInContext("curSection", ctx) === "overview" && byId["tabbar"].children[0].className === "active");
 clickButton(byId["tabbar"], "Выводы");
@@ -552,6 +552,28 @@ check("история: без истории строки сравнения н�
 vm.runInContext(`historyStore = { "2026-10": { first: 1, last: 31, total: 400, days: { 2: 100 }, cats: {} } }; demoMode = true;`, ctx);
 check("история: в демо сравнения нет", !headText().includes("по истории на этом устройстве"));
 vm.runInContext(`demoMode = false;`, ctx);
+
+// ---- Раздел «Подписки» ----
+clickButton(byId["tabbar"], "Подписки");
+check("раздел «Подписки»: data-view", document.body.attrs["data-view"] === "subs");
+vm.runInContext(`
+  header = { from: "2026-07-01", to: "2026-10-31" };
+  txs = [
+    { date: "2026-07-07", time: "10:00:00", amount: -30, mcc: "4899", details: "STREAM SERVICE", balance: 1 },
+    { date: "2026-08-07", time: "10:00:00", amount: -30, mcc: "4899", details: "STREAM SERVICE", balance: 2 },
+    { date: "2026-09-07", time: "10:00:00", amount: -30, mcc: "4899", details: "STREAM SERVICE", balance: 3 },
+    { date: "2026-10-07", time: "10:00:00", amount: -30, mcc: "4899", details: "STREAM SERVICE", balance: 4 },
+    { date: "2026-07-20", time: "10:00:00", amount: -55, mcc: "5411", details: "SHOP A", balance: 5 },
+    { date: "2026-09-21", time: "10:00:00", amount: -80, mcc: "5411", details: "SHOP A", balance: 6 },
+  ];
+  render(); renderSubs();
+`, ctx);
+const subsText = textOf(byId["subs"]);
+check("подписки: сумма в месяц и число платежей", /30\.00\s*BYN/.test(subsText) && subsText.includes("регулярные платежи в месяц"));
+check("подписки: ближайшее списание 07.11", subsText.includes("Ближайшие списания") && subsText.includes("07.11"));
+check("подписки: есть полный список и оговорка про совпадение сумм", subsText.includes("Все регулярные платежи") && subsText.includes("совпадение сумм"));
+vm.runInContext(`txs = txs.slice(0, 2); header = { from: "2026-07-05", to: "2026-08-31" }; render(); renderSubs();`, ctx);
+check("подписки: мало месяцев — пояснение, а не список", textOf(byId["subs"]).includes("минимум два полных месяца") && !textOf(byId["subs"]).includes("Ближайшие списания"));
 
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
