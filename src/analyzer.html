@@ -438,7 +438,7 @@
     <details><summary>Куда отправляется моя выписка?</summary>
       <p>Никуда. PDF читается прямо в вашем браузере, на сервер ничего не загружается. Библиотека для чтения PDF (pdf.js от Mozilla, лицензия Apache 2.0) встроена в саму страницу, поэтому ничего с чужих серверов не подгружается. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда. Чтобы убедиться, отключите интернет перед загрузкой выписки: всё продолжит работать.</p></details>
     <details><summary>Что сайт запоминает?</summary>
-      <p>В памяти этого браузера (localStorage) хранятся: ваши правила категорий, свои категории и значки, лимиты бюджета и введённые числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций (он привязан к дате, времени и сумме операции). Сами выписки и операции автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора.</p></details>
+      <p>В памяти этого браузера (localStorage) хранятся: ваши правила категорий, свои категории и значки, лимиты бюджета и введённые числа калькулятора, выбранные тема и вид, итоги трат по месяцам для сравнения с прошлыми выписками (только суммы по дням и категориям, без описаний операций и без номеров счетов), а также выбор категории для отдельных операций (он привязан к дате, времени и сумме операции). Сами выписки и операции автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора.</p></details>
     <details><summary>Как всё стереть?</summary>
       <p>Кнопка «Забыть мои категории» в разделе «Ещё» удаляет ваши правила и выбор по операциям. Загруженные выписки убираются кнопкой «Убрать загруженные выписки» или просто закрытием вкладки. Полностью очистить сохранённое можно в настройках браузера: «Данные сайтов».</p></details>
     <details><summary>Что в файле разбора?</summary>
@@ -641,7 +641,7 @@
     <div id="resetBox" class="modal" hidden>
       <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
         <p id="resetTitle" style="margin-top:0;font-size:1.15rem"><b>Забыть все ваши категории и выбор по операциям?</b></p>
-        <p>Это нельзя отменить. Если вы не сохраняли разбор в файл, он пропадёт.</p>
+        <p>Это нельзя отменить. Если вы не сохраняли разбор в файл, он пропадёт. История месяцев для сравнения («на N% больше, чем в прошлом месяце») тоже сотрётся.</p>
         <div class="modalbtns">
           <button id="resetSave" type="button">Сначала сохранить разбор в файл</button>
           <button id="resetYes" type="button">Да, забыть</button>
@@ -686,7 +686,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.48, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.49, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -704,6 +704,7 @@
   <script src="export.js"></script>
   <script src="planner.js"></script>
   <script src="backup.js"></script>
+  <script src="history.js"></script>
   <script src="anonymize.js"></script>
   <script>
     // Чтение PDF: библиотека pdf.js встроена в страницу (build.py), из интернета ничего не подгружается.
@@ -1434,6 +1435,7 @@
       $("shareBox").hidden = !txs.length;
       $("resetRow").hidden = demoMode;
       recurring = findRecurring();
+      saveHistory();
       renderCheck();
       refreshTop();
       renderReview();
@@ -1857,6 +1859,33 @@
       return d.length ? Math.round((Date.parse(d[d.length - 1]) - Date.parse(d[0])) / 864e5) + 1 : 0;
     }
     let lastHeadline = "", lastTrend = "";
+    // История между выписками (только в этом браузере): итоги по месяцам, без описаний операций
+    let historyStore = loadJSON("ba_history_v1", {});
+    function statementSummary() {
+      const dates = txs.map(t => t.date).filter(Boolean).sort();
+      if (!dates.length) return {};
+      const sum = History.summarize(spendList(txs), { from: header.from || dates[0], to: header.to || dates[dates.length - 1], dates });
+      Object.keys(sum).forEach(ym => {
+        const m = sum[ym], full = m.first === 1 && m.last === new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+        if (full && coverageNote(ym)) delete sum[ym];   // месяц покрыт выписками не целиком: полным его не считаем
+      });
+      return sum;
+    }
+    function saveHistory() {
+      if (demoMode || !txs.length) return;
+      try { historyStore = History.merge(historyStore, statementSummary()); saveJSON("ba_history_v1", historyStore); } catch (e) { /* история необязательна */ }
+    }
+    function historyFact(ctx) {
+      if (demoMode) return null;
+      const months = ctx.months || monthsInStatement(), ym = ctx.current === undefined ? months[months.length - 1] : months[ctx.current];
+      if (!ym || months.includes(History.addMonths(ym, -1))) return null;   // прошлый месяц и так в этой выписке
+      const cur = statementSummary()[ym], prev = historyStore[History.addMonths(ym, -1)], c = History.compare(ym, cur, prev);
+      if (!c) return null;
+      const name = monthTitle(c.prevYm), d = Math.abs(c.pct);
+      const body = d < 1 ? "почти как" : `на ${d}% ${c.pct > 0 ? "больше" : "меньше"}, чем`;
+      return c.full ? `${monthTitle(ym)}: ${body} в предыдущем месяце (${name}), по истории на этом устройстве`
+        : `С ${c.a} по ${c.b} число: ${body} за те же числа в предыдущем месяце (${name}), по истории на этом устройстве`;
+    }
     function countUp(el, to) {
       const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (calm || typeof requestAnimationFrame !== "function" || typeof performance === "undefined") { el.textContent = fmt(to); return; }
@@ -1880,6 +1909,7 @@
         const body = Math.abs(d) < 1 ? `почти как в предыдущем месяце (${name})` : `на ${Math.abs(d)}% ${d > 0 ? "больше" : "меньше"}, чем в предыдущем месяце (${name})`;
         return subject ? subject + body : body.charAt(0).toUpperCase() + body.slice(1);
       };
+      try { const hf = historyFact(ctx); if (hf) facts.push(hf); } catch (e) { /* без сравнения с историей */ }
       if (days >= 2) facts.push(`В среднем ${fmt(st.total / days)} BYN в день`);
       const fullIdx = months.map((m, i) => i).filter(i => !coverageNote(months[i]));
       if (ctx.current === undefined && fullIdx.length >= 2) {
@@ -3020,7 +3050,7 @@
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") $("resetBox").hidden = true; });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
     $("resetYes").addEventListener("click", () => {
-      userRules = {}; customCats = []; txRules = {}; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
+      userRules = {}; customCats = []; txRules = {}; customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
       ownUndo.length = 0; saveJSON("ba_acctnames_v1", acctNames);
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
@@ -3161,7 +3191,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.48", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.49", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
