@@ -257,6 +257,10 @@
     .picker button.sel { background: var(--bar); color: var(--active-text); outline: 2px solid var(--bar); outline-offset: 1px; }
     .picker[hidden] { display: none; }
     .ask { margin: .45rem 0 .1rem; font-weight: 600; }
+    .recur { display: inline-block; margin-left: .5rem; padding: .05rem .55rem; border-radius: 999px; font-size: var(--fs-xs); line-height: 1.5; color: var(--details); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); white-space: nowrap; }
+    .labeled { margin-top: .6rem; }
+    .labelrow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .3rem; }
+    .labelrow input[type=text] { flex: 1 1 14rem; width: auto; max-width: 22rem; min-width: 0; padding: .45rem .7rem; border-radius: var(--r-m); }
     .tailbox { margin: .6rem 0; }
     .chips > div { margin: 0; }
     .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
@@ -809,7 +813,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.68, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.69, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1064,7 +1068,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.68";
+    const FB_VERSION = "v4.69";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1586,10 +1590,11 @@
     // Подпись счёта: чтобы через полгода было видно, что это за счёт
     function labelEditor(tx) {
       const id = acctId(tx);
-      const input = h("input", { type: "text", maxlength: "40", placeholder: "Как назвать этот счёт (например: Мама)", "aria-label": "Название счёта", value: acctNames[id] || "", autocomplete: "off" });
+      const input = h("input", { type: "text", maxlength: "40", placeholder: "Например: Мама", "aria-label": "Название счёта", value: acctNames[id] || "", autocomplete: "off" });
       const save = () => { const v = input.value.trim(); if (v) acctNames[id] = v; else delete acctNames[id]; saveJSON("ba_acctnames_v1", acctNames); render(); };
       input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
-      return h("div", {}, input, " ", h("button", { type: "button", onclick: save }, "Сохранить название"));
+      return h("div", { class: "labeled" }, h("div", { class: "muted" }, "Хотите запомнить, чей это счёт? Подпишите его (по желанию, видно только вам):"),
+        h("div", { class: "labelrow" }, input, h("button", { type: "button", onclick: save }, "Сохранить название")));
     }
     function renderRules() {
       const box = $("rulesList");
@@ -2815,7 +2820,7 @@
           h("summary", {}, "Подробнее"),
           h("div", { class: "muted" }, `${range}${range ? " · " : ""}суммы: ${amountsText}` + (g.tx.mcc ? ` · MCC ${g.tx.mcc}` : "")),
           recurCount
-            ? h("div", {}, `↻ Похоже на регулярные платежи (аренда, связь, подписка, коммуналка): повторяющихся сумм здесь ${recurCount} из ${items.length}.`)
+            ? h("div", {}, `Похоже на регулярные платежи (аренда, связь, подписка, коммуналка): повторяющихся сумм здесь ${recurCount} из ${items.length}.`)
             : "",
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
           rec ? h("div", { class: "muted" }, `Получатель: счёт …${rec.last4}` + (rec.op ? ` (${rec.op})` : "") + ".") : "",
@@ -2846,9 +2851,10 @@
         const sameAmt = amts.every(x => Math.abs(x - amts[0]) < 0.005);
         // Переводы без получателя и с разными суммами: получатели могут быть разные, поэтому по одной операции
         const split = many && !rec && isPersonTransfer(g.tx) && !Cat.isErip(g.tx) && !sameAmt;
-        const sumText = `${fmt(g.sum)} BYN` + (recurCount ? " ↻" : "");
+        const sumText = `${fmt(g.sum)} BYN`;
         const head = h("div", { class: "revhead" }, h("b", {}, title), h("span", { class: "revsum" }, sumText));
-        const sub = h("div", { class: "muted" }, `${items.length} ${opsWord(items.length)}` + (rhythm ? " · " + rhythm : ""));
+        const sub = h("div", { class: "muted" }, `${items.length} ${opsWord(items.length)}` + (rhythm ? " · " + rhythm : ""),
+          recurCount ? h("span", { class: "recur", title: "Суммы повторяются: похоже на аренду, связь, подписку или коммуналку" }, "регулярный платёж") : "");
         // Ключи для памяти: последние операции с датой и суммой видны сразу
         const last = [...items].reverse().slice(0, 3).map(t => `${dm(t.date)} · ${fmt(Math.abs(t.amount))}`).join("; ");
         const keysLine = h("div", { class: "muted" }, `Последние: ${last}` + (items.length > 3 ? `; и ещё ${items.length - 3}` : ""));
@@ -3570,7 +3576,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.68", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.69", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
