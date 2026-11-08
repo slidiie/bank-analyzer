@@ -421,6 +421,9 @@
     #howDetail h3 { margin: .8rem 0 .2rem; }
     #howDetail ul { margin: .3rem 0; padding-left: 1.2rem; }
     #howDetail li { margin: .35rem 0; }
+    .mailapps { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .mailapps .btnlink { flex: 1 1 8rem; }
+    .anonpeek { max-height: 12rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-xs); background: var(--surface-2); border-radius: var(--r-s); padding: .6rem .8rem; margin: .4rem 0 0; }
     .btnlink.alt { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
     .howback { margin-bottom: .4rem; }
     @media (max-width: 520px) {
@@ -741,16 +744,24 @@
           <p><label><input type="checkbox" id="anonOk" disabled> Я сам просмотрел все страницы образца, ФИО, номера счетов и карт, адреса и телефоны скрыты, меня всё устраивает. Я согласен, что образец будет использован только для создания чтения моего банка, не будет публиковаться и будет удалён.</label></p>
           <p>Подготовьте образец одним из способов:</p>
           <div class="wizacts">
-            <button id="anonShare" type="button" disabled hidden>Поделиться файлом</button>
+            <button id="anonShare" type="button" disabled hidden>Прикрепить к письму</button>
             <button id="anonDownload" type="button" disabled>Скачать файл</button>
             <button id="anonCopy" type="button" disabled>Скопировать образец</button>
           </div>
+          <p id="anonShareHint" class="muted" hidden>«Прикрепить к письму» открывает меню телефона: выберите в нём почтовое приложение (Почта, Gmail, Outlook). Другие приложения нам не нужны.</p>
+          <details id="anonPeek" class="howto"><summary>Посмотреть, что в файле</summary>
+            <p class="muted">Это обычный текст вашей выписки, где ФИО, номера и адреса уже закрыты. Ничего другого в файл не попадает.</p>
+            <pre id="anonPeekText" class="anonpeek"></pre></details>
           <p id="anonMadeMsg" class="muted"></p>
         </div>
         <div id="anonStep5" hidden>
           <p id="anonSendText"></p>
           <p class="note">Сейчас откроется ваше почтовое приложение с готовым письмом. <b>Ничего не отправится, пока вы сами не нажмёте «Отправить».</b> Если передумали, просто закройте письмо.</p>
-          <p><a id="anonMail" class="btnlink" href="mailto:bankanalyzer.help@gmail.com">Открыть почту</a></p>
+          <p class="mailapps"><a id="anonMail" class="btnlink" href="mailto:bankanalyzer.help@gmail.com">Почта на устройстве</a>
+            <a id="anonGmail" class="btnlink alt" href="#" target="_blank" rel="noopener">Gmail</a>
+            <a id="anonOutlook" class="btnlink alt" href="#" target="_blank" rel="noopener">Outlook</a>
+            <a id="anonYandex" class="btnlink alt" href="#" target="_blank" rel="noopener">Яндекс Почта</a></p>
+          <p class="muted">Gmail, Outlook и Яндекс Почта открывают письмо без вложения: если вы скачали файл, приложите его скрепкой. Нет почты под рукой? Отправьте с телефона или компьютера друга.</p>
           <p class="muted">Адрес: <b>bankanalyzer.help@gmail.com</b> <button id="anonCopyMail" type="button">Скопировать адрес</button></p>
           <p class="muted" id="anonMailMsg">Если почта не открылась, скопируйте адрес и отправьте письмо вручную. Сайт сам ничего не отправляет.</p>
         </div>
@@ -906,7 +917,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.73, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.74, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1162,7 +1173,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.73";
+    const FB_VERSION = "v4.74";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -3701,7 +3712,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.73", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.74", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
@@ -3715,10 +3726,10 @@
     $("anonDownload").addEventListener("click", () => {
       if (!anon || !$("anonOk").checked) return;
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([anonSampleJson()], { type: "application/json" }));
-      a.download = "образец-выписки.json";
+      a.href = URL.createObjectURL(new Blob([anonSampleJson()], { type: "text/plain;charset=utf-8" }));
+      a.download = "образец-выписки.txt";
       a.click();
-      anonMade_("file", "Готово: файл «образец-выписки.json» скачан (папка «Загрузки», на iPhone: «Файлы»). Нажмите «Далее».");
+      anonMade_("file", "Готово: файл «образец-выписки.txt» скачан (папка «Загрузки», на iPhone: «Файлы»). Нажмите «Далее».");
     });
     $("anonCopy").addEventListener("click", async () => {
       if (!anon || !$("anonOk").checked) return;
@@ -3726,30 +3737,41 @@
       else $("anonMadeMsg").textContent = "Не удалось скопировать: скачайте файл.";
     });
     // «Поделиться»: на телефоне файл сразу уходит в выбранное приложение (почту) вложением
-    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare) $("anonShare").hidden = false;
+    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare) { $("anonShare").hidden = false; $("anonShareHint").hidden = false; }
+    $("anonPeek").addEventListener("toggle", () => {
+      if (!$("anonPeek").open || !anon) return;
+      const t = anonSampleJson();
+      $("anonPeekText").textContent = t.length > 4000 ? t.slice(0, 4000) + "\n… (дальше то же самое для остальных страниц)" : t;
+    });
     $("anonShare").addEventListener("click", async () => {
       if (!anon || !$("anonOk").checked) return;
       try {
-        const f = new File([anonSampleJson()], "образец-выписки.json", { type: "application/json" });
+        const f = new File([anonSampleJson()], "образец-выписки.txt", { type: "text/plain" });
         if (!navigator.canShare({ files: [f] })) throw new Error("не поддерживается");
         await navigator.share({ files: [f], title: "Образец выписки для нового банка", text: "Образец выписки для нового банка. Отправьте на " + ANON_MAIL });
-        anonMade_("share", "Готово: файл отправлен через меню «Поделиться». Нажмите «Далее».");
+        anonMade_("share", "Готово: файл передан в выбранное приложение. Нажмите «Далее».");
       } catch (e) {
-        if (!(e && e.name === "AbortError")) $("anonMadeMsg").textContent = "Поделиться не получилось: скачайте файл или скопируйте образец.";
+        if (!(e && e.name === "AbortError")) $("anonMadeMsg").textContent = "Прикрепить не получилось: скачайте файл или скопируйте образец.";
       }
     });
     // Шаг 5: письмо с названием банка; подсказка зависит от способа
     function anonPrepareMail() {
       const bank = $("anonBank").value.trim();
       const how = anonMade;
-      const todo = how === "file" ? "Приложите файл «образец-выписки.json» (он скачался в папку загрузок)."
+      const todo = how === "file" ? "Приложите файл «образец-выписки.txt» (он скачался в папку загрузок)."
         : how === "copy" ? "Вставьте сюда скопированный образец (долгое нажатие → Вставить)."
-        : "Образец отправлен файлом из меню «Поделиться».";
+        : "Файл уже приложен через меню телефона.";
       $("anonMail").href = "mailto:" + ANON_MAIL + "?subject=" + encodeURIComponent("Образец выписки для нового банка" + (bank ? ": " + bank : "")) +
         "&body=" + encodeURIComponent("Название банка: " + bank + "\n\n" + todo + "\n\n" + ANON_CONSENT);
-      $("anonSendText").textContent = how === "file" ? "Откройте письмо и приложите скачанный файл «образец-выписки.json» (скрепка в почтовой программе). Почтовая программа файл сама не подтянет."
+      const subj = "Образец выписки для нового банка" + (bank ? ": " + bank : ""), body = "Название банка: " + bank + "\n\n" + todo + "\n\n" + ANON_CONSENT;
+      const q = (to, a, b, c) => `${a}=${encodeURIComponent(to)}&${b}=${encodeURIComponent(subj)}&${c}=${encodeURIComponent(body)}`;
+      const ios = typeof navigator !== "undefined" && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+      $("anonGmail").href = ios ? "googlegmail:///co?" + q(ANON_MAIL, "to", "subject", "body") : "https://mail.google.com/mail/?view=cm&fs=1&" + q(ANON_MAIL, "to", "su", "body");
+      $("anonOutlook").href = ios ? "ms-outlook://compose?" + q(ANON_MAIL, "to", "subject", "body") : "https://outlook.live.com/mail/0/deeplink/compose?" + q(ANON_MAIL, "to", "subject", "body");
+      $("anonYandex").href = "https://mail.yandex.ru/compose?" + q(ANON_MAIL, "to", "subject", "body");
+      $("anonSendText").textContent = how === "file" ? "Откройте письмо и приложите скачанный файл «образец-выписки.txt» (скрепка в почтовой программе). Почтовая программа файл сама не подтянет."
         : how === "copy" ? "Откройте письмо и вставьте скопированный образец в текст письма (долгое нажатие → Вставить)."
-        : "Если вы выбрали почту в меню «Поделиться», остаётся ввести адрес и отправить. Или откройте новое письмо ниже и приложите файл.";
+        : "Если вы выбрали почту в меню телефона, остаётся ввести адрес и отправить. Или откройте новое письмо ниже и приложите файл.";
     }
     $("anonCopyMail").addEventListener("click", async () => { $("anonMailMsg").textContent = (await copyText(ANON_MAIL)) ? "Адрес скопирован." : "Не удалось скопировать: выделите адрес и скопируйте вручную."; });
     $("anonBack").addEventListener("click", () => anonGo(anonStep - 1));
