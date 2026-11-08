@@ -809,7 +809,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.67, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.68, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -821,6 +821,7 @@
   <script src="prior.js"></script>
   <script src="priorcsv.js"></script>
   <script src="transfers.js"></script>
+  <script src="merchants.js"></script>
   <script src="banks.js"></script>
   <script src="demo.js"></script>
   <script src="merge.js"></script>
@@ -1063,7 +1064,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.67";
+    const FB_VERSION = "v4.68";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1486,7 +1487,11 @@
       if (/p2p|р2р/i.test(tx.details || "")) return "Перевод с карты на карту, получатель не указан";
       if (/sou sber bank/i.test(tx.details || "")) return "Платёж из приложения Сбера, получатель не указан";
       // Остальное: название места без хвоста «MINSK BY» и без общей фразы «Оплата товаров и услуг»
-      return ruleLabel(Cat.merchantKey(tx)).replace(/\s+(MINSK|МИНСК)\s+BY\b/i, " ").replace(/\s*ОПЛАТА ТОВАРОВ И УСЛУГ\s*$/i, "").replace(/\s+BY\s*$/i, "").replace(/\s+/g, " ").trim() || "Без названия";
+      // Известные места получают красивое название (merchants.js), остальные очищаются от мусора; категории и суммы не затрагиваются
+      const label = ruleLabel(Cat.merchantKey(tx));
+      const pretty = Merchants.pretty(label);
+      if (pretty) return pretty;
+      return Merchants.clean(label) || label.replace(/\s+(MINSK|МИНСК)\s+BY\b/i, " ").replace(/\s*ОПЛАТА ТОВАРОВ И УСЛУГ\s*$/i, "").replace(/\s+BY\s*$/i, "").replace(/\s+/g, " ").trim() || "Без названия";
     }
     // Что это за операция человеческим языком: направление, кто или что, и честная подсказка, если банк этого не показал
     function txWhat(tx) {
@@ -3565,7 +3570,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.67", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.68", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
