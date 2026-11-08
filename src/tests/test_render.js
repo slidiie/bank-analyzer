@@ -14,6 +14,7 @@ const Merge = require("../merge.js");
 const Exporter = require("../export.js");
 const Planner = require("../planner.js");
 const Backup = require("../backup.js");
+const History = require("../history.js");
 const lsWrites = [];
 
 // ---- Заглушка страницы ----
@@ -58,7 +59,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History,
 });
 vm.runInContext(script, ctx);
 
@@ -534,6 +535,23 @@ clickButton(byId["review"], "Да, в «Прочее»");
 check("хвост: группы ушли в «Прочее», есть плашка отмены", vm.runInContext(`Object.values(userRules).filter(v => v === "Прочее").length === 7`, ctx) && textOf(byId["undoBar"]).includes("отправлены в «Прочее»"));
 clickButton(byId["undoBar"], "Отменить");
 check("хвост: отмена возвращает прежнее состояние", vm.runInContext(`Object.keys(userRules).length === 0`, ctx));
+
+// История между выписками: сравнение с прошлым месяцем, которого нет в текущей выписке
+vm.runInContext(`demoMode = false; statements = []; activeTab = "all"; userRules = {}; txRules = {};
+  historyStore = { "2026-10": { first: 1, last: 31, total: 400, days: { 2: 100, 5: 50, 20: 200, 31: 50 }, cats: {} } };
+  header = { from: "2026-11-01", to: "2026-11-08", bank: "mtb" };
+  txs = [2, 4, 8].map((d, i) => ({ date: "2026-11-0" + d, time: "10:0" + i, amount: -[150, 50, 50][i], balance: 1, details: "ЛАВКА " + i }));
+  render();`, ctx);
+const headText = () => textOf(vm.runInContext(`headlineCard(renderSummaryCore())`, ctx));
+const hs = headText();
+check("история: «на 67% больше, чем за те же числа» и подпись об источнике", hs.includes("на 67% больше"));
+check("история: текст про числа 1–8", hs.includes("С 1 по 8 число"));
+check("история: выписка сохранила месяц, без описаний операций", vm.runInContext(`Object.keys(historyStore).includes("2026-11") && !JSON.stringify(historyStore).includes("ЛАВКА")`, ctx));
+vm.runInContext(`historyStore = {}; render();`, ctx);
+check("история: без истории строки сравнения нет", !headText().includes("по истории на этом устройстве"));
+vm.runInContext(`historyStore = { "2026-10": { first: 1, last: 31, total: 400, days: { 2: 100 }, cats: {} } }; demoMode = true;`, ctx);
+check("история: в демо сравнения нет", !headText().includes("по истории на этом устройстве"));
+vm.runInContext(`demoMode = false;`, ctx);
 
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
