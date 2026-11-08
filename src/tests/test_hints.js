@@ -27,5 +27,15 @@ check("сильно разные суммы туда и обратно: не с�
 check("пустой список и пустые группы не падают", H.transferHints([]).length === 0 && H.transferHints([{ key: "e", items: [] }]).length === 0 && H.transferHints(null).length === 0);
 check("тексты подсказок не пустые", r.every(h => h.text && h.text.length > 10));
 
+// v4.61: на сайте приход и расход лежат в разных группах (ключ со знаком): подсказка ищет встречные суммы по всем операциям
+{
+  const inn = { details: "SVOI SCHET TEST", amount: 100, date: "2026-10-05" }, out = { details: "SVOI SCHET TEST", amount: -98, date: "2026-10-06" };
+  const g = grp(Cat.merchantKey(inn), [inn]);
+  check("группа только с приходом без всех операций: подсказки нет", !H.transferHints([g], Cat).some(h => h.kind === "roundtrip"));
+  check("группа только с приходом, встречный расход в другой группе: «свои счета»", H.transferHints([g], Cat, [inn, out]).some(h => h.kind === "roundtrip"));
+  const far = { details: "SVOI SCHET TEST", amount: -10, date: "2026-10-06" };
+  check("встречный расход сильно меньше: не свои", !H.transferHints([g], Cat, [inn, far]).some(h => h.kind === "roundtrip"));
+}
+
 console.log(failed ? `\nОшибок: ${failed}` : "\nВсе проверки пройдены");
 process.exit(failed ? 1 : 0);
