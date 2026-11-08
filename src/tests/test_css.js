@@ -23,5 +23,11 @@ check("на узких экранах легенда занимает всю с�
 check("длинные слова переносятся (overflow-wrap) и страница не прокручивается вбок", /overflow-wrap:\s*anywhere/.test(css) && /html\s*\{[^}]*overflow-x:\s*clip/.test(css));
 check("карточки: minmax не шире экрана", !/minmax\(\s*\d+(\.\d+)?rem\s*,\s*1fr\)/.test(css));
 
+// Печать / PDF: правила @media print и кнопка
+check("есть @media print", /@media print\s*\{/.test(css));
+check("печать: светлая тема принудительно", /@media print\s*\{[\s\S]*color-scheme:\s*light/.test(css));
+check("печать: скрыты вкладки, кнопки и загрузка", /@media print[\s\S]*#tabbar[\s\S]*display:\s*none\s*!important/.test(css));
+check("кнопка «Печать / PDF» есть и вызывает window.print", /id="printBtn"/.test(html) && /window\.print\(\)/.test(html));
+
 if (failed) { console.log("Не пройдено проверок: " + failed); process.exit(1); }
 console.log("Все проверки пройдены.");

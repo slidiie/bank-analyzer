@@ -429,6 +429,30 @@
       .chipbtn { min-height: 44px; }
       .viewswitch button { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
     }
+    #printBtn[hidden] { display: none; }
+    /* Печать / сохранение в PDF средствами браузера: печатается открытый раздел, всегда светлая тема, без кнопок и навигации */
+    @media print {
+      html:root:not([data-p1]):not([data-p2]) {
+        color-scheme: light;
+        --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F0ECE4; --line:#CFC8BA;
+        --text:#000000; --muted:#4A453E; --details:#2D2A26;
+        --accent:#2F6554; --on-accent:#FFFFFF; --accent-ink:#2F6554;
+        --pos:#1B8052; --neg:#B8423A; --ctl-border:#8F887D; --ctl-text:#000000; --ctl-bg:#FFFFFF;
+        --tab-bg:#FFFFFF; --tab-fg:#2F6554; --tab-border:#2F6554;
+      }
+      body { max-width: none; margin: 0; padding: 0; background: #fff; color: #000; font-size: 11pt; line-height: 1.35; }
+      #landing, #tabbar, #demoBar, .filerow, #undoBar, #bottomTabs, #catCreator, #reviewTools, #ffilters, .ffilters, #shareBox, #resetRow,
+      #exportBox, #helpBox, #dataRules, #printBtn, #clearBtn, footer .muted:not(#build), button, .nav, .howto, .cardbtns, input, select, textarea { display: none !important; }
+      #report, #app, main { display: block !important; }
+      .sect, .morecard, .note, .warn, .ok, table tr, .pie, .goalrow, svg { break-inside: avoid; page-break-inside: avoid; }
+      h2, h3 { break-after: avoid; page-break-after: avoid; }
+      table { width: 100%; }
+      thead { display: table-header-group; }
+      a { color: inherit; text-decoration: none; }
+      details > *:not(summary) { display: block; }
+      * { box-shadow: none !important; animation: none !important; transition: none !important; }
+      #app::before { content: "Анализ банковской выписки"; display: block; font-size: 9pt; color: #4A453E; margin-bottom: .4rem; }
+    }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -586,6 +610,7 @@
       <input type="file" id="file" class="vh" accept="application/pdf,.pdf,.csv,text/csv" multiple aria-label="Выберите файлы выписок (PDF или CSV)">
       <label for="file" class="filebtn">Добавить выписки</label>
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
+      <button id="printBtn" type="button" hidden title="Откроется окно печати браузера: там можно выбрать «Сохранить как PDF». Печатается открытый раздел.">Печать / PDF</button>
     </p>
     <p id="status" data-sec="overview more"></p>
     <div id="bankChips" class="bankchips" data-sec="overview more" aria-label="Загруженные банки"></div>
@@ -719,7 +744,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.53, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.54, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -963,6 +988,12 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
+    // Печать: перед печатью раскрываем свёрнутые блоки открытого раздела, после возвращаем как было
+    let printOpened = [];
+    function printPrepare() { printOpened = [...document.querySelectorAll("#report details:not([open])")]; printOpened.forEach(d => d.setAttribute("open", "")); }
+    function printRestore() { printOpened.forEach(d => d.removeAttribute("open")); printOpened = []; }
+    if (typeof window !== "undefined" && window.addEventListener) { window.addEventListener("beforeprint", printPrepare); window.addEventListener("afterprint", printRestore); }
+    $("printBtn").addEventListener("click", () => { try { window.print(); } catch (e) { alert("Не удалось открыть печать. Нажмите Ctrl+P (на телефоне: меню браузера → «Печать»)."); } });
     $("clearBtn").addEventListener("click", () => {
       txs = []; header = {}; statements = [];
       bottomTab = null; allCat = "all"; allFilt = Filters.empty(); activeTab = "all";
@@ -1468,6 +1499,7 @@
       document.body.setAttribute("data-view", curSection);
       $("demoBar").hidden = !demoMode;
       $("clearBtn").hidden = demoMode || !txs.length;
+      $("printBtn").hidden = !txs.length && !demoMode;
       $("dataRules").hidden = demoMode;
       $("shareBox").hidden = !txs.length;
       $("resetRow").hidden = demoMode;
@@ -3363,7 +3395,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.53", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.54", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
