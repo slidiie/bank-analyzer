@@ -808,7 +808,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.59, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.60, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -830,6 +830,7 @@
   <script src="goals.js"></script>
   <script src="filters.js"></script>
   <script src="feedback.js"></script>
+  <script src="hints.js"></script>
   <script src="pwa.js"></script>
   <script src="anonymize.js"></script>
   <script>
@@ -1058,7 +1059,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.59";
+    const FB_VERSION = "v4.60";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -2666,6 +2667,9 @@
       if (!cats.length) for (const c of [...usedCats(), "Продукты", "Кафе и рестораны", "Транспорт"]) { if (cats.length >= 3) break; if (!cats.includes(c)) cats.push(c); }   // общие категории только когда подсказки нет
       return { cats: cats.slice(0, 3), hint, q };
     }
+    // Подсказка группе (hints.js): одна строка и, если есть, кнопка с категорией. Категорию назначает человек
+    const hintLine = (hint, tx) => hint ? h("div", { class: "muted", style: "margin-top:.3rem" }, hint.text + " ",
+      hint.cat ? h("button", { type: "button", class: "linklike", onclick: () => setRule(tx, hint.cat, Cat.ICONS[hint.cat]) }, "Отметить как «" + hint.cat + "»") : "") : "";
     const qchip = (label, onclick, title, cls) => h("button", { type: "button", class: "qchip" + (cls ? " " + cls : ""), onclick, title: title || "" }, label);
 
     const deferred = new Set();                // отложено кнопкой «Не помню»: только в памяти страницы, категория не назначается
@@ -2690,6 +2694,7 @@
       }
       // Сначала самые крупные по сумме
       const list = [...groups.values()].sort((a, b) => Math.abs(b.sum) - Math.abs(a.sum));
+      const hintByKey = new Map(Hints.transferHints(list).map(x => [x.key, x]));
       const opsLeft = list.reduce((n, g) => n + g.items.length, 0);
       reviewOps = opsLeft;
       reviewSum = list.reduce((a, g) => a + Math.abs(g.sum), 0);
@@ -2849,6 +2854,7 @@
             sc > 1 ? h("div", { class: "muted", style: "margin-top:.3rem" }, `Применится ко всем ${sc}.`) : "",
             extra, rec ? ownAccountControl(g.tx, title) : "", more);
         }
+        card.append(hintLine(hintByKey.get(g.key), g.tx));
         box.append(card);
       }
       if (headCount < list.length) {
@@ -2912,6 +2918,7 @@
         g.items.push(tx); g.sum += tx.amount;
       }
       const list = [...groups.values()].sort((a, b) => b.sum - a.sum);
+      const incomeHints = new Map(Hints.transferHints(list).map(x => [x.key, x]));
       incomeGroups = list.length;
       $("incomeCount").textContent = list.length ? `(групп: ${list.length}, операций: ${list.reduce((n, g) => n + g.items.length, 0)})` : "";
       const box = $("income");
@@ -2929,7 +2936,7 @@
           h("div", { style: "font-size:1.1rem" }, h("b", {}, `+${fmt(g.sum)} BYN`), ` · операций: ${items.length}`),
           h("div", { class: "muted" }, `${range}${range ? " · " : ""}суммы: ${amountsText}`),
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
-          ...(Cat.maybeGamblingPayout(g.tx) ? [h("div", { class: "muted", style: "margin-top:.3rem" }, "Похоже на вывод с игровой площадки? ", h("button", { type: "button", class: "linklike", onclick: () => setRule(g.tx, Cat.GAMBLING, Cat.ICONS[Cat.GAMBLING]) }, "Отметить как «Азартные игры»"))] : []),
+          hintLine(incomeHints.get(g.key), g.tx),
           h("div", { style: "margin-top:.4rem" }, chooser(scopeText(ruleScope(g.tx)), (cat, icon) => setRule(g.tx, cat, icon)),
             ruleScope(g.tx) > 1 ? h("div", { class: "muted" }, `Выбор сразу применится ко всем ${ruleScope(g.tx)} операциям такого получателя (во всех месяцах) и к будущим выпискам. Только к одной операции: выберите категорию ниже, в списке «Операции по отдельности». Отменить можно в разделе «Ещё» → «Мои правила».`) : ""));
         if (many) {
@@ -3516,7 +3523,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.59", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.60", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
