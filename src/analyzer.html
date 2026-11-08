@@ -288,6 +288,11 @@
     .pie .lname { flex: 1 1 8rem; }
     th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
     .searchwrap { position: relative; display: inline-block; }
+    .ffilters { display: flex; flex-direction: column; gap: .5rem; margin: .5rem 0; }
+    .ffilters .frow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .ffilters input.fq { width: 100%; max-width: 100%; min-height: 44px; padding: .4rem .6rem; font-size: 1rem; box-sizing: border-box; }
+    .ffilters input.fa { width: 6.5rem; min-height: 44px; padding: .4rem .6rem; font-size: 1rem; box-sizing: border-box; }
+    .ffilters [hidden] { display: none; }
     /* Демо: прячем длинное вступление и загрузку файлов, чтобы кнопка и результат были рядом */
     body.demo #landing > :not(.topbar):not(.upcard), body.demo .upcard > :not(.cta), body.demo #app > :not(#demoBar):not(#report) { display: none !important; }
     body.demo #startBtn, body.demo .upcard { display: none; }
@@ -714,7 +719,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.49, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.53, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -734,6 +739,7 @@
   <script src="backup.js"></script>
   <script src="history.js"></script>
   <script src="goals.js"></script>
+  <script src="filters.js"></script>
   <script src="pwa.js"></script>
   <script src="anonymize.js"></script>
   <script>
@@ -834,6 +840,7 @@
     let allLimit = PAGE_ROWS, allLimitKey = "";
     let reviewLimit = REVIEW_GROUPS, reviewLimitKey = null, tailShown = false;
     let incomeLimit = PAGE_GROUPS, incomeLimitKey = null;
+    let allFilt = Filters.empty();                 // поиск и фильтры списка (текст, расходы/поступления, сумма); только в сессии
     let allSort = "date-desc";                     // порядок строк там же
 
     // Убранные категории: стираем старые выборы с ними, эти операции вернутся на разбор
@@ -903,7 +910,7 @@
 
     function enterDemo() {
       const wasDemo = demoMode;
-      if (!demoMode) stash = { userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab };
+      if (!demoMode) stash = { userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
       demoMode = true;
       document.body.classList.add("demo"); $("demoBtn").textContent = "Показать другой пример";
       userRules = {}; txRules = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
@@ -914,7 +921,7 @@
       d.txs.forEach(t => { if (/накопительн/i.test(t.details || "")) userRules[Cat.merchantKey(t)] = Cat.SAVINGS; });
       calc = { saveVal: 10 };
       statements = [{ bank: "demo", bankName: "Демо", from: d.header.from, to: d.header.to, count: d.txs.length, added: d.txs.length, skipped: 0, check: null }];
-      allCat = "all"; allSort = "date-desc"; bottomTab = null;
+      allCat = "all"; allFilt = Filters.empty(); allSort = "date-desc"; bottomTab = null;
       if (!wasDemo) { activeTab = "all"; curSection = "overview"; }   // при повторном нажатии выбранный месяц остаётся (если такого месяца нет, render сам вернёт «весь период»)
       openKeys.clear();
       render();
@@ -924,7 +931,7 @@
       if (!demoMode) return;
       demoMode = false;
       document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо";
-      ({ userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allSort, activeTab, bottomTab } = stash);
+      ({ userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
       stash = null;
       ownUndo.length = 0;
       openKeys.clear();
@@ -958,7 +965,7 @@
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
     $("clearBtn").addEventListener("click", () => {
       txs = []; header = {}; statements = [];
-      bottomTab = null; allCat = "all"; activeTab = "all";
+      bottomTab = null; allCat = "all"; allFilt = Filters.empty(); activeTab = "all";
       hideReport(); $("clearBtn").hidden = true;
       $("status").textContent = "Выписки убраны. Ваш выбор категорий сохранён.";
       $("backupMsg").textContent = backupSummary();
@@ -1814,7 +1821,7 @@
         h("div", { class: "muted" }, "Так выглядит картина, если много операций отправлено в «Прочее». Их можно разобрать заново."),
         h("div", { class: "chips" },
           qchip("Разобрать заново", ask, "", "primary"),
-          qchip("Показать, что там", () => { allCat = "Прочее"; bottomTab = "all"; bottomOpen = true; showSection("review"); renderAll(); renderBottom(); })));
+          qchip("Показать, что там", () => { allCat = "Прочее"; allFilt = Filters.empty(); bottomTab = "all"; bottomOpen = true; showSection("review"); renderAll(); renderBottom(); })));
       const ask = () => {
         const rules = Object.keys(userRules).filter(k => userRules[k] === "Прочее");
         const tx = Object.keys(txRules).filter(k => txRules[k] === "Прочее");
@@ -2798,7 +2805,6 @@
     function sortBy(col) {
       const pair = { date: ["date-desc", "date-asc"], sum: ["sum-desc", "sum-asc"] }[col];
       allSort = allSort === pair[0] ? pair[1] : pair[0];
-      allCat = "all";          // сортировка применяется ко всем операциям сразу, без «поднятой» категории
       renderAll();
     }
     const UNSORTED = "Не разобрано";
@@ -2817,7 +2823,7 @@
       $("allSummary").textContent = period === "all" ? `Все операции (${txs.length})` : `Все операции · ${monthTitle(period)} (${byMonth.length})`;
 
       // Заголовок таблицы создаётся один раз, чтобы поле поиска не теряло курсор при вводе
-      const search = h("input", { type: "text", placeholder: "найти категорию", "aria-label": "Найти категорию", autocomplete: "off", style: "width:9rem;margin-left:.4rem;font-weight:400;user-select:text" });
+      const search = h("input", { type: "text", placeholder: "категория", "aria-label": "Фильтр по категории", autocomplete: "off", style: "width:9rem;margin-left:.4rem;font-weight:400;user-select:text" });
       search.value = allCat !== "all" ? allCat : "";
       const suggest = h("div", { class: "suggest" });
       suggest.hidden = true;
@@ -2835,7 +2841,7 @@
         const shown = allCat !== "all" && search.value === allCat ? catNames : catNames.filter(c => !q || c.toLowerCase().includes(q));
         suggest.replaceChildren();
         if (allCat !== "all") {
-          const reset = h("div", { class: "opt" }, "Показать в обычном порядке");
+          const reset = h("div", { class: "opt" }, "Показать все категории");
           reset.addEventListener("mousedown", e => { e.preventDefault(); pick("all"); });
           suggest.append(reset);
         }
@@ -2869,7 +2875,7 @@
       wrapSearch.addEventListener("click", e => e.stopPropagation());
       const dateTh = h("th", { class: "sortable", title: "Нажмите, чтобы отсортировать все операции", onclick: () => sortBy("date") });
       const sumTh = h("th", { class: "sortable num", title: "Нажмите, чтобы отсортировать все операции", onclick: () => sortBy("sum") });
-      const catTh = h("th", { class: "sortable", title: "Нажмите, чтобы поднять наверх следующую категорию", onclick: nextCategory },
+      const catTh = h("th", { class: "sortable", title: "Нажмите, чтобы показать следующую категорию", onclick: nextCategory },
         h("span", {}, "Категория ›"), wrapSearch);
       for (const th of [dateTh, sumTh, catTh]) {      // сортировку можно включить с клавиатуры
         th.setAttribute("tabindex", "0"); th.setAttribute("role", "button");
@@ -2877,14 +2883,44 @@
       }
       const tbody = h("tbody");
       const info = h("p", { class: "muted" });
+      // Панель поиска и фильтров над таблицей; создаётся один раз, чтобы поле поиска не теряло курсор при вводе
+      const q = h("input", { type: "text", class: "fq", placeholder: "поиск: описание, сумма, дата", "aria-label": "Поиск по операциям", autocomplete: "off", enterkeyhint: "search" });
+      q.value = allFilt.query;
+      q.addEventListener("input", () => { allFilt.query = q.value; renderTable(); });
+      const kindBtns = [["all", "Все"], ["expense", "Расходы"], ["income", "Поступления"]].map(([k, label]) => {
+        const b = h("button", { type: "button", class: "qchip", "aria-pressed": "false" }, label);
+        b.addEventListener("click", () => { allFilt.kind = k; syncKind(); renderTable(); });
+        b.dataset = b.dataset || {}; b.kindKey = k;
+        return b;
+      });
+      function syncKind() {
+        for (const b of kindBtns) { const on = allFilt.kind === b.kindKey; b.setAttribute("aria-pressed", on ? "true" : "false"); b.className = "qchip" + (on ? " primary" : ""); }
+      }
+      syncKind();
+      const mkAmount = (key, label) => {
+        const el = h("input", { type: "text", class: "fa", inputmode: "decimal", placeholder: label, "aria-label": "Сумма " + label, autocomplete: "off" });
+        el.value = allFilt[key];
+        el.addEventListener("input", () => { allFilt[key] = el.value; renderTable(); });
+        return el;
+      };
+      const minIn = mkAmount("min", "от"), maxIn = mkAmount("max", "до");
+      const resetBtn = h("button", { type: "button", class: "qchip ghost", onclick: () => resetFilters() }, "Сбросить");
+      resetBtn.hidden = true;
+      function resetFilters() {
+        allFilt = Filters.empty(); allCat = "all";
+        q.value = ""; minIn.value = ""; maxIn.value = ""; search.value = "";
+        syncKind(); renderTable();
+      }
+      const panel = h("div", { class: "ffilters" }, q, h("div", { class: "frow" }, ...kindBtns), h("div", { class: "frow" }, minIn, maxIn, resetBtn));
       const arrow = (a, d) => (allSort === d ? " ▼" : allSort === a ? " ▲" : "");
 
       function renderTable() {
-        // Все операции остаются в списке; выбранная категория поднимается наверх, остальные идут за ней
+        // Поиск и фильтры (текст, расходы/поступления, сумма, категория) оставляют в списке только подходящие операции
         const sorted = [...byMonth].sort(SORTS[allSort]);
-        const isTop = tx => allCat !== "all" && (displayCat(tx) || UNSORTED) === allCat;
-        const top = sorted.filter(isTop), rest = sorted.filter(tx => !isTop(tx));
-        const list = [...top, ...rest];
+        const filt = { ...allFilt, cat: allCat };
+        const filtered = Filters.isActive(filt);
+        const list = Filters.apply(sorted, filt, tx => displayCat(tx) || UNSORTED);
+        resetBtn.hidden = !filtered;
         dateTh.textContent = "Дата" + arrow("date-asc", "date-desc");
         sumTh.textContent = "Сумма" + arrow("sum-asc", "sum-desc");
         const isOwn = t => categoryOf(t) === Cat.OWN;
@@ -2892,13 +2928,12 @@
         const spent = list.filter(t => t.amount < 0 && !isOwn(t) && !isSaving(t)).reduce((a, t) => a + -t.amount, 0);
         const got = list.filter(t => t.amount > 0 && !isOwn(t) && !isSaving(t)).reduce((a, t) => a + t.amount, 0);
         const ownList = list.filter(isOwn);
-        const parts = [`операций: ${list.length}`];
-        if (allCat !== "all") parts.unshift(`сначала: ${allCat} (${top.length})`);
+        const parts = [filtered ? `найдено операций: ${list.length} из ${byMonth.length}` : `операций: ${list.length}`];
         if (spent) parts.push(`расходы: ${fmt(spent)} BYN`);
         if (got) parts.push(`поступления: ${fmt(got)} BYN`);
         if (ownList.length) parts.push(`⇄ между своими (не в счёт): ${ownList.length} ${ownList.length === 1 ? "операция" : "операций"}, ${fmt(ownList.filter(t => t.amount < 0).reduce((a, t) => a + -t.amount, 0))} BYN`);
         info.textContent = parts.join(" · ");
-        const limitKey = period + "|" + allSort + "|" + allCat;
+        const limitKey = period + "|" + allSort + "|" + allCat + "|" + JSON.stringify(allFilt);
         if (limitKey !== allLimitKey) { allLimitKey = limitKey; allLimit = PAGE_ROWS; }
         const view = list.slice(0, allLimit);
         const more = list.length - view.length;
@@ -2912,6 +2947,7 @@
               ? "Пришло и сразу ушло ровно столько же. Не считается ни доходом, ни расходом. Если это не так, выберите другую категорию."
               : "Перевод между своими счетами: не считается ни доходом, ни расходом." }, "⇄ между своими") : "",
             tx.details))));
+        if (!list.length && filtered) tbody.append(h("tr", {}, h("td", { colspan: "4" }, "Ничего не найдено. ", h("button", { type: "button", onclick: resetFilters }, "Сбросить фильтры"))));
         if (more > 0) {
           tbody.append(h("tr", {}, h("td", { colspan: "4" },
             `Показано ${view.length} из ${list.length}. `,
@@ -2938,7 +2974,7 @@
         openList();
       });
 
-      $("allFilter").replaceChildren(info);
+      $("allFilter").replaceChildren(panel, info);
       $("all").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, dateTh, sumTh, catTh, h("th", {}, "Описание"))), tbody));
       renderTable();
     }
@@ -3327,7 +3363,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.49", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.53", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
