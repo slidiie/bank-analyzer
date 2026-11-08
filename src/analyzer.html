@@ -809,7 +809,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.66, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.67, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1063,7 +1063,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.66";
+    const FB_VERSION = "v4.67";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1721,6 +1721,7 @@
         if (c && c.headerIncome != null) {
           t += `Поступления: по выписке ${fmt(c.headerIncome)}, найдено ${fmt(c.income)} ${c.incomeOk ? "✓" : "✗"}. `;
           t += `Списания: по выписке ${fmt(c.headerExpense)}, найдено ${fmt(c.expense)} ${c.expenseOk ? "✓" : "✗"}.`;
+          if (c.pending) t += ` Ещё не проведено банком: ${c.pending} ${opsWord(c.pending)}. Они учтены в тратах и не входят в итоги выписки; после проведения банк покажет их в следующей выписке.`;
           if (!c.ok) { ok = false; t += " Суммы не сошлись: часть операций прочитана неверно или пропущена. Сообщите об этом автору сайта."; }
         }
         return h("div", {}, t);
@@ -3143,6 +3144,7 @@
             isOwn(tx) ? h("span", { class: "badge", title: tx.pair
               ? "Пришло и сразу ушло ровно столько же. Не считается ни доходом, ни расходом. Если это не так, выберите другую категорию."
               : "Перевод между своими счетами: не считается ни доходом, ни расходом." }, "⇄ между своими") : "",
+            tx.pending ? h("span", { class: "badge", title: "Банк деньги заблокировал, но ещё не провёл операцию. В следующей выписке она появится уже проведённой." }, "⏳ не проведена") : "",
             tx.details))));
         if (!list.length && filtered) tbody.append(h("tr", {}, h("td", { colspan: "4" }, "Ничего не найдено. ", h("button", { type: "button", onclick: resetFilters }, "Сбросить фильтры"))));
         if (more > 0) {
@@ -3186,7 +3188,7 @@
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
-        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
+        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
       return res;
     }
     // Читает один файл и возвращает { bank, header, txs, check } или бросает ошибку с понятным текстом
@@ -3563,7 +3565,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.66", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.67", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }

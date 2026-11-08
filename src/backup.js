@@ -53,6 +53,7 @@
     for (const k of ["regDate", "time", "type", "currency", "mcc", "card", "bank", "purpose", "place", "bankCat"]) {
       const v = str(t[k], 300); if (v !== null) o[k] = v;
     }
+    if (t.pending === true) o.pending = true;
     for (const k of ["balance", "origAmount", "src", "pair"]) {
       const v = num(t[k]); if (v !== null) o[k] = v;
     }

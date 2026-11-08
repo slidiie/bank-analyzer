@@ -204,5 +204,28 @@ check("мусор в валюте: предупреждения нет", M.curre
   check("комиссия за перевод и комиссионное вознаграждение: «Комиссии банка»", cat("Комиссия за перевод") === C.FEES && cat("Комиссионное вознаграждение") === C.FEES);
 }
 
+// v4.67: непроведённая операция (авторизация, тип A) и её проведённая версия в следующей выписке
+{
+  const st = (txs, bank = "mtb") => ({ bank: { id: bank, name: "Тест" }, header: { from: "2026-09-07", to: "2026-10-06" }, txs, check: null });
+  const pend = { date: "2026-10-02", regDate: "2026-10-02", time: "12:16:48", amount: -5.5, balance: null, details: "тест", pending: true };
+  const posted = { date: "2026-10-03", regDate: "2026-10-02", time: "12:16:48", amount: -5.5, balance: 100.25, details: "тест" };
+  const s = M.newState();
+  M.addStatement(s, st([pend]));
+  const r = M.addStatement(s, st([posted]));
+  check("проведённая заменяет непроведённую, без задвоения", s.txs.length === 1 && !s.txs[0].pending && r.added === 1);
+  const s2 = M.newState();
+  M.addStatement(s2, st([posted]));
+  const r2 = M.addStatement(s2, st([pend]));
+  check("непроведённая не дублирует уже проведённую", s2.txs.length === 1 && r2.skipped === 1);
+  const s3 = M.newState();
+  M.addStatement(s3, st([pend]));
+  M.addStatement(s3, st([pend]));
+  check("повторная загрузка той же непроведённой не задваивает", s3.txs.length === 1);
+  const s4 = M.newState();
+  M.addStatement(s4, st([pend]));
+  M.addStatement(s4, st([posted], "belarusbank"));
+  check("проведённая в другом банке непроведённую не вытесняет", s4.txs.length === 2);
+}
+
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

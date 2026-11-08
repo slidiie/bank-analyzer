@@ -27,5 +27,12 @@ check("ФИО скрываются, магазины нет",
   Cat.looksLikePerson("Петрова Анна Сергеевна") && Cat.looksLikePerson("Сидоров И.П.") && Cat.looksLikePerson("IVANOV I.I.") &&
   !Cat.looksLikePerson("EVROOPT MINSK") && !Cat.looksLikePerson("Burger King") && !Cat.looksLikePerson("Фикс Прайс") && !Cat.looksLikePerson("A1 BY"));
 
+// v4.67: пометка «не проведена» переживает сохранение и загрузку разбора
+{
+  const data = { app: "bank-analyzer", version: 1, txs: [{ date: "2026-10-02", amount: -5.5, details: "тест", pending: true }, { date: "2026-10-03", amount: -1, details: "тест", pending: "yes" }], statements: [] };
+  let out; try { out = B.sanitize(data); } catch (e) { out = null; }
+  check("pending сохраняется только как true", out && out.txs[0].pending === true && out.txs[1].pending === undefined);
+}
+
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

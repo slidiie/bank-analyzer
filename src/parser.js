@@ -118,6 +118,8 @@
       .trim();
 
     const main = postDate || regDate;
+    // Тип "A": авторизация, банк деньги заблокировал, но ещё не провёл (нет остатка по счёту). В итогах шапки её нет.
+    const pending = !!(type && type.text === "A" && !bal);
     return {
       date: main ? toIso(main.text) : null,
       regDate: regDate ? toIso(regDate.text) : null,
@@ -129,17 +131,20 @@
       card: card ? card.text : null,
       details,
       balance: bal ? parseFloat(bal.text) : null,
+      ...(pending ? { pending: true } : {}),
     };
   }
 
   // Сверка: суммы разобранных операций должны совпасть с итогами в шапке выписки.
   function validate(txs, header) {
     const cents = n => Math.round(n * 100);
-    let inc = 0, exp = 0;
+    let inc = 0, exp = 0, pend = 0;
     for (const t of txs) {
+      if (t.pending) { pend++; continue; }   // непроведённые в итогах шапки не учтены
       if (t.amount > 0) inc += cents(t.amount); else exp += cents(-t.amount);
     }
     const res = { count: txs.length, income: inc / 100, expense: exp / 100 };
+    if (pend) res.pending = pend;
     res.incomeOk = header.income == null ? null : cents(header.income) === inc;
     res.expenseOk = header.expense == null ? null : cents(header.expense) === exp;
     res.ok = res.incomeOk === true && res.expenseOk === true;

@@ -190,5 +190,14 @@ check("категории «Дом» больше нет", Cat.DEFAULT_CATEGORIE
 const v = SP.validate(txs, { income: 302.05, expense: 11.17 });
 check("сверка итогов", [v.incomeOk, v.expenseOk, v.ok], [true, true, true]);
 
+// v4.67: непроведённые операции (pending) не входят в сверку, но считаются отдельно
+{
+  const tx = (amount, pending) => Object.assign({ amount }, pending ? { pending: true } : {});
+  const v2 = SP.validate([tx(-10), tx(-5.5, true), tx(20)], { income: 20, expense: 10 });
+  check("непроведённая не ломает сверку", [v2.incomeOk, v2.expenseOk, v2.ok, v2.pending], [true, true, true, 1]);
+  const v3 = SP.validate([tx(-10)], { income: 0, expense: 10 });
+  check("без непроведённых поля pending нет", v3.pending, undefined);
+}
+
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

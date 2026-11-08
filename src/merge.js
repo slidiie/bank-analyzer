@@ -40,12 +40,24 @@
     const cnt = counter(state.txs);
     const offset = state.txs.reduce((m, t) => Math.max(m, t.pair || 0), 0);
     let added = 0, skipped = 0;
+    // Непроведённая операция (авторизация) потом приходит в новой выписке уже проведённой, с другим остатком и датой.
+    // Ключ «банк, дата и время регистрации, сумма»: проведённая заменяет непроведённую, а непроведённая не дублирует проведённую.
+    const pkey = (bank, t) => [bank, t.regDate || t.date || "", t.time || "", t.amount].join("|");
+    const posted = new Set(), pending = new Map();
+    state.txs.forEach(t => { if (t.pending) pending.set(pkey(t.bank || "?", t), t); else posted.add(pkey(t.bank || "?", t)); });
     for (const t of list) {
       const bank = bankOf(t);
+      if (t.pending && posted.has(pkey(bank, t))) { skipped++; continue; }
+      if (!t.pending && pending.has(pkey(bank, t))) {
+        const i = state.txs.indexOf(pending.get(pkey(bank, t)));
+        if (i >= 0) state.txs.splice(i, 1);
+        pending.delete(pkey(bank, t));
+      }
       if (takeDup(cnt, bank, txId(t))) { skipped++; continue; }
       const copy = Object.assign({}, t, { bank, src: srcOf(t) });
       if (copy.pair) copy.pair += offset;       // номера пар из разных выписок не должны совпасть
       state.txs.push(copy);
+      if (copy.pending) pending.set(pkey(bank, copy), copy); else posted.add(pkey(bank, copy));
       added++;
     }
     return { added, skipped };
