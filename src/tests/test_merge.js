@@ -154,5 +154,38 @@ check("не в счёт и доходы", sum.includes("Не в счёт: меж
   check("экспорт: накопления не в расходах, строка «отложено» = 200 − 30, доход без снятия", /Итого расходов;50,00/.test(csv) && /отложено в накопления;170,00/.test(csv) && /Доходы[^;]*;1000,00/.test(csv));
 }
 
+// v4.61: одинаковые операции внутри одной выписки (без времени и остатка) не теряются
+{
+  const s = M.newState();
+  const cof = tx("2026-03-05", null, -3.5, null, "COFFEE TEST");
+  const r1 = M.addStatement(s, { bank: { id: "sber", name: "Сбер" }, header: {}, txs: [cof, Object.assign({}, cof)] });
+  check("две одинаковые покупки в одной выписке: обе остались", r1.added === 2 && r1.skipped === 0 && s.txs.length === 2);
+  const r2 = M.addStatement(s, { bank: { id: "sber", name: "Сбер" }, header: {}, txs: [cof, Object.assign({}, cof), Object.assign({}, cof)] });
+  check("повторная выписка того же банка: пропущены только уже бывшие (2), третья добавлена", r2.skipped === 2 && r2.added === 1 && s.txs.length === 3);
+  const r3 = M.addStatement(s, { bank: { id: "alfa", name: "Альфа" }, header: {}, txs: [cof] });
+  check("такая же операция другого банка: не повтор", r3.added === 1 && r3.skipped === 0);
+}
+// v4.61: файл разбора поверх загруженной выписки: повторы того же банка, сдвиг пар и номеров выписок
+{
+  const s = M.newState();
+  const a = tx("2026-04-01", "10:00:00", 50, 150, "Пополнение"), b = tx("2026-04-02", "11:00:00", -50, 100, "Перевод", { pair: 1 });
+  a.pair = 1;
+  M.addStatement(s, { bank: bankA, header: {}, txs: [a, b] });
+  const saved = [
+    Object.assign({}, a, { bank: "vtb", src: 0 }),                              // повтор
+    tx("2026-04-03", null, 20, null, "Зачисление", { bank: "mtb", src: 1, pair: 1 }),
+    tx("2026-04-03", null, -20, null, "Перевод", { bank: "mtb", src: 1, pair: 1 }),
+    tx("2026-04-04", null, -7, null, "Кафе", { src: 1 }),                       // старый файл: банка у операции нет
+  ];
+  const sts = [{ bank: "vtb", from: "2026-04-01", to: "2026-04-02" }, { bank: "mtb", from: "2026-04-03", to: "2026-04-04" }];
+  const r = M.addSaved(s, saved, sts, "mtb");
+  check("файл разбора: повтор пропущен, новые добавлены", r.skipped === 1 && r.added === 3 && s.txs.length === 5);
+  check("файл разбора: номера пар не совпали с уже загруженными", M.pairCount(s.txs) === 2);
+  check("файл разбора: номера выписок сдвинуты", s.statements.length === 3 && s.txs.slice(2).every(t => t.src === 2));
+  check("файл разбора: банк взят из выписки, если у операции его нет", s.txs[4].bank === "mtb");
+  const r2 = M.addSaved(s, [Object.assign({}, saved[1], { pair: 9 })], [sts[1]], "mtb");
+  check("файл разбора: половина пары без второй половины больше не пара", r2.added === 0 && M.pairCount(s.txs) === 2);
+}
+
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

@@ -18,22 +18,44 @@
 
   const newState = () => ({ txs: [], statements: [] });
 
-  // Добавить выписку. res = { bank: {id, name}, header, txs, check }.
-  // Возвращает { added, skipped, index }.
-  function addStatement(state, res) {
-    const have = new Set(state.txs.map(txId));
-    const index = state.statements.length;
+  // Сколько раз каждая операция уже есть в разборе: ключ «банк|идентификатор».
+  // Повтором считается только операция того же банка, и столько раз, сколько она уже встречалась:
+  // две одинаковые покупки в одной выписке (без времени и остатка) обе остаются.
+  // У операций из старых файлов разбора банка нет: они сравниваются с любым банком.
+  function counter(txs) {
+    const cnt = new Map();
+    for (const t of txs) { const k = (t.bank || "?") + "|" + txId(t); cnt.set(k, (cnt.get(k) || 0) + 1); }
+    return cnt;
+  }
+  function takeDup(cnt, bank, id) {
+    for (const k of [bank + "|" + id, "?|" + id]) {
+      const n = cnt.get(k) || 0;
+      if (n > 0) { cnt.set(k, n - 1); return true; }
+    }
+    return false;
+  }
+
+  // Добавить операции в разбор без повторов. Номера пар и выписок сдвигаются, чтобы не совпасть с уже загруженными.
+  function addTxs(state, list, bankOf, srcOf) {
+    const cnt = counter(state.txs);
     const offset = state.txs.reduce((m, t) => Math.max(m, t.pair || 0), 0);
     let added = 0, skipped = 0;
-    for (const t of res.txs) {
-      const id = txId(t);
-      if (have.has(id)) { skipped++; continue; }
-      have.add(id);
-      const copy = Object.assign({}, t, { bank: res.bank.id, src: index });
+    for (const t of list) {
+      const bank = bankOf(t);
+      if (takeDup(cnt, bank, txId(t))) { skipped++; continue; }
+      const copy = Object.assign({}, t, { bank, src: srcOf(t) });
       if (copy.pair) copy.pair += offset;       // номера пар из разных выписок не должны совпасть
       state.txs.push(copy);
       added++;
     }
+    return { added, skipped };
+  }
+
+  // Добавить выписку. res = { bank: {id, name}, header, txs, check }.
+  // Возвращает { added, skipped, index }.
+  function addStatement(state, res) {
+    const index = state.statements.length;
+    const { added, skipped } = addTxs(state, res.txs, () => res.bank.id, () => index);
     state.statements.push({
       bank: res.bank.id, bankName: res.bank.name,
       from: res.header.from || null, to: res.header.to || null,
@@ -42,6 +64,18 @@
     });
     dropOrphanPairs(state.txs);
     return { added, skipped, index };
+  }
+
+  // Добавить операции из файла разбора к уже загруженным. statements: выписки из файла
+  // (номер выписки src у операций указывает на них). Возвращает { added, skipped }.
+  function addSaved(state, txs, statements, defaultBank) {
+    const base = state.statements.length;
+    const sts = statements || [];
+    const bankOf = t => t.bank || (sts[t.src] && sts[t.src].bank) || defaultBank || "?";
+    const r = addTxs(state, txs, bankOf, t => (Number.isInteger(t.src) && t.src >= 0 && t.src < sts.length ? t.src : 0) + base);
+    state.statements.push(...sts);
+    dropOrphanPairs(state.txs);
+    return r;
   }
 
   // Пара, у которой не нашлась вторая половина (её пропустили как повтор), больше не пара
@@ -100,7 +134,7 @@
 
   const pairCount = txs => new Set(txs.filter(t => t.pair).map(t => t.pair)).size;
 
-  const api = { newState, addStatement, mergedHeader, markCrossPairs, pairCount, txId, TRANSFERISH };
+  const api = { newState, addStatement, addSaved, mergedHeader, markCrossPairs, pairCount, txId, TRANSFERISH };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Merge = api;
 })(typeof self !== "undefined" ? self : this);
