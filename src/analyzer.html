@@ -41,7 +41,7 @@
       --bar:var(--accent); --barbg:var(--surface-2); --active-text:var(--on-accent);
       --ctl-bg:var(--surface); --ctl-border:#8F887D; --ctl-text:var(--text);
       --lvl-warn:#8a5f00; --lvl-over:#b3261e;
-      --tab-bg:color-mix(in srgb, var(--accent) 14%, var(--surface)); --tab-fg:var(--accent-ink); --tab-border:var(--accent);
+      --tab-bg:color-mix(in srgb, var(--accent) 14%, var(--surface)); --tab-fg:var(--accent-ink); --tab-border:var(--accent); --link:var(--accent-ink);
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -57,7 +57,7 @@
         --ctl-border:#666D76;
         --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
         --lvl-warn:#d9a400; --lvl-over:#e0554f;
-        --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent);
+        --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent); --link:var(--accent);
       }
     }
     :root[data-theme="dark"] {
@@ -72,7 +72,7 @@
       --ok-border:#2F6B4F; --warn-border:#6A5E32;
       --ctl-border:#666D76; --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
       --lvl-warn:#d9a400; --lvl-over:#e0554f;
-      --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent);
+      --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent); --link:var(--accent);
     }
     :root[data-theme="light"] { color-scheme: light; }
     :root[data-theme="dark"] { color-scheme: dark; }
@@ -97,6 +97,7 @@
     /* Единый вид кнопок: скругление --r-m, высота 44 px, один размер текста. Исключения: значки, переключатели, нижняя панель. */
     button { padding: .5rem 1rem; min-height: 44px; font-size: .95rem; cursor: pointer; }
     .muted { color: var(--muted); font-size: var(--fs-s); }
+    a { color: var(--link); }
     .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
     ul.insights { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .7rem; }
     ul.insights { align-items: start; }
@@ -126,7 +127,9 @@
     .trend .hit, .trend .hit:focus, .trend .hit:focus-visible, .trend .hit:active { outline: none !important; outline-style: none !important; box-shadow: none; stroke: none; }   /* рамки нет: столбец подсвечивается сам (наведение, фокус с клавиатуры, выбор) */
     .trend text { fill: var(--muted); font-size: 15px; }
     .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
-    .toprow .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toprow .tname { display: flex; min-width: 0; }
+    .toprow .tname .tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .toprow .tname .muted { flex: none; white-space: nowrap; }
     .tbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); }
     .tbar > i { display: block; height: 100%; border-radius: 3px; }
     .icard { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: .8rem 1rem; }
@@ -367,6 +370,8 @@
     .upcard .cta { display: flex; flex-direction: column; gap: .6rem; max-width: 24rem; margin: 0 auto; }
     .upcard .cta button { width: 100%; margin: 0; }
     #demoBtn { background: transparent; color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .quickfaq h2 { margin: 1.4rem 0 .4rem; font-size: 1.1rem; }
+    .quickfaq .qfaqall { margin: .6rem 0 0; font-size: var(--fs-s); }
     .rowcard { display: flex; align-items: center; gap: .7rem; width: 100%; min-height: 3rem; margin-top: .6rem; padding: .6rem 1rem; text-align: left; font-size: var(--fs-m); background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); }
     .rowcard > span { flex: 1 1 auto; min-width: 0; }
     .rowcard .gi { color: var(--accent); }
@@ -398,7 +403,9 @@
       .modal.wizsheet .wizcard { width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; padding: 0; }
     }
     #app > h2:first-child { margin-top: 1rem; }
-    #status { white-space: pre-line; }
+    #status, .landstatus { white-space: pre-line; }
+    .landstatus { margin: .6rem 0 0; font-size: var(--fs-s); }
+    .landstatus:empty { display: none; }
     footer { margin-top: 3rem; }
     .morecard { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-l); padding: .9rem 1rem; margin: 0 0 .8rem; }
     .morecard h3 { margin: 0 0 .3rem; font-size: 1.05rem; }
@@ -545,6 +552,7 @@
         <button id="startBtn" class="primary" type="button">Выбрать файл</button>
         <button id="demoBtn" type="button">Посмотреть демо</button>
       </p>
+      <p id="landStatus" class="landstatus" role="status"></p>
       <p class="muted safe">PDF остаётся на вашем устройстве и никуда не отправляется.</p>
     </div>
     <aside class="mini" aria-label="Пример отчёта на выдуманных данных">
@@ -577,6 +585,18 @@
     </ol>
     <button id="privRow" class="rowcard" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Файл не покидает ваш браузер</span><svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
     <button id="howRow" class="rowcard" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg><span>Как получить выписку</span><svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <section class="quickfaq" aria-labelledby="qfaqH">
+      <h2 id="qfaqH">Коротко о главном</h2>
+      <details><summary>Куда уходит файл?</summary>
+        <p>Никуда. PDF читается прямо в вашем браузере, на сервер ничего не загружается. Библиотека для чтения PDF (pdf.js от Mozilla, лицензия Apache 2.0) встроена в саму страницу, поэтому ничего с чужих серверов не подгружается. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда. Чтобы убедиться, отключите интернет перед загрузкой выписки: всё продолжит работать.</p></details>
+      <details><summary>Какие банки читает, а если моего нет?</summary>
+        <p id="faqBanks"></p>
+      <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Мастер из пяти шагов сам закроет личное, вы проверите образец и отправите его письмом. Сайт файлы никуда не отправляет.</p>
+      <p><button id="anonOpen" type="button">Помочь добавить банк</button></p></details>
+      <details><summary>Что если не распозналось?</summary>
+        <p>Сайт скажет, что именно не получилось. Попробуйте скачать выписку в PDF заново или загрузить файл другого периода. Если банк не читается, можно помочь его добавить: это в пункте «Какие банки читает, а если моего нет?» выше.</p></details>
+      <p class="muted qfaqall"><a href="#faq">Все вопросы и приватность</a></p>
+    </section>
     <details class="aboutdet"><summary>Что умеет сайт</summary>
     <div class="cards">
       <div class="card"><h3>Банк определяется сам</h3>
@@ -589,8 +609,6 @@
     </div>
     </details>
     <h2 id="faq">Приватность и частые вопросы</h2>
-    <details><summary>Куда отправляется моя выписка?</summary>
-      <p>Никуда. PDF читается прямо в вашем браузере, на сервер ничего не загружается. Библиотека для чтения PDF (pdf.js от Mozilla, лицензия Apache 2.0) встроена в саму страницу, поэтому ничего с чужих серверов не подгружается. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда. Чтобы убедиться, отключите интернет перед загрузкой выписки: всё продолжит работать.</p></details>
     <details><summary>Что сайт запоминает?</summary>
       <p>В памяти этого браузера (localStorage) хранятся: ваши правила категорий, свои категории и значки, лимиты бюджета и введённые числа калькулятора, выбранные тема и вид, итоги трат по месяцам для сравнения с прошлыми выписками (только суммы по дням и категориям, без описаний операций и без номеров счетов), а также выбор категории для отдельных операций (он привязан к дате, времени и сумме операции). Сами выписки и операции автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора.</p></details>
     <details><summary>Как всё стереть?</summary>
@@ -615,10 +633,6 @@
       <p>Если сайт пишет, что ваш банк пока не читается, он предложит помочь его добавить. Это необязательно и тоже ничего не отправляет само: вы готовите образец без личных данных, проверяете его глазами и, если захотите, сами отправляете письмом. Если не хотите, просто закройте окно.</p></details>
     <details><summary>Это сайт банка?</summary>
       <p>Нет. Сайт независимый, он не связан ни с одним банком и не является сервисом какого-либо банка. Названия банков указаны только для того, чтобы было понятно, выписки какого формата сайт умеет читать. Логотипы и фирменные цвета банков здесь не используются.</p></details>
-    <details><summary>Моего банка нет в списке</summary>
-      <p id="faqBanks"></p>
-      <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Мастер из пяти шагов сам закроет личное, вы проверите образец и отправите его письмом. Сайт файлы никуда не отправляет.</p>
-      <p><button id="anonOpen" type="button">Помочь добавить банк</button></p></details>
   </header>
 
   <div id="privSheet" class="modal sheet" hidden>
@@ -865,7 +879,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.70, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.72, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1063,7 +1077,7 @@
       chip.setAttribute("role", "listitem");
       return chip;
     }));
-    $("landingBanks").textContent = "Нет вашего банка? Можно помочь добавить его: ссылка ниже в разделе вопросов.";
+    $("landingBanks").textContent = "Нет вашего банка? Можно помочь добавить его: пункт «Какие банки читает» в блоке «Коротко о главном» ниже.";
 
     function enterDemo() {
       const wasDemo = demoMode;
@@ -1097,22 +1111,22 @@
     }
     function hideReport() { $("report").hidden = true; $("exportBox").hidden = true; document.body.setAttribute("data-view", "none"); curSection = "overview"; }
     const scrollTo = id => { try { $(id).scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { /* без прокрутки */ } };
-    const toApp = () => scrollTo("app");
     // Демо: сразу показываем результат (плашка демо, вкладки, таблица трат), а не начало страницы анализа
     $("miniDemoBtn").addEventListener("click", () => $("demoBtn").click());
-    $("demoBtn").addEventListener("click", () => { enterDemo(); try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { /* без прокрутки */ } });
-    $("startBtn").addEventListener("click", () => { toApp(); $("file").click(); });
+    $("demoBtn").addEventListener("click", () => { enterDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
+    $("startBtn").addEventListener("click", () => { $("file").click(); });
     // Перетаскивание файла на карточку загрузки (ПК); на телефоне работает кнопка «Выбрать файл»
     const dz = $("dropzone");
     dz.addEventListener("dragover", e => { e.preventDefault(); dz.className = "upcard drag"; });
     dz.addEventListener("dragleave", () => { dz.className = "upcard"; });
     dz.addEventListener("drop", e => {
       e.preventDefault(); dz.className = "upcard";
-      try { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) { $("file").files = fl; $("file").dispatchEvent(new Event("change")); toApp(); } } catch (err) { /* старый браузер: используйте кнопку */ }
+      try { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) { $("file").files = fl; $("file").dispatchEvent(new Event("change")); } } catch (err) { /* старый браузер: используйте кнопку */ }
     });
     // Шторки «Приватность» и «Как получить выписку»: Esc, клик по фону и кнопка «Понятно» закрывают, фокус возвращается на кнопку
     const SHEETS = ["privSheet", "howSheet", "anonSheet", "fbSheet"];
     let sheetOpener = null;
+    function setStatus(t) { $("status").textContent = t; $("landStatus").textContent = t; }
     function openSheet(id, opener) { sheetOpener = opener; $(id).hidden = false; try { $(id).querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ } }
     function closeSheets() { SHEETS.forEach(id => { $(id).hidden = true; }); try { if (sheetOpener) sheetOpener.focus(); } catch (e) { /* без фокуса */ } sheetOpener = null; }
     [["privRow", "privSheet"], ["howRow", "howSheet"]].forEach(([b, sh]) => $(b).addEventListener("click", () => openSheet(sh, $(b))));
@@ -1121,7 +1135,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.70";
+    const FB_VERSION = "v4.72";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1170,7 +1184,7 @@
       txs = []; header = {}; statements = [];
       bottomTab = null; allCat = "all"; allFilt = Filters.empty(); activeTab = "all";
       hideReport(); $("clearBtn").hidden = true;
-      $("status").textContent = "Выписки убраны. Ваш выбор категорий сохранён.";
+      setStatus("Выписки убраны. Ваш выбор категорий сохранён.");
       $("backupMsg").textContent = backupSummary();
     });
     $("demoExit").addEventListener("click", () => { leaveDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
@@ -2337,7 +2351,7 @@
           ...top.map(g => {
             const nm = friendlyTitle(g.tx);
             return h("div", { class: "toprow" },
-              h("span", { class: "tname" }, nm === nm.toUpperCase() ? sentence(nm) : nm, h("span", { class: "muted" }, ` · ${g.n} ${opsWord(g.n)}`)),
+              h("span", { class: "tname" }, h("span", { class: "tn" }, nm === nm.toUpperCase() ? sentence(nm) : nm), h("span", { class: "muted" }, ` · ${g.n} ${opsWord(g.n)}`)),
               h("span", { class: "num" }, fmt(g.sum)),
               h("div", { class: "tbar" }, h("i", { style: `width:${(g.sum / topMax * 100).toFixed(1)}%;background:${catColor(displayCat(g.tx))}` })));
           }),
@@ -3262,7 +3276,7 @@
       if (isCsv) return readCsv(file);
       if (!isPdf) throw new Error("формат не поддерживается. Скачайте выписку из интернет-банка в формате PDF (CSV сейчас читается только у Приорбанка, Excel и Word не поддерживаются)");
       let pdf;
-      $("status").textContent = `${label}Открываю PDF…`;
+      setStatus(`${label}Открываю PDF…`);
       try {
         pdf = await openPdf(new Uint8Array(await file.arrayBuffer()));
       } catch (err) {
@@ -3271,7 +3285,7 @@
       }
       const pages = [];
       for (let p = 1; p <= pdf.numPages; p++) {
-        $("status").textContent = `${label}Читаю страницу ${p} из ${pdf.numPages}…`;
+        setStatus(`${label}Читаю страницу ${p} из ${pdf.numPages}…`);
         const page = await pdf.getPage(p);
         const t = page.getViewport({ scale: 1 }).transform;   // учитывает поворот страницы (выписка ВТБ альбомная)
         const content = await page.getTextContent();
@@ -3325,9 +3339,9 @@
         curSection = "overview";
         render();
         $("backupMsg").textContent = backupSummary();
-        scrollTo("status");
+        try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
       }
-      $("status").textContent = notes.join("\n");
+      setStatus(notes.join("\n"));
       $("file").value = "";
     });
 
@@ -3629,7 +3643,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.70", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.72", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
