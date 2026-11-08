@@ -750,7 +750,7 @@
           </div>
           <p id="anonShareHint" class="muted" hidden>«Прикрепить к письму» открывает меню телефона: выберите в нём почтовое приложение (Почта, Gmail, Outlook). Другие приложения нам не нужны.</p>
           <details id="anonPeek" class="howto"><summary>Посмотреть, что в файле</summary>
-            <p class="muted">Это обычный текст вашей выписки, где ФИО, номера и адреса уже закрыты. Ничего другого в файл не попадает.</p>
+            <p class="muted">Так выглядит ваша выписка с закрытыми ФИО, номерами и адресами. В самом файле к тексту добавлены координаты каждого слова на странице: по ним мы учим сайт читать вашу таблицу.</p>
             <pre id="anonPeekText" class="anonpeek"></pre></details>
           <p id="anonMadeMsg" class="muted"></p>
         </div>
@@ -3740,7 +3740,7 @@
     if (typeof navigator !== "undefined" && navigator.share && navigator.canShare) { $("anonShare").hidden = false; $("anonShareHint").hidden = false; }
     $("anonPeek").addEventListener("toggle", () => {
       if (!$("anonPeek").open || !anon) return;
-      const t = anonSampleJson();
+      const t = Anon.toPlainText(anon.model);   // для просмотра человеку читаемый текст, в письмо уходит полный образец с координатами
       $("anonPeekText").textContent = t.length > 4000 ? t.slice(0, 4000) + "\n… (дальше то же самое для остальных страниц)" : t;
     });
     $("anonShare").addEventListener("click", async () => {
