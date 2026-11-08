@@ -536,6 +536,27 @@
     #fbSheet label { font-weight: 600; }
     #fbSheet select { max-width: 100%; }
     #printBtn[hidden] { display: none; }
+    /* ===== Строже, без «ИИ-вида» (v4.77). Весь блок можно удалить целиком: остальная вёрстка от него не зависит. =====
+       Плоские карточки с тонкой рамкой вместо мягких теней, меньше скруглений, чёткие заголовки и крупные числа,
+       меньше декоративных значков, плотнее таблицы. */
+    :root { --r-m:8px; --r-l:10px; }
+    .hsum, .icard, #plan details, #subs .scard, .goalsdet > summary, .rowcard, .morecard, .card, .mini, .steps li { box-shadow: none; border: 1px solid var(--line); }
+    #demoBar { box-shadow: none; border-bottom: 1px solid var(--line); }
+    h2, .sect > h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+    h3, #summary h3, .dyn h3, .morecard h3 { font-size: 1rem; font-weight: 650; letter-spacing: 0; }
+    .hsum .hbig, .ibig, #subs .sbig, #plan .pbig { font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .hsum .hlabel, .ilabel, #plan .pcap { color: var(--muted); }
+    .hsum li::before { background: var(--muted); width: .3rem; height: .3rem; }
+    th { font-size: var(--fs-s); font-weight: 600; color: var(--muted); }
+    th, td { padding: .3rem .5rem; }
+    td { line-height: 1.35; }
+    td.num { font-variant-numeric: tabular-nums; }
+    @media (min-width: 769px) { #tabbar .tabico { display: none; } }   /* на ПК вкладки без значков, на телефоне значки нужны в нижней панели */
+    .rowcard > .gi, .trust .gi { display: none; }
+    .trust li { padding: .55rem .75rem; }
+    #plan input[type=text], #plan input[type=number] { border-radius: var(--r-s); }
+    #plan .chip, .recur, .howtag, .bankchip { border-radius: var(--r-s); }
+    .steps b { border-radius: var(--r-s); }
     /* Печать / сохранение в PDF средствами браузера: печатается открытый раздел, всегда светлая тема, без кнопок и навигации */
     @media print {
       html:root:not([data-p1]):not([data-p2]) {
