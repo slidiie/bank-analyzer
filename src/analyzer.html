@@ -808,7 +808,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.63, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.64, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1062,7 +1062,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.63";
+    const FB_VERSION = "v4.64";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1081,6 +1081,26 @@
     $("fbCopy").addEventListener("click", async () => { $("fbMsg").textContent = (await copyText(Feedback.MAIL)) ? "Адрес скопирован: " + Feedback.MAIL : "Не удалось скопировать. Адрес: " + Feedback.MAIL; });
 
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
+    // Tab и Shift+Tab не выходят из открытого окна: с последнего элемента фокус переходит на первый и обратно.
+    // Возвращает, куда перевести фокус, или null (внутри списка браузер переводит фокус сам).
+    function nextFocus(list, current, back) {
+      if (!list.length) return null;
+      const i = list.indexOf(current);
+      if (i === -1) return back ? list[list.length - 1] : list[0];
+      if (back && i === 0) return list[list.length - 1];
+      if (!back && i === list.length - 1) return list[0];
+      return null;
+    }
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const openModal = () => [...SHEETS, "resetBox"].map(id => $(id)).find(el => el && !el.hidden) || null;
+    if (document.addEventListener) document.addEventListener("keydown", e => {
+      if (e.key !== "Tab") return;
+      const m = openModal();
+      if (!m) return;
+      const list = [...m.querySelectorAll(FOCUSABLE)].filter(el => el.getClientRects().length && !el.closest("[hidden]"));
+      const to = nextFocus(list, document.activeElement, e.shiftKey);
+      if (to) { e.preventDefault(); to.focus(); }
+    });
     // Печать: перед печатью раскрываем свёрнутые блоки открытого раздела, после возвращаем как было
     let printOpened = [];
     function printPrepare() { printOpened = [...document.querySelectorAll("#report details:not([open])")]; printOpened.forEach(d => d.setAttribute("open", "")); }
@@ -3380,10 +3400,12 @@
 
     // Сброс только после подтверждения: сначала предупреждение, потом уже стирание
     $("reset").addEventListener("click", () => { $("resetBox").hidden = false; try { $("resetNo").focus(); } catch (e) { /* без фокуса */ } });
-    $("resetNo").addEventListener("click", () => { $("resetBox").hidden = true; });
+    // Окно сброса закрылось без сброса: фокус возвращается на кнопку «Сбросить»
+    const closeReset = () => { if ($("resetBox").hidden) return; $("resetBox").hidden = true; try { $("reset").focus(); } catch (e) { /* без фокуса */ } };
+    $("resetNo").addEventListener("click", closeReset);
     // Окно закрывается и по клику на затемнённый фон, и по Esc
-    $("resetBox").addEventListener("click", e => { if (e.target === $("resetBox")) $("resetBox").hidden = true; });
-    if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") $("resetBox").hidden = true; });
+    $("resetBox").addEventListener("click", e => { if (e.target === $("resetBox")) closeReset(); });
+    if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeReset(); });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
     $("resetYes").addEventListener("click", () => {
       userRules = {}; customCats = []; txRules = {}; customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
@@ -3527,7 +3549,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.63", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.64", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
