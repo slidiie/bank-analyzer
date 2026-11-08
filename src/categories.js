@@ -178,10 +178,10 @@
     ["Здоровье", /apteka|аптек|pharm|фармаци|planeta zdorov|планета здоровья|lyubimaya apt|любимая аптека|ostrov zdorov|остров здоровья|zabotliv|заботлив|belfarm|белфарм|optika|оптик|klinik|клиник|clinic|stomatolog|стоматолог|dental|медицин|medcentr|медцентр|laborator|лаборатор|анализ/i],
     ["Красота и уход", /salon|салон красот|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж/i],
     ["Образование", /udemy|coursera|skillbox|skyeng|duolingo|школа|school|универс|universit|лицей|гимназ|детский сад|kindergarten/i],
-    ["Товары для дома", /fix ?price|фикс ?прайс|три цены|tri ?ceny|tri ?tseny|ikea|икеа|leroy|леруа|castorama|касторама|obi\b|domovoy|домовой|hoff|хофф/i],
+    ["Товары для дома", /fix ?price|фикс ?прайс|три цены|tri ?ceny|tri ?tseny|ikea|икеа|leroy|леруа|castorama|касторама|\bobi\b|domovoy|домовой|hoff|хофф/i],
     ["Одежда и покупки", /wildberries|\bwb\b|\bozon\b|озон|lamoda|aliexpress|алиэкспресс|21vek|21 век|onliner|\bemall\b|kufar|куфар|deal\.by|shop\.by|delivio|5element|5 элемент|5 element|electrosila|электросила|\bmila\b|\bмила\b|megatop|мегатоп|\bmarko\b|belwest|белвест|formelle|\bconte\b|милавица|milavitsa|zara|bershka|oodji|o'?stin|остин|lc ?waikiki|sinsay|reserved|deichmann|белпочта|belpost/i],
     ["Связь и подписки", /\ba1\b|a1\.by|\bmts\b|мтс|\blife[:)]|beltelecom|белтелеком|byfly|байфлай|\bzala\b|атлант телеком|velcom|google ?\*? ?(youtube|one|play)|yandex ?(plus|music)|яндекс ?(плюс|музыка)|spotify|netflix|itunes|apple\.com\/bill|icloud|okko|kinopoisk|кинопоиск|megogo|boosty|patreon|openai|chatgpt|telegram premium|подписка|subscription/i],
-    ["Развлечения", /fitnes|fitness|фитнес|world ?class|kino|кино|cinema|театр|sport|спорт|бассейн|aquapark|аквапарк|bowling|боулинг|квест|музей|museum|zoo|зоопарк/i],
+    ["Развлечения", /fitnes|fitness|фитнес|world ?class|kino|кино|cinema|театр|\bsport|(?:^|[^а-яё])спорт|бассейн|aquapark|аквапарк|bowling|боулинг|квест|музей|museum|zoo|зоопарк/i],
   ];
 
 
@@ -236,7 +236,8 @@
     // Пополнение своего вклада
     if (/On-line пополнение тек\.счета\/ вклада/i.test(d)) return [OWN, "пополнение своего вклада"];
     // В выписке встречается слово «комиссии» с латинскими буквами «c», поэтому [сc]
-    if (/ком[иi][сc]{2}/i.test(d)) return [FEES, "в названии есть «комиссия»"];
+    // «Комиссионный магазин» это магазин, а не плата банку
+    if (/ком[иi][сc]{2}(?![иi][оo]нн\S* магазин)/i.test(d)) return [FEES, "в названии есть «комиссия»"];
     if (/(^|\s)плата за (перевод|обслуживани|смс|sms|уведомлен|выпуск|перевыпуск|снят)/i.test(d)) return [FEES, "плата банку за услугу"];
     if (/в рамках одного клиента/i.test(d)) return [OWN, "перевод в рамках одного клиента"];
     if (tx.amount > 0) {

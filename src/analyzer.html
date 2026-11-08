@@ -808,7 +808,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.62, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.63, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -899,15 +899,18 @@
     let stash = null;                                // настоящие данные, пока открыто демо
 
     // ---------- Сохранённые пользователем категории (только в браузере) ----------
+    // Значение другого вида, чем ожидалось (например, {} вместо списка), считаем повреждённым и берём запасное
+    const sameKind = (v, fb) => fb === null || (Array.isArray(fb) ? Array.isArray(v) :
+      typeof fb === "object" ? v !== null && typeof v === "object" && !Array.isArray(v) : typeof v === typeof fb);
     function loadJSON(key, fallback) {
-      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (e) { return fallback; }
+      try { const v = JSON.parse(localStorage.getItem(key)); return v != null && sameKind(v, fallback) ? v : fallback; } catch (e) { return fallback; }
     }
     function saveJSON(key, value) {
       if (demoMode && !/theme|view/.test(key)) return;   // в демо сохраняем только тему и вид диаграммы
       try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* хранилище недоступно: работаем без него */ }
     }
     let userRules = loadJSON("ba_rules_v1", {});   // ключ магазина -> категория
-    let customCats = loadJSON("ba_cats_v1", []);   // добавленные пользователем категории
+    let customCats = loadJSON("ba_cats_v1", []).filter(c => typeof c === "string" && c);   // добавленные пользователем категории
     let txRules = loadJSON("ba_txrules_v1", {});   // выбор для одной конкретной операции
     let customIcons = loadJSON("ba_icons_v1", {}); // значки своих категорий
     let acctNames = loadJSON("ba_acctnames_v1", {}); // подписи счетов получателей: «последние 4 цифры-хэш» -> название (только в браузере)
@@ -942,7 +945,7 @@
     customCats = customCats.filter(c => !RETIRED.includes(c));
     // Свои категории-двойники стандартных (например «Подарки») сливаем со стандартными.
     // Что именно слито, запоминаем: пользователь видит уведомление и может вернуть как было.
-    let keepCats = loadJSON("ba_keepcats_v1", []);        // имена, которые пользователь велел не сливать
+    let keepCats = loadJSON("ba_keepcats_v1", []).filter(c => typeof c === "string");        // имена, которые пользователь велел не сливать
     let mergeNote = loadJSON("ba_mergenote_v1", []);      // [{from, to, entries:[{s, k}]}]
     function mergeDuplicateCats() {
       const target = c => keepCats.includes(c) ? c : Cat.canonical(c);
@@ -1059,7 +1062,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.62";
+    const FB_VERSION = "v4.63";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -3205,6 +3208,7 @@
           const r = Merge.addStatement(st, res);
           loaded++;
           notes.push(`${f.name}: ${res.bank.name}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
+          const curNote = Merge.currencyNote(res.header); if (curNote) notes.push(curNote);
         } catch (err) {
           notes.push(`${f.name}: ${String(err.message).replace(/\.$/, "")}.`);
           if (err && err.unsupported) unsupportedFile = f;
@@ -3523,7 +3527,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.62", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.63", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }

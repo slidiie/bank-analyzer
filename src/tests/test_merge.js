@@ -187,5 +187,22 @@ check("не в счёт и доходы", sum.includes("Не в счёт: меж
   check("файл разбора: половина пары без второй половины больше не пара", r2.added === 0 && M.pairCount(s.txs) === 2);
 }
 
+// v4.63: предупреждение о счёте не в рублях
+check("счёт в USD: есть предупреждение", /USD/.test(M.currencyNote({ currency: "USD" }) || ""));
+check("счёт в BYN или без валюты: предупреждения нет", M.currencyNote({ currency: "BYN" }) === null && M.currencyNote({}) === null && M.currencyNote(null) === null);
+check("мусор в валюте: предупреждения нет", M.currencyNote({ currency: "<b>" }) === null);
+// v4.63: слова внутри других слов не дают ложную категорию
+{
+  const C = require("../categories.js");
+  const cat = d => C.categorize({ details: d, amount: -5 });
+  check("TRANSPORT не «Развлечения» (sport внутри)", cat("TRANSPORT CARD TEST") !== "Развлечения");
+  check("«транспорт» не «Развлечения» (спорт внутри)", cat("Оплата транспорт тест") !== "Развлечения");
+  check("SPORTMASTER и «Спортзал» по-прежнему «Развлечения»", cat("SPORTMASTER TEST") === "Развлечения" && cat("Оплата спортзал") === "Развлечения");
+  check("MOBI не «Товары для дома» (obi внутри)", cat("MOBI SHOP TEST") !== "Товары для дома");
+  check("OBI по-прежнему «Товары для дома»", cat("OBI MINSK") === "Товары для дома");
+  check("комиссионный магазин не «Комиссии банка»", cat("КОМИССИОННЫЙ МАГАЗИН ТЕСТ") !== C.FEES);
+  check("комиссия за перевод и комиссионное вознаграждение: «Комиссии банка»", cat("Комиссия за перевод") === C.FEES && cat("Комиссионное вознаграждение") === C.FEES);
+}
+
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);
