@@ -432,6 +432,8 @@
       .viewswitch button { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
     }
     .fbbtn { min-height: 2.75rem; padding: 0 .9rem; background: transparent; color: var(--accent-ink); border: 1px solid var(--accent); border-radius: 999px; font: inherit; font-size: .95rem; cursor: pointer; }
+    :root[data-theme="dark"] .fbbtn { color: var(--accent); }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fbbtn { color: var(--accent); } }
     #fbSheet label { font-weight: 600; }
     #fbSheet select { max-width: 100%; }
     #printBtn[hidden] { display: none; }
