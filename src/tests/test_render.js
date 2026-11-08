@@ -611,5 +611,21 @@ check("столбец-месяц и столбец-день ведут в сво
 check("неделя относится к месяцу своего четверга", bm("2026-08-31", "week", ["2026-08", "2026-09"]) === "2026-09" && bm("2026-08-24", "week", ["2026-08", "2026-09"]) === "2026-08");
 check("месяца нет в выписке: перехода нет", bm("2026-07", "month", ["2026-08", "2026-09"]) === null);
 
+// ---- v4.63: повреждённое хранилище (значения не того вида) не ломает страницу ----
+{
+  const bad = { ba_cats_v1: '{"x":1}', ba_rules_v1: '"строка"', ba_txrules_v1: "[1,2]", ba_icons_v1: "5", ba_keepcats_v1: '"a"',
+    ba_mergenote_v1: "{}", ba_budget_v1: "[]", ba_calc_v1: "true", ba_history_v1: '"x"', ba_view_v1: "{}", ba_acctnames_v1: "null" };
+  const ctx2 = vm.createContext(Object.assign({}, ctx, { localStorage: { getItem: k => (k in bad ? bad[k] : null), setItem: () => {} } }));
+  let err = null;
+  try {
+    vm.runInContext(script, ctx2);
+    vm.runInContext(`header = { from: "2026-09-01", to: "2026-09-30" };
+      txs = [{ date: "2026-09-03", time: null, amount: -10, balance: null, details: "SHOP TEST", mcc: "5411" }]; render();`, ctx2);
+  } catch (e) { err = e; }
+  check("повреждённое хранилище: страница отрисовалась без ошибки" + (err ? " (" + err.message + ")" : ""), !err);
+  check("повреждённое хранилище: свои категории пустые, правила пустые",
+    vm.runInContext(`Array.isArray(customCats) && customCats.length === 0 && Object.keys(userRules).length === 0 && !Array.isArray(txRules)`, ctx2));
+}
+
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

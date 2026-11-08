@@ -132,9 +132,16 @@
     return n;
   }
 
+  // Счёт не в белорусских рублях: суммы показываются как есть, без пересчёта по курсу. Возвращает текст предупреждения или null.
+  function currencyNote(header) {
+    const c = header && typeof header.currency === "string" ? header.currency.toUpperCase() : "";
+    if (!/^[A-Z]{3}$/.test(c) || c === "BYN" || c === "BYR") return null;
+    return `Счёт в валюте ${c}: суммы показаны в ${c} без пересчёта по курсу, а подписаны как BYN. Если вместе загружены выписки в рублях, общие итоги будут неточными.`;
+  }
+
   const pairCount = txs => new Set(txs.filter(t => t.pair).map(t => t.pair)).size;
 
-  const api = { newState, addStatement, addSaved, mergedHeader, markCrossPairs, pairCount, txId, TRANSFERISH };
+  const api = { newState, addStatement, addSaved, mergedHeader, currencyNote, markCrossPairs, pairCount, txId, TRANSFERISH };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Merge = api;
 })(typeof self !== "undefined" ? self : this);
