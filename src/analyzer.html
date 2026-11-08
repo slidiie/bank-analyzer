@@ -126,7 +126,9 @@
     .trend .hit, .trend .hit:focus, .trend .hit:focus-visible, .trend .hit:active { outline: none !important; outline-style: none !important; box-shadow: none; stroke: none; }   /* рамки нет: столбец подсвечивается сам (наведение, фокус с клавиатуры, выбор) */
     .trend text { fill: var(--muted); font-size: 15px; }
     .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
-    .toprow .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toprow .tname { display: flex; min-width: 0; }
+    .toprow .tname .tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .toprow .tname .muted { flex: none; white-space: nowrap; }
     .tbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); }
     .tbar > i { display: block; height: 100%; border-radius: 3px; }
     .icard { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: .8rem 1rem; }
@@ -865,7 +867,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.70, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.71, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1121,7 +1123,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.70";
+    const FB_VERSION = "v4.71";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -2337,7 +2339,7 @@
           ...top.map(g => {
             const nm = friendlyTitle(g.tx);
             return h("div", { class: "toprow" },
-              h("span", { class: "tname" }, nm === nm.toUpperCase() ? sentence(nm) : nm, h("span", { class: "muted" }, ` · ${g.n} ${opsWord(g.n)}`)),
+              h("span", { class: "tname" }, h("span", { class: "tn" }, nm === nm.toUpperCase() ? sentence(nm) : nm), h("span", { class: "muted" }, ` · ${g.n} ${opsWord(g.n)}`)),
               h("span", { class: "num" }, fmt(g.sum)),
               h("div", { class: "tbar" }, h("i", { style: `width:${(g.sum / topMax * 100).toFixed(1)}%;background:${catColor(displayCat(g.tx))}` })));
           }),
@@ -3629,7 +3631,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.70", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.71", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
