@@ -34,7 +34,7 @@
       --ok-bg:var(--surface); --ok-border:#8FC3A9;
       --warn-bg:var(--surface); --warn-border:#CDBB84;
       --bar:var(--accent); --barbg:var(--surface-2); --active-text:var(--on-accent);
-      --ctl-bg:var(--surface); --ctl-border:#838C97; --ctl-text:var(--text);
+      --ctl-bg:var(--surface); --ctl-border:#7A838E; --ctl-text:var(--text);
       --lvl-warn:#8a5f00; --lvl-over:#b3261e;
     }
     @media (prefers-color-scheme: dark) {
@@ -323,6 +323,14 @@
     #all { overflow-x: auto; }
     .pie .lname, .lrow > span { overflow-wrap: break-word; min-width: 0; }
     button, .tab { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+    /* Доступность: цели нажатия не меньше 44 px на телефоне и сенсорных экранах */
+    @media (pointer: coarse), (max-width: 768px) {
+      button:not(.linklike), .tab, select { min-height: 44px; }
+      .themeseg button { width: 2.75rem; height: 2.75rem; }
+      .chipbtn { min-height: 44px; }
+      .viewswitch button { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
   </style>
 </head>
 <body>
@@ -598,7 +606,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.43, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.44, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -2665,7 +2673,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.43", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.44", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
