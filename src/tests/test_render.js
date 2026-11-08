@@ -611,6 +611,14 @@ check("столбец-месяц и столбец-день ведут в сво
 check("неделя относится к месяцу своего четверга", bm("2026-08-31", "week", ["2026-08", "2026-09"]) === "2026-09" && bm("2026-08-24", "week", ["2026-08", "2026-09"]) === "2026-08");
 check("месяца нет в выписке: перехода нет", bm("2026-07", "month", ["2026-08", "2026-09"]) === null);
 
+// ---- v4.64: Tab по кругу внутри открытого окна ----
+{
+  const r = vm.runInContext(`(() => { const a = {n:"a"}, b = {n:"b"}, c = {n:"c"}, L = [a, b, c], out = {n:"out"};
+    const nm = x => x ? x.n : null;
+    return [nm(nextFocus(L, c, false)), nm(nextFocus(L, a, true)), nm(nextFocus(L, b, false)), nm(nextFocus(L, out, false)), nm(nextFocus(L, out, true)), nm(nextFocus([], a, false))].join(","); })()`, ctx);
+  check("окно: с последнего на первый, с первого назад на последний, снаружи внутрь, пустое окно без перехода", r === "a,c,,a,c,");
+}
+
 // ---- v4.63: повреждённое хранилище (значения не того вида) не ломает страницу ----
 {
   const bad = { ba_cats_v1: '{"x":1}', ba_rules_v1: '"строка"', ba_txrules_v1: "[1,2]", ba_icons_v1: "5", ba_keepcats_v1: '"a"',
