@@ -808,7 +808,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.64, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.65, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1062,7 +1062,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.64";
+    const FB_VERSION = "v4.65";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1287,11 +1287,13 @@
     // Значки, из которых пользователь выбирает для своей категории
     const ICON_NAMES = { tag: "Ценник", gift: "Подарки", paw: "Питомцы", gamepad: "Игры", book: "Книги", plane: "Путешествия", car: "Машина", briefcase: "Работа", cap: "Учёба", receipt: "Счета", wrench: "Ремонт", coffee: "Кофе", dumbbell: "Спорт", music: "Музыка", heart: "Здоровье", bulb: "Идеи" };
     const PICK_ICONS = ["tag", "gift", "paw", "gamepad", "book", "plane", "car", "briefcase", "cap", "receipt", "wrench", "coffee", "dumbbell", "music", "heart", "bulb"];
-    const iconKey = cat => (cat === "Не разобрано" ? "question" : Cat.ICONS[cat] || (ICON_SVG[customIcons[cat]] ? customIcons[cat] : "tag"));
+    // Только собственные значки: имя вроде «constructor» из файла разбора не должно найти служебное свойство объекта
+    const hasIcon = k => typeof k === "string" && Object.prototype.hasOwnProperty.call(ICON_SVG, k);
+    const iconKey = cat => (cat === "Не разобрано" ? "question" : (Object.prototype.hasOwnProperty.call(Cat.ICONS, cat) && Cat.ICONS[cat]) || (hasIcon(customIcons[cat]) ? customIcons[cat] : "tag"));
     function iconEl(key) {
       const s = document.createElement("span");
       s.className = "ico";
-      s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON_SVG[key] || ICON_SVG.tag) + "</svg>";
+      s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (hasIcon(key) ? ICON_SVG[key] : ICON_SVG.tag) + "</svg>";
       return s;
     }
     // Суммы: пробел между тысячами (неразрывный), единый минус «−»
@@ -1308,6 +1310,9 @@
     // Для показа: если категории нет, но видно способ оплаты (ЕРИП, интернет-банк), берём «корзину»
     const displayCat = tx => categoryOf(tx) || Cat.bucket(tx) || null;
     const isUnclear = c => !c || c === "Не разобрано" || Cat.BUCKETS.includes(c);
+    // Возврат денег за покупку: поступление с категорией трат (по коду MCC или выбранной человеком). Уменьшает траты этой категории, доходом не считается
+    const NOT_SPEND = [Cat.INCOME, Cat.OWN, Cat.LOAN, Cat.SAVINGS, Cat.GAMBLING];
+    const isRefund = tx => { if (!(tx.amount > 0)) return false; const c = displayCat(tx); return !isUnclear(c) && !NOT_SPEND.includes(c); };
     // Откуда взялась категория: подпись «почему здесь» под выбором категории
     function whyCat(tx) {
       if (txRules[txId(tx)]) return "выбрано вами";
@@ -1773,15 +1778,20 @@
       const sums = new Map();
       let total = 0, own = 0, loan = 0, saved = 0;
       for (const tx of list) {
-        if (tx.amount >= 0) { if (displayCat(tx) === Cat.SAVINGS) saved -= tx.amount; continue; }   // снятие с накоплений уменьшает «отложено»
+        if (tx.amount >= 0) {
+          if (displayCat(tx) === Cat.SAVINGS) saved -= tx.amount;                     // снятие с накоплений уменьшает «отложено»
+          else if (isRefund(tx)) sums.set(displayCat(tx), (sums.get(displayCat(tx)) || 0) - tx.amount);   // возврат уменьшает траты своей категории
+          continue;
+        }
         const cat = displayCat(tx) || "Не разобрано";
         if (cat === Cat.OWN) { own += -tx.amount; continue; }
         if (cat === Cat.LOAN) { loan += -tx.amount; continue; }
         if (cat === Cat.SAVINGS) { saved += -tx.amount; continue; }
         sums.set(cat, (sums.get(cat) || 0) + -tx.amount);
-        total += -tx.amount;
       }
-      const rows = [...sums.entries()].sort((a, b) => b[1] - a[1]);
+      // Возврат больше покупок за период: категория просто обнуляется, в минус не уходит
+      const rows = [...sums.entries()].filter(([, v]) => v > 0.004).sort((a, b) => b[1] - a[1]);
+      total = rows.reduce((a, [, v]) => a + v, 0);
       return { rows, total, own, loan, saved };
     }
 
@@ -2034,7 +2044,7 @@
     }
 
     // ---- Обзор: главная мысль сверху, динамика и топ получателей снизу ----
-    const spendList = list => list.filter(t => t.amount < 0 && ![Cat.OWN, Cat.LOAN, Cat.SAVINGS].includes(displayCat(t)));
+    const spendList = list => list.filter(t => (t.amount < 0 && ![Cat.OWN, Cat.LOAN, Cat.SAVINGS].includes(displayCat(t))) || isRefund(t));
     const MON = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
     const shortDate = iso => `${parseInt(iso.slice(8, 10), 10)} ${MON[parseInt(iso.slice(5, 7), 10) - 1]}`;
     function periodDays(list) {
@@ -2047,7 +2057,7 @@
     function statementSummary() {
       const dates = txs.map(t => t.date).filter(Boolean).sort();
       if (!dates.length) return {};
-      const sum = History.summarize(spendList(txs).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Прочее" })), { from: header.from || dates[0], to: header.to || dates[dates.length - 1], dates });
+      const sum = History.summarize(spendList(txs).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Прочее", refund: t.amount > 0 })), { from: header.from || dates[0], to: header.to || dates[dates.length - 1], dates });
       Object.keys(sum).forEach(ym => {
         const m = sum[ym], full = m.first === 1 && m.last === new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
         if (full && coverageNote(ym)) delete sum[ym];   // месяц покрыт выписками не целиком: полным его не считаем
@@ -2197,7 +2207,7 @@
       const sums = new Map();
       barList.forEach(t => { const k = keyOf(t.date); sums.set(k, (sums.get(k) || 0) - t.amount); });
       const keys = [...sums.keys()].sort(), seq = [];
-      for (let k = keys[0], guard = 0; k <= keys[keys.length - 1] && guard < 400; k = next(k), guard++) seq.push([k, sums.get(k) || 0]);
+      for (let k = keys[0], guard = 0; k <= keys[keys.length - 1] && guard < 400; k = next(k), guard++) seq.push([k, Math.max(0, sums.get(k) || 0)]);
       const box = h("div", { class: "dyn" });
       const dmonths = monthsInStatement(), canOpen = dmonths.length > 1;   // месяц можно выбрать (и снять выбор) из любого периода
       if (seq.length >= 2) {
@@ -3109,7 +3119,7 @@
         const isOwn = t => categoryOf(t) === Cat.OWN;
         const isSaving = t => categoryOf(t) === Cat.SAVINGS;
         const spent = list.filter(t => t.amount < 0 && !isOwn(t) && !isSaving(t)).reduce((a, t) => a + -t.amount, 0);
-        const got = list.filter(t => t.amount > 0 && !isOwn(t) && !isSaving(t)).reduce((a, t) => a + t.amount, 0);
+        const got = list.filter(t => t.amount > 0 && !isOwn(t) && !isSaving(t) && !isRefund(t)).reduce((a, t) => a + t.amount, 0);
         const ownList = list.filter(isOwn);
         const parts = [filtered ? `найдено операций: ${list.length} из ${byMonth.length}` : `операций: ${list.length}`];
         if (spent) parts.push(`расходы: ${fmt(spent)} BYN`);
@@ -3549,7 +3559,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.64", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.65", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
