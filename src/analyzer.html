@@ -125,6 +125,15 @@
     #plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .7rem; align-items: start; }
     #plan details { margin: 0; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-m); padding: .7rem 1rem; max-width: none; }
     #plan details[open] { grid-column: 1 / -1; }
+    #subs .sbig { font-size: 1.6rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
+    #subs .scard { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-m); padding: .7rem 1rem; margin: 0 0 .7rem; }
+    #subs h3 { margin: 1rem 0 .4rem; font-size: 1rem; }
+    #subs .slist { list-style: none; margin: 0; padding: 0; }
+    #subs .slist li { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; padding: .45rem 0; border-top: 1px solid var(--line); }
+    #subs .slist li:first-child { border-top: 0; }
+    #subs .sname { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+    #subs .swhen { color: var(--muted); font-size: .85rem; }
+    #subs .samount { font-variant-numeric: tabular-nums; white-space: nowrap; }
     #plan summary { cursor: pointer; font-weight: 600; list-style: none; min-height: 44px; }
     #plan summary::-webkit-details-marker { display: none; }
     #plan .pbig { display: block; font-size: 1.6rem; line-height: 1.2; font-weight: 700; }
@@ -183,6 +192,7 @@
     body[data-view="review"] [data-sec]:not([data-sec~="review"]),
     body[data-view="insights"] [data-sec]:not([data-sec~="insights"]),
     body[data-view="plan"] [data-sec]:not([data-sec~="plan"]),
+    body[data-view="subs"] [data-sec]:not([data-sec~="subs"]),
     body[data-view="more"] [data-sec]:not([data-sec~="more"]) { display: none !important; }
     body[data-view]:not([data-view="none"]):not(.demo) #landing > :not(.topbar) { display: none; }
     .sect { margin: 0; }
@@ -608,6 +618,11 @@
       <p class="muted secthint">Период выбирается на экране «Обзор».<button id="insPeriod" type="button">Сменить период</button></p>
       <ul class="insights" id="insights"></ul>
     </section>
+    <section class="sect" id="subsBox" data-sec="subs">
+      <h2 id="subsTitle">Подписки и регулярные</h2>
+      <p class="muted secthint">Период выбирается на экране «Обзор». Здесь считаются полные месяцы.<button id="subsPeriod" type="button">Сменить период</button></p>
+      <div id="subs"></div>
+    </section>
     <section class="sect" id="planBox" data-sec="plan">
       <h2 id="planTitle">Планирование</h2>
       <p class="muted secthint">Период выбирается на экране «Обзор».<button id="planPeriod" type="button">Сменить период</button></p>
@@ -791,7 +806,7 @@
     const openKeys = new Set();                    // группы, где пользователь раскрыл «Операции по отдельности» (по умолчанию свёрнуты, чтобы список был короче)
     let recurring = new Map();                     // повторяющиеся суммы (см. findRecurring)
     let bottomOpen = true;                         // список в разделе «Разобрать» всегда развёрнут (раздел и есть экран)
-    let curSection = "overview";                   // открытый раздел: overview | review | insights | plan | more
+    let curSection = "overview";                   // открытый раздел: overview | review | insights | subs | plan | more
     let bottomTab = null;                          // нижняя вкладка: "review" или "all" (null: выбрать при первой отрисовке)
     let reviewOther = 0;                           // сколько неразобранных операций в других месяцах
     let incomeGroups = 0;                            // сколько групп неопознанных поступлений ждут отметки
@@ -1450,6 +1465,7 @@
       const r = renderSummary();
       renderInsights(r.stats, r.label, r);
       renderPlan();
+      renderSubs();
     }
 
     // Нижняя часть страницы: вкладки «Все операции» и «Нужно разобрать», плюс плашка наверху
@@ -2150,19 +2166,69 @@
     }
 
     const PLAN_WINDOW = 6;                         // сколько последних полных месяцев берём для прогноза и средних
-    function renderPlan(focusId) {
-      const box = $("plan");
-      box.replaceChildren();
-      const period = currentPeriod();
+    // Общие данные для «Планирования» и «Подписок»: последние полные месяцы и регулярные платежи по ним
+    function regularCtx() {
       const months = monthsInStatement();
       const fullAll = months.filter(ym => !coverageNote(ym));
       // Для прогноза, дохода и регулярных платежей берём последние полные месяцы: свежие данные точнее старых
       const full = fullAll.slice(-PLAN_WINDOW);
       const items = txs.map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) }));
-      const listFor = ym => txs.filter(t => t.date && t.date.startsWith(ym));
-      const totals = full.map(ym => statsFor(listFor(ym)).total);
       const winItems = items.filter(t => t.date && full.includes(t.date.slice(0, 7)));
       const regular = full.length >= 2 ? Planner.findRegular(winItems, full, PLAN_SKIP) : [];
+      return { months, fullAll, full, items, regular };
+    }
+
+    const dmy = d => d.slice(8, 10) + "." + d.slice(5, 7);
+    const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+
+    // Экран «Подписки и регулярные»: сколько уходит в месяц, ближайшие списания, весь список
+    function renderSubs() {
+      const box = $("subs");
+      if (!box) return;
+      box.replaceChildren();
+      const { months, full, items, regular } = regularCtx();
+      if (months.length < 2) { box.append(h("p", { class: "muted" }, "Для этого нужны данные хотя бы за два месяца. Загрузите выписку за больший период.")); return; }
+      if (full.length < 2) { box.append(h("p", { class: "muted" }, "Нужно минимум два полных месяца: сейчас таких " + full.length + ". Загрузите выписку за больший период.")); return; }
+      if (!regular.length) { box.append(h("p", { class: "muted" }, "Одинаковых платежей не нашлось. Ищу платёж одной и той же суммы минимум в " + Math.max(2, Math.ceil(full.length * 0.6)) + " месяцах из " + full.length + ".")); return; }
+      const dates = txs.map(t => t.date).filter(Boolean).sort();
+      const dataEnd = [header.to, dates[dates.length - 1]].filter(Boolean).sort().pop();
+      const today = todayIso();
+      const rows = regular.map(r => ({ r, s: Planner.schedule(r, items, dataEnd, PLAN_SKIP) })).filter(x => x.s);
+      const sum = regular.reduce((a, r) => a + r.perMonth, 0);
+      const spend = full.map(ym => statsFor(txs.filter(t => t.date && t.date.startsWith(ym))).total);
+      const avg = spend.reduce((a, v) => a + v, 0) / spend.length;
+      const share = avg > 0 ? Math.round(Math.min(100, sum / avg * 100)) : null;
+      box.append(h("div", { class: "scard" },
+        h("div", { class: "sbig" }, `${money(sum)} BYN`),
+        h("div", { class: "muted" }, `Уходит на регулярные платежи в месяц · ${regular.length}` + (share != null ? ` · около ${share}% трат` : "")),
+        h("div", { class: "muted" }, `По последним ${full.length} полным месяцам (${monthTitle(full[0])} — ${monthTitle(full[full.length - 1])})`)));
+      const when = d => {
+        const n = Planner.daysBetween(today, d);
+        return n < 0 ? `по выписке (она до ${dmy(dataEnd)})` : n === 0 ? "сегодня" : n === 1 ? "завтра" : `через ${n} дн.`;
+      };
+      const upcoming = rows.filter(x => x.s.next && !x.s.skipped).sort((a, b) => a.s.next < b.s.next ? -1 : a.s.next > b.s.next ? 1 : b.r.amount - a.r.amount).slice(0, 5);
+      box.append(h("h3", {}, "Ближайшие списания"));
+      if (upcoming.length) {
+        box.append(h("ul", { class: "slist" }, upcoming.map(x => h("li", {},
+          h("span", { class: "sname" }, x.r.name), h("span", { class: "swhen" }, `${dmy(x.s.next)} · ${when(x.s.next)}`), h("span", { class: "samount" }, `${money(x.r.amount)} BYN`)))));
+        box.append(h("p", { class: "muted" }, "Дата: последний платёж плюс обычный шаг между платежами. Если платёж не прошёл в срок, он ниже помечен."));
+      } else box.append(h("p", { class: "muted" }, "Назвать ближайшие списания нельзя: у найденных платежей нет ровного срока или они не прошли в срок (ниже в списке)."));
+      const stepName = s => s.kind === "month" ? "раз в месяц" : s.kind === "days" ? `каждые ${s.step} дн.` : "без чёткого срока";
+      box.append(h("h3", {}, `Все регулярные платежи · ${rows.length}`));
+      box.append(h("ul", { class: "slist" }, rows.map(x => h("li", {},
+        h("span", { class: "sname" }, x.r.name, h("span", { class: "muted" }, ` · ${x.r.cat}`)),
+        h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
+        h("span", { class: "samount" }, `${money(x.r.amount)} BYN`)))));
+      box.append(h("p", { class: "muted" }, "Это совпадение сумм, а не подтверждённые подписки: проверьте список сами."));
+    }
+
+    function renderPlan(focusId) {
+      const box = $("plan");
+      box.replaceChildren();
+      const period = currentPeriod();
+      const { months, fullAll, full, items, regular } = regularCtx();
+      const listFor = ym => txs.filter(t => t.date && t.date.startsWith(ym));
+      const totals = full.map(ym => statsFor(listFor(ym)).total);
       const fc = Planner.forecast(totals, regular);
       const useM = full.length ? full : months.slice(-PLAN_WINDOW);
       const n = Math.max(1, useM.length);
@@ -2220,6 +2286,7 @@
           h("td", { class: "muted" }, `~${r.day}-го`), h("td", {}, r.name), h("td", { class: "muted" }, r.cat), h("td", { class: "num" }, money(r.amount))))));
         if (regular.length > 12) d.append(h("p", { class: "muted" }, `…и ещё ${regular.length - 12}.`));
         d.append(h("p", { class: "muted" }, "Это совпадение сумм, а не подтверждённые подписки: проверьте список сами."));
+        d.append(h("p", {}, h("button", { type: "button", onclick: () => showSection("subs") }, "Открыть «Подписки»: ближайшие списания и весь список")));
       }
       if (fc) {
         const from = Planner.addMonths(full[full.length - 1], 1);
@@ -3251,6 +3318,7 @@
       overview: '<path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
       review: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
       insights: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+      subs: '<path d="M20 11a8 8 0 0 0-14.3-4.6L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.6L20 15.5"/><path d="M20 20v-4.5h-4.5"/>',
       plan: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
       more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'
     };
@@ -3272,10 +3340,11 @@
         if (id === curSection) attrs["aria-current"] = "page";
         return h("button", attrs, ...kids);
       };
-      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Разобрать"), btn("insights", "Выводы"), btn("plan", "Планирование", "План"), btn("more", "Ещё"));
+      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Разобрать"), btn("insights", "Выводы"), btn("subs", "Подписки"), btn("plan", "Планирование", "План"), btn("more", "Ещё"));
     }
     $("insPeriod").addEventListener("click", () => showSection("overview"));
     $("planPeriod").addEventListener("click", () => showSection("overview"));
+    $("subsPeriod").addEventListener("click", () => showSection("overview"));
     renderRules();
     renderMergeNote();
   </script>
