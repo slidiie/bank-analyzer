@@ -523,6 +523,7 @@
     <details class="aboutdet"><summary>Что умеет сайт</summary>
     <div class="cards">
       <div class="card"><h3>Банк определяется сам</h3>
+        <div id="landingChips" class="bankchips" role="list" aria-label="Поддерживаемые банки"></div>
         <p id="landingBanks"></p></div>
       <div class="card"><h3>Несколько выписок сразу</h3>
         <p>Можно загрузить выписки разных банков и периодов. Повторы пропускаются, а перевод между вашими счетами программа старается не считать тратой.</p></div>
@@ -541,6 +542,12 @@
       <p>Кнопка «Сохранить в файл» создаёт файл с вашими правилами и операциями, то есть с реальными тратами. Храните его у себя и никому не отправляйте. На чужом компьютере после работы сотрите сохранённое, как описано выше.</p></details>
     <details><summary>Насколько точны итоги?</summary>
       <p>Если банк указывает итоги в шапке выписки, сайт сверяет с ними разобранные операции и показывает результат: зелёная галочка, если сумма сошлась. Если сверить нечем, так и написано. Категории определяются по правилам и могут ошибаться: поправьте вручную, выбор запомнится. Сайт не даёт финансовых советов, это справочный разбор ваших же данных.</p></details>
+    <details><summary>Почему итоги могут не совпасть с банком?</summary>
+      <p>Чаще всего из-за переводов между вашими счетами (сайт старается не считать их тратами и доходом), возвратов и операций, которые банк провёл другой датой. Если банк указывает итоги в шапке выписки, сайт показывает строку «Сверка итогов». Если сумма не сошлась, пришлите образец через кнопку «Написать нам», мы разберёмся.</p></details>
+    <details><summary>Нужно ли платить или регистрироваться?</summary>
+      <p>Нет. Сайт бесплатный, аккаунт не нужен: открыли страницу, выбрали файл и получили отчёт.</p></details>
+    <details><summary>Работает ли без интернета?</summary>
+      <p>Да, после того как страница открылась. Отключите интернет перед загрузкой выписки: чтение и разбор продолжат работать, потому что всё происходит в вашем браузере.</p></details>
     <details><summary>Помогаю проверить сайт: что делать?</summary>
       <p>Спасибо! Это займёт 5–10 минут. <b>Ваша выписка никуда не отправляется:</b> сайт работает целиком в вашем браузере, на сервер ничего не загружается.</p>
       <ol>
@@ -801,7 +808,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.58, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.59, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -989,7 +996,12 @@
     const bankNames = Banks.BANKS.map(b => b.name).reverse().join(", ");
     $("banks").textContent = "PDF или CSV · " + bankNames;
     $("faqBanks").textContent = "Сейчас разбираются выписки: " + bankNames + ". Для каждого банка формат PDF свой, поэтому новые банки добавляются по мере того, как появляются образцы выписок. Выписку неподдерживаемого банка сайт честно откажется читать, а не покажет неверные суммы.";
-    $("landingBanks").textContent = "Сейчас поддерживаются: " + bankNames + ". Нет вашего банка? Можно помочь добавить его: ссылка ниже в разделе вопросов.";
+    $("landingChips").replaceChildren(...Banks.BANKS.map(b => b.name).reverse().map(n => {
+      const chip = h("span", { class: "bankchip" }, h("span", { class: "mono", "aria-hidden": "true" }, n.trim().charAt(0).toUpperCase()), n);
+      chip.setAttribute("role", "listitem");
+      return chip;
+    }));
+    $("landingBanks").textContent = "Нет вашего банка? Можно помочь добавить его: ссылка ниже в разделе вопросов.";
 
     function enterDemo() {
       const wasDemo = demoMode;
@@ -1046,7 +1058,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.58";
+    const FB_VERSION = "v4.59";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -3504,7 +3516,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.58", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.59", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
