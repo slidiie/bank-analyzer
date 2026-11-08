@@ -664,7 +664,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.46, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.47, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1727,9 +1727,31 @@
 
     // Плашка над диаграммой: «Прочее» занимает много, а вернуть разбор раньше было негде
     const otherUndo = [];
+    // Порог зависит от длины показанного периода: чем короче, тем он выше (одна операция сильно меняет долю).
+    // 6 мес. и больше: 20%, 3 мес.: 25%, 1 мес.: 30%, меньше месяца: 35%; между точками линейно. Нужно ещё хотя бы 5 операций.
+    const OTHER_MIN_OPS = 5;
+    function otherThreshold(days) {
+      const pts = [[15, 0.35], [30, 0.30], [90, 0.25], [180, 0.20]];
+      if (days <= pts[0][0]) return pts[0][1];
+      for (let i = 1; i < pts.length; i++) if (days <= pts[i][0]) {
+        const [d0, v0] = pts[i - 1], [d1, v1] = pts[i];
+        return v0 + (v1 - v0) * (days - d0) / (d1 - d0);
+      }
+      return pts[pts.length - 1][1];
+    }
+    function otherPlateInfo() {
+      const period = currentPeriod();
+      const list = txs.filter(t => t.date && (period === "all" || t.date.startsWith(period)));
+      const dates = list.map(t => t.date).sort();
+      const days = dates.length ? Math.round((Date.parse(dates[dates.length - 1]) - Date.parse(dates[0])) / 864e5) + 1 : 0;
+      const ops = list.filter(t => t.amount < 0 && !t.pair && displayCat(t) === "Прочее").length;
+      return { threshold: otherThreshold(days), ops };
+    }
     function otherPlate(st) {
       const row = st.rows.find(r => r[0] === "Прочее");
-      if (!row || !st.total || row[1] / st.total < 0.25) return null;
+      if (!row || !st.total) return null;
+      const info = otherPlateInfo();
+      if (row[1] / st.total < info.threshold || info.ops < OTHER_MIN_OPS) return null;
       const pct = Math.round(row[1] / st.total * 100);
       const box = h("div", { class: "note otherplate" });
       const intro = () => box.replaceChildren(
@@ -2983,7 +3005,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.46", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.47", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
