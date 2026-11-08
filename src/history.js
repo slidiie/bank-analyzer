@@ -11,7 +11,8 @@
 
   // Сводка по месяцам из трат. cover: { from, to } даты выписки (если пусто, берутся из самих трат).
   function summarize(spend, cover) {
-    const dated = spend.filter(t => t.date && t.amount < 0);
+    // Возврат (refund: true, сумма больше нуля) уменьшает траты месяца и своей категории
+    const dated = spend.filter(t => t.date && (t.amount < 0 || (t.refund === true && t.amount > 0)));
     const out = {};
     const dates = (cover && cover.dates) || dated.map(t => t.date);
     if (!dates.length) return out;
@@ -29,9 +30,9 @@
       m.total += v; m.days[d] = (m.days[d] || 0) + v; m.cats[t.cat || "Прочее"] = (m.cats[t.cat || "Прочее"] || 0) + v;
     });
     Object.values(out).forEach(m => {
-      m.total = r2(m.total);
-      Object.keys(m.days).forEach(k => { m.days[k] = r2(m.days[k]); });
-      Object.keys(m.cats).forEach(k => { m.cats[k] = r2(m.cats[k]); });
+      m.total = Math.max(0, r2(m.total));                       // возвратов больше, чем трат: месяц без трат, не в минус
+      Object.keys(m.days).forEach(k => { m.days[k] = Math.max(0, r2(m.days[k])); });
+      Object.keys(m.cats).forEach(k => { const v = r2(m.cats[k]); if (v > 0) m.cats[k] = v; else delete m.cats[k]; });
     });
     return out;
   }

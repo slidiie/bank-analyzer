@@ -611,6 +611,22 @@ check("столбец-месяц и столбец-день ведут в сво
 check("неделя относится к месяцу своего четверга", bm("2026-08-31", "week", ["2026-08", "2026-09"]) === "2026-09" && bm("2026-08-24", "week", ["2026-08", "2026-09"]) === "2026-08");
 check("месяца нет в выписке: перехода нет", bm("2026-07", "month", ["2026-08", "2026-09"]) === null);
 
+// ---- v4.65: возврат за покупку уменьшает траты своей категории и не считается доходом ----
+{
+  const r = vm.runInContext(`(() => { const L = [
+      { date: "2026-09-02", time: null, amount: -50, balance: null, details: "SHOP TEST", mcc: "5411" },
+      { date: "2026-09-04", time: null, amount: 20, balance: null, details: "Возврат SHOP TEST", mcc: "5411" },
+      { date: "2026-09-05", time: null, amount: 100, balance: null, details: "Зачисление TEST", mcc: null },
+      { date: "2026-09-06", time: null, amount: 70, balance: null, details: "Возврат CAFE TEST", mcc: "5812" }];
+    const st = statsFor(L), food = st.rows.find(x => x[0] === "Продукты");
+    return [st.total, food ? food[1] : null, st.rows.some(x => x[0] === "Кафе и рестораны"), isRefund(L[1]), isRefund(L[2]), spendList(L).length].join(","); })()`, ctx);
+  check("возврат: Продукты 50 − 20 = 30, итог 30; поступление не возврат", r === "30,30,false,true,false,3");
+}
+
+// ---- v4.65: значок ищется только среди своих значков ----
+check("значок «constructor» из файла разбора и категория «toString»: обычный значок",
+  vm.runInContext(`customIcons["Тест-кат"] = "constructor"; const a = iconKey("Тест-кат"), b = iconKey("toString"); delete customIcons["Тест-кат"]; a + "," + b`, ctx) === "tag,tag");
+
 // ---- v4.64: Tab по кругу внутри открытого окна ----
 {
   const r = vm.runInContext(`(() => { const a = {n:"a"}, b = {n:"b"}, c = {n:"c"}, L = [a, b, c], out = {n:"out"};
