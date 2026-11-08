@@ -122,7 +122,8 @@
     .trend.hasSel .col:not(.sel):not(.hot) { opacity: .3; }
     .trend .hit { fill: transparent; }
     .trend.go .hit { cursor: pointer; }
-    .trend .hit, .trend .hit:focus, .trend .hit:focus-visible { outline: none; -webkit-tap-highlight-color: transparent; }   /* рамки нет: столбец подсвечивается сам (наведение, фокус с клавиатуры, выбор) */
+    .trend, .trend * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+    .trend .hit, .trend .hit:focus, .trend .hit:focus-visible, .trend .hit:active { outline: none !important; outline-style: none !important; box-shadow: none; stroke: none; }   /* рамки нет: столбец подсвечивается сам (наведение, фокус с клавиатуры, выбор) */
     .trend text { fill: var(--muted); font-size: 15px; }
     .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
     .toprow .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -808,7 +809,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.65, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.66, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1062,7 +1063,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.65";
+    const FB_VERSION = "v4.66";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -2253,6 +2254,9 @@
           openMonth(m);
         };
         if (holder.addEventListener) {
+          // Касание и щелчок не ставят фокус на столбец (на iOS он рисует системную синюю рамку); клавиатура фокусируется как раньше
+          holder.addEventListener("mousedown", e => { if (e.target.closest && e.target.closest(".hit")) e.preventDefault(); });
+          holder.addEventListener("focusin", e => { const el = e.target; if (el && el.matches && el.matches(".hit") && !el.matches(":focus-visible") && el.blur) el.blur(); });
           holder.addEventListener("mouseover", show); holder.addEventListener("focusin", show); holder.addEventListener("click", act);
           holder.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.getAttribute && e.target.getAttribute("data-m")) { e.preventDefault(); act(e); } });
         }
@@ -3559,7 +3563,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.65", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.66", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
