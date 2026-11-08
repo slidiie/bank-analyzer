@@ -15,6 +15,7 @@ const Exporter = require("../export.js");
 const Planner = require("../planner.js");
 const Backup = require("../backup.js");
 const History = require("../history.js");
+const Filters = require("../filters.js");
 const lsWrites = [];
 
 // ---- Заглушка страницы ----
@@ -59,7 +60,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters,
 });
 vm.runInContext(script, ctx);
 
@@ -249,14 +250,14 @@ vm.runInContext(`
 const allText = () => textOf(byId["all"]);
 check("все операции: по умолчанию сначала новые", allText().indexOf("НЕИЗВЕСТНО-Г") < allText().indexOf("ПРОДУКТЫ-А"));
 vm.runInContext(`allCat = "Продукты"; renderAll();`, ctx);
-check("категория наверху: операции продуктов идут первыми", allText().indexOf("ПРОДУКТЫ-В") < allText().indexOf("НЕИЗВЕСТНО-Г") && allText().indexOf("ПРОДУКТЫ-А") < allText().indexOf("КАФЕ-Б"));
-check("категория наверху: остальные операции остаются в списке", allText().includes("КАФЕ-Б") && allText().includes("НЕИЗВЕСТНО-Г"));
+check("фильтр категории: остаются операции продуктов", allText().includes("ПРОДУКТЫ-А") && allText().includes("ПРОДУКТЫ-В"));
+check("фильтр категории: остальные операции скрыты", !allText().includes("КАФЕ-Б") && !allText().includes("НЕИЗВЕСТНО-Г"));
 vm.runInContext(`allSort = "sum-desc"; renderAll();`, ctx);
 check("сортировка по сумме: сначала крупные", allText().indexOf("ПРОДУКТЫ-В") < allText().indexOf("ПРОДУКТЫ-А"));
 vm.runInContext(`allSort = "sum-asc"; renderAll();`, ctx);
 check("сортировка по сумме: сначала мелкие", allText().indexOf("ПРОДУКТЫ-А") < allText().indexOf("ПРОДУКТЫ-В"));
 vm.runInContext(`allCat = "Не разобрано"; renderAll();`, ctx);
-check("«Не разобрано» можно поднять наверх", allText().indexOf("НЕИЗВЕСТНО-Г") < allText().indexOf("ПРОДУКТЫ-А") && allText().includes("ПРОДУКТЫ-А"));
+check("«Не разобрано» оставляет только неразобранные", allText().includes("НЕИЗВЕСТНО-Г") && !allText().includes("ПРОДУКТЫ-А"));
 vm.runInContext(`allCat = "all"; allSort = "date-asc"; renderAll();`, ctx);
 check("сортировка по дате: сначала старые", allText().indexOf("ПРОДУКТЫ-А") < allText().indexOf("НЕИЗВЕСТНО-Г"));
 
@@ -369,21 +370,48 @@ vm.runInContext(`
 const cats = vm.runInContext(`[...new Set(txs.map(t => categoryOf(t) || "Не разобрано"))].sort((x, y) => x === "Не разобрано" ? -1 : y === "Не разобрано" ? 1 : x.localeCompare(y, "ru"))`, ctx);
 const seen = [];
 for (let i = 0; i < cats.length; i++) { clickTh(byId["all"], "Категория"); seen.push(vm.runInContext(`allCat`, ctx)); }
-check("каждый клик по «Категория» поднимает следующую категорию", JSON.stringify(seen) === JSON.stringify(cats));
-check("при этом все операции остаются в списке", ["ПРОДУКТЫ-А", "ПРОДУКТЫ-В", "КАФЕ-Б", "НЕИЗВЕСТНО-Г"].every(x => allText().includes(x)));
+check("каждый клик по «Категория» показывает следующую категорию", JSON.stringify(seen) === JSON.stringify(cats));
+check("при этом список сужен до выбранной категории", ["ПРОДУКТЫ-А", "ПРОДУКТЫ-В", "КАФЕ-Б", "НЕИЗВЕСТНО-Г"].filter(x => allText().includes(x)).length < 4);
 clickTh(byId["all"], "Категория");
 check("после последней категории круг начинается заново", vm.runInContext(`allCat`, ctx) === "all");
 clickTh(byId["all"], "Категория");
 check("и снова первая категория", vm.runInContext(`allCat`, ctx) === cats[0]);
-const box = findEl(byId["all"], n => n.tag === "input" && n.attrs.placeholder === "найти категорию");
+const box = findEl(byId["all"], n => n.tag === "input" && n.attrs.placeholder === "категория");
 check("поле поиска стоит в заголовке «Категория» и показывает текущую", box && box.value === cats[0]);
 box.value = "кафе";
 box.listeners.input[0]();
-check("поиск: начало названия поднимает категорию наверх", vm.runInContext(`allCat`, ctx) === "Кафе и рестораны" && allText().indexOf("КАФЕ-Б") < allText().indexOf("ПРОДУКТЫ-А") && allText().includes("ПРОДУКТЫ-А"));
+check("поиск категории: начало названия оставляет только её", vm.runInContext(`allCat`, ctx) === "Кафе и рестораны" && allText().includes("КАФЕ-Б") && !allText().includes("ПРОДУКТЫ-А"));
 box.value = "";
 box.listeners.input[0]();
 check("пустой поиск возвращает обычный порядок", vm.runInContext(`allCat`, ctx) === "all");
 vm.runInContext(`allCat = "all"; renderAll();`, ctx);
+
+// ---- Поиск и фильтры над таблицей ----
+const filt = () => byId["allFilter"];
+const input = ph => findEl(filt(), n => n.tag === "input" && n.attrs.placeholder === ph);
+const typeIn = (el, v) => { el.value = v; el.listeners.input[0](); };
+vm.runInContext(`allCat = "all"; allFilt = Filters.empty(); renderAll();`, ctx);
+check("панель фильтров на месте: поиск, сумма от и до", input("поиск: описание, сумма, дата") && input("от") && input("до"));
+typeIn(input("поиск: описание, сумма, дата"), "продукты-в");
+check("поиск по описанию оставляет только совпавшее", allText().includes("ПРОДУКТЫ-В") && !allText().includes("КАФЕ-Б") && !allText().includes("ПРОДУКТЫ-А"));
+check("в итогах: найдено X из Y", textOf(filt()).includes("найдено операций: 1 из 4"));
+typeIn(input("поиск: описание, сумма, дата"), "нет-такого");
+check("ничего не найдено: понятная строка со сбросом", allText().includes("Ничего не найдено"));
+typeIn(input("поиск: описание, сумма, дата"), "");
+typeIn(input("от"), "50");
+check("сумма от: мелкие операции скрыты", allText().includes("ПРОДУКТЫ-В") && !allText().includes("НЕИЗВЕСТНО-Г"));
+typeIn(input("до"), "95");
+check("сумма от и до", allText().includes("ПРОДУКТЫ-В") && !allText().includes("ПРОДУКТЫ-А"));
+const resetEl = findEl(filt(), n => n.tag === "button" && textOf(n).trim() === "Сбросить");
+check("кнопка «Сбросить» видна при активном фильтре", resetEl && !resetEl.hidden);
+resetEl.listeners.click[0]();
+check("сброс возвращает все операции", ["ПРОДУКТЫ-А", "ПРОДУКТЫ-В", "КАФЕ-Б", "НЕИЗВЕСТНО-Г"].every(x => allText().includes(x)) && !textOf(filt()).includes("найдено"));
+const expBtn = findEl(filt(), n => n.tag === "button" && textOf(n).trim() === "Расходы");
+expBtn.listeners.click[0]();
+check("«Расходы»: нажатая кнопка помечена", expBtn.attrs["aria-pressed"] === "true" && vm.runInContext(`allFilt.kind`, ctx) === "expense");
+vm.runInContext(`allFilt = Filters.empty(); allCat = "all"; renderAll();`, ctx);
+check("сортировка не сбрасывает фильтр", (() => { typeIn(input("поиск: описание, сумма, дата"), "продукты"); clickTh(byId["all"], "Сумма"); return vm.runInContext(`allFilt.query`, ctx) === "продукты"; })());
+vm.runInContext(`allFilt = Filters.empty(); allCat = "all"; renderAll();`, ctx);
 
 // ---- Пары «пришло и сразу ушло» (ВТБ): видны в списке, но не считаются ----
 vm.runInContext(`
