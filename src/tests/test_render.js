@@ -16,6 +16,7 @@ const Planner = require("../planner.js");
 const Backup = require("../backup.js");
 const History = require("../history.js");
 const Filters = require("../filters.js");
+const Feedback = require("../feedback.js");
 const lsWrites = [];
 
 // ---- Заглушка страницы ----
@@ -60,7 +61,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, Feedback,
 });
 vm.runInContext(script, ctx);
 
