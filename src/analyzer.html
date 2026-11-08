@@ -598,7 +598,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.42, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.43, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -896,7 +896,7 @@
         how: ["Интернет-банкинг: раздел «Карточки» → «Получить выписку по карточкам», период не больше 3 месяцев. По найденным материалам, сохранить можно в Word или Excel (PDF может не быть: уточните).", "Быстро: двойной клик по карточке в виджете «Карточки» даёт выписку за последнюю календарную неделю. Мини-выписка платная.", "Ежемесячную выписку на e-mail подключают в «Карточки» → «Управление услугами»; также в отделении по месту открытия счёта."],
         wait: "В интернет-банкинге сразу. Операции отражаются по счёту с задержкой до нескольких дней.",
         link: ["https://www.belapb.by/upload/sprint.editor/995/4iqmvuqqpa62pa62rdaq4pc636v9db4t/IB.PDF.pdf", "Белагропромбанк: инструкция по системе «Интернет-банкинг»"] },
-      { id: "alfa", name: "Альфа-Банк", reads: true,
+      { id: "alfa", name: "Альфа-Банк", reads: true, fresh: true,
         how: ["Интернет-банк «Альфа-Клик»: слева выберите счёт, затем карту в блоке «Все карты к счёту», в «Действиях с картой» нажмите «Выписка», задайте период и «Применить», затем «Скачать PDF».", "Мобильное приложение: откройте счёт, пункт выписки, период; выписку можно скачать, отправить на e-mail или поделиться (для карты шаги могут немного отличаться)."],
         wait: "Сразу, в интернет-банке и приложении.",
         link: ["https://help.alfabank.by/hc/ru/articles/360000303298-%D0%9A%D0%B0%D0%BA-%D0%BF%D0%BE%D0%BB%D1%83%D1%87%D0%B8%D1%82%D1%8C-%D0%B2%D1%8B%D0%BF%D0%B8%D1%81%D0%BA%D1%83-%D0%BF%D0%BE-%D0%BA%D0%B0%D1%80%D1%82%D0%B5-%D0%B2-%D0%90%D0%BB%D1%8C%D1%84%D0%B0-%D0%9A%D0%BB%D0%B8%D0%BA-", "Альфа-Банк: как получить выписку по карте в «Альфа-Клик»"] },
@@ -940,7 +940,7 @@
     function showHowList() {
       $("howList").hidden = false; $("howDetail").hidden = true;
       $("howBanks").replaceChildren(...BANK_HELP.map(b => h("button", { type: "button", class: "rowcard", onclick: () => showHowBank(b.id) },
-        h("span", {}, b.name), h("span", { class: "howtag" + (b.reads ? " ok" : "") }, b.reads ? "читается сайтом" : "пока нет"), chevSvg())));
+        h("span", {}, b.name), h("span", { class: "howtag" + (b.reads ? " ok" : "") }, b.reads ? (b.fresh ? "читается, но не полностью" : "читается сайтом") : "пока нет"), chevSvg())));
       try { $("howSheet").querySelector(".modalcard").scrollTop = 0; } catch (e) { /* без прокрутки */ }
     }
     function chevSvg() {
@@ -957,6 +957,7 @@
         h("button", { type: "button", class: "howback", onclick: () => showHowList() }, "← Все банки"),
         h("h3", {}, b.name),
         h("p", {}, h("span", { class: "howtag" + (b.reads ? " ok" : "") }, b.reads ? "Сайт читает выписки этого банка" : "Сайт пока не читает выписки этого банка")),
+        ...(b.fresh ? [h("p", { class: "warn" }, "Сайт подключил этот банк недавно, образцов выписок пока мало (проверены кредитная карта и карта с несколькими операциями). Чтение может быть неточным: сверяйте суммы и операции с выпиской.")] : []),
         h("h3", {}, "Где взять выписку"),
         h("ul", {}, b.how.map(t => h("li", {}, t))),
         h("h3", {}, "Нужно ли ждать"),
@@ -2664,7 +2665,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.42", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.43", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
