@@ -111,7 +111,9 @@
     .trend.anim .col { animation: grow .5s ease both; }
     .trend .col.max { opacity: .8; }
     .trend .col.hot { opacity: 1; }
-    .trend .hit { fill: transparent; cursor: pointer; }
+    .trend .hit { fill: transparent; }
+    .trend.go .hit { cursor: pointer; }
+    .trend .hit:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
     .trend text { fill: var(--muted); font-size: 15px; }
     .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
     .toprow .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -761,7 +763,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Что не так?</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.55, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Что не так?</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.56, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1006,7 +1008,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.55";
+    const FB_VERSION = "v4.56";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -2093,6 +2095,13 @@
         h("div", { class: "hbig" }, big, h("small", {}, "BYN")),
         facts.length ? h("ul", {}, facts.slice(0, 5).map(f => h("li", {}, f))) : "");
     }
+    // Месяц, к которому относится столбец «Динамики»: день и месяц понятны сразу, неделя относится к месяцу своего четверга (как в ISO).
+    // Если такого месяца нет в выписке, возвращает null (столбец остаётся без перехода).
+    function barMonth(key, mode, months) {
+      let ym = key.slice(0, 7);
+      if (mode === "week") ym = new Date(Date.parse(key + "T00:00:00Z") + 3 * 864e5).toISOString().slice(0, 7);
+      return months.includes(ym) ? ym : null;
+    }
     // Динамика: столбики по дням, неделям или месяцам (по длине периода) и пять самых затратных получателей
     function dynamicsBlock(ctx) {
       const all = ctx.list || txs, list = spendList(all).filter(t => t.date);
@@ -2114,6 +2123,7 @@
       const keys = [...sums.keys()].sort(), seq = [];
       for (let k = keys[0], guard = 0; k <= keys[keys.length - 1] && guard < 400; k = next(k), guard++) seq.push([k, sums.get(k) || 0]);
       const box = h("div", { class: "dyn" });
+      const dmonths = monthsInStatement(), canOpen = activeTab === "all" && dmonths.length > 1;   // переход к месяцу только из «За весь период»
       if (seq.length >= 3) {
         const labelOf = k => mode === "month" ? monthTitle(k) : mode === "week" ? `неделя с ${shortDate(k)}` : shortDate(k);
         const tickOf = k => mode === "month" ? `${MON[+k.slice(5, 7) - 1]} ${k.slice(2, 4)}` : shortDate(k);
@@ -2122,7 +2132,8 @@
         seq.forEach(([k, v], i) => {
           const bh = v ? Math.max(2, v / max * (H - 14)) : 0, x = i * step + (step - bw) / 2;
           bars += `<rect class="col${v === max ? " max" : ""}" x="${x.toFixed(1)}" y="${(H - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${Math.min(3, bw / 2).toFixed(1)}"/>`;
-          hits += `<rect class="hit" data-i="${i}" x="${(i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"/>`;
+          const go = canOpen ? barMonth(k, mode, dmonths) : null;
+          hits += `<rect class="hit" data-i="${i}"${go ? ` data-m="${go}" tabindex="0" role="button" aria-label="${esc(labelOf(k))}: ${esc(fmt(v))} BYN. Открыть ${esc(monthTitle(go))}"` : ""} x="${(i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"/>`;
         });
         const tc = Math.min(n, 5);
         for (let j = 0; j < tc; j++) { const i = tc === 1 ? 0 : Math.round(j * (n - 1) / (tc - 1)); ticks += `<text x="${Math.min(W - 30, Math.max(30, i * step + step / 2)).toFixed(1)}" y="${H + 18}" text-anchor="middle">${esc(tickOf(seq[i][0]))}</text>`; }
@@ -2130,15 +2141,31 @@
         lastTrend = trendKey;
         const tip = h("div", { class: "pietip" }, h("span", { class: "muted" }, `Наведи на столбик · максимум ${fmt(max)} BYN`));
         const holder = document.createElement("span");
-        holder.innerHTML = `<svg class="trend${freshTrend ? " anim" : ""}" viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Траты по ${mode === "day" ? "дням" : mode === "week" ? "неделям" : "месяцам"}">${bars}${ticks}${hits}</svg>`;
+        holder.innerHTML = `<svg class="trend${freshTrend ? " anim" : ""}${canOpen ? " go" : ""}" viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Траты по ${mode === "day" ? "дням" : mode === "week" ? "неделям" : "месяцам"}">${bars}${ticks}${hits}</svg>`;
         const show = e => {
           const el = e.target.closest && e.target.closest(".hit");
           if (!el) return;
           const i = +el.getAttribute("data-i");
           holder.querySelectorAll(".col").forEach((b, j) => b.classList.toggle("hot", j === i));
-          tip.replaceChildren(h("b", {}, labelOf(seq[i][0])), ` · ${fmt(seq[i][1])} BYN`);
+          const m = el.getAttribute("data-m");
+          tip.replaceChildren(h("b", {}, labelOf(seq[i][0])), ` · ${fmt(seq[i][1])} BYN`, ...(m ? [h("span", { class: "muted" }, ` · нажмите, чтобы открыть: ${monthTitle(m)}`)] : []));
         };
-        if (holder.addEventListener) { holder.addEventListener("mouseover", show); holder.addEventListener("click", show); }
+        // Мышь и клавиатура открывают месяц сразу; на сенсорном экране первое касание показывает сумму, второе по тому же столбцу открывает месяц
+        let ptype = "mouse", tapped = -1;
+        const openMonth = m => { activeTab = m; refreshTop(); renderReview(); renderNav(); renderAll(); renderBottom(); try { $("summary").scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) { /* без прокрутки */ } };
+        const act = e => {
+          show(e);
+          const el = e.target.closest && e.target.closest(".hit"), m = el && el.getAttribute("data-m");
+          if (!m) return;
+          const i = +el.getAttribute("data-i");
+          if (ptype === "touch" && tapped !== i) { tapped = i; return; }
+          openMonth(m);
+        };
+        if (holder.addEventListener) {
+          holder.addEventListener("pointerdown", e => { ptype = e.pointerType || "mouse"; });
+          holder.addEventListener("mouseover", show); holder.addEventListener("focusin", show); holder.addEventListener("click", act);
+          holder.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.getAttribute && e.target.getAttribute("data-m")) { e.preventDefault(); ptype = "key"; act(e); } });
+        }
         box.append(h("h3", { style: "margin-bottom:.2rem" }, "Динамика трат"),
           h("div", { class: "muted" }, mode === "day" ? "По дням" : mode === "week" ? "По неделям" : "По месяцам"), tip, holder);
       }
@@ -3432,7 +3459,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.55", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.56", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
