@@ -156,7 +156,14 @@
 
   // Банки без MCC-кодов (ВТБ): смотрим на название места или магазина в описании
   // Названия букмекеров и казино, которые встречаются прямо в описании операции
-  const GAMBLING_RE = /maxline|superbel|belbet|betera|1xbet|1хбет|fonbet|marathon ?bet|parimatch|winline|melbet|pin-?up|casino|казино|букмекер|bookmaker/i;
+  const GAMBLING_RE = /maxline|superbel|belbet|betera|1xbet|1хбет|fonbet|marathon ?bet|parimatch|winline|melbet|pin-?up|mostbet|betboom|1win|betwinner|bet365|vulkan ?(bet|vegas)|casino|казино|букмекер|bookmaker/i;
+  // Подсказка: поступление с названием площадки в «карточном» виде («NAME CITY BY … Перевод на БПК … Р2Р / Пополнение тек. счет»),
+  // которое сайт не опознал. Это может быть вывод выигрыша; категорию назначает сам человек.
+  const PAYOUT_RE = /пополнение тек|р2р|p2p|перевод на бпк/i, PLACE_PREFIX_RE = /^[A-Z0-9][A-Z0-9 .\-_*]+ (BY|RU|CY|MT|GB|LT|IE|EE)\b/;
+  function maybeGamblingPayout(tx) {
+    const d = String((tx && tx.details) || "").trim();
+    return !!tx && tx.amount > 0 && PAYOUT_RE.test(d) && PLACE_PREFIX_RE.test(d);
+  }
   // Игры и игровые покупки: сильнее MCC 7372 («программное обеспечение»), под которым Google Play пишет и игры, и подписки
   const GAME_RE = /hustle castle|supercell|clash of|roblox|steam|playstation|xbox|nintendo|epic games|wargaming|world of tanks|genshin|mobile legends|brawl|pubg|dota|valorant|riot games|blizzard/i;
   // Правила по названию места. Сведения о сетях собраны вручную по открытым источникам (см. MERCHANTS.md).
@@ -258,7 +265,7 @@
   const INITIALS_RE = /(?:[А-ЯЁ][а-яё]+|[A-ZА-ЯЁ]{3,})\s+[A-ZА-ЯЁ]\.\s?[A-ZА-ЯЁ]\./;
   const looksLikePerson = text => { const t = String(text || ""); return PATRONYMIC_RE.test(t) || INITIALS_RE.test(t); };
 
-  const api = { looksLikePerson, resolve, SUBS_RE, OWN, INCOME, FEES, LOAN, SAVINGS, GAMBLING, DEFAULT_CATEGORIES, ICONS, MCC, BUCKETS, canonical, merchantKey, categorize, bucket, isErip, recipient };
+  const api = { looksLikePerson, maybeGamblingPayout, resolve, SUBS_RE, OWN, INCOME, FEES, LOAN, SAVINGS, GAMBLING, DEFAULT_CATEGORIES, ICONS, MCC, BUCKETS, canonical, merchantKey, categorize, bucket, isErip, recipient };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Categories = api;
 })(typeof self !== "undefined" ? self : this);

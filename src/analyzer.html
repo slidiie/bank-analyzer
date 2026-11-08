@@ -94,7 +94,9 @@
     .muted { color: var(--muted); font-size: .85rem; }
     .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
     ul.insights { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .7rem; }
-    ul.insights li { margin: 0; }
+    ul.insights { align-items: start; }
+    ul.insights li { margin: 0; display: flex; flex-direction: column; }
+    ul.insights li > .icard { flex: 1 1 auto; box-sizing: border-box; }
     @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
     .hsum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
@@ -111,15 +113,17 @@
     .trend.anim .col { animation: grow .5s ease both; }
     .trend .col.max { opacity: .8; }
     .trend .col.hot { opacity: 1; }
+    .trend .col.sel { opacity: 1; }
+    .trend.hasSel .col:not(.sel):not(.hot) { opacity: .3; }
     .trend .hit { fill: transparent; }
     .trend.go .hit { cursor: pointer; }
-    .trend .hit:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+    .trend .hit, .trend .hit:focus, .trend .hit:focus-visible { outline: none; -webkit-tap-highlight-color: transparent; }   /* рамки нет: столбец подсвечивается сам (наведение, фокус с клавиатуры, выбор) */
     .trend text { fill: var(--muted); font-size: 15px; }
     .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
     .toprow .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .tbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); }
     .tbar > i { display: block; height: 100%; border-radius: 3px; }
-    .icard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: .8rem 1rem; height: 100%; }
+    .icard { background: var(--surface); border: 1px solid color-mix(in srgb, var(--line) 55%, transparent); border-radius: var(--r-m); padding: .8rem 1rem; }
     .ibig { font-size: 1.6rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
     .ilabel { margin-top: .15rem; }
     .icard details { border: 0; padding: 0; margin: .4rem 0 0; }
@@ -300,6 +304,12 @@
     body.demo #startBtn, body.demo .upcard { display: none; }
     body.demo .hero { margin-bottom: .6rem; padding-bottom: .6rem; }
     .hero { padding-bottom: .4rem; margin-bottom: 1.2rem; }
+    .steps { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+    .steps li { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; margin: 0; padding: .7rem .8rem; background: var(--surface); border-radius: var(--r-m); font-size: .9rem; line-height: 1.3; }
+    .steps b { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: var(--active-text, #fff); font-size: .85rem; }
+    @media (max-width: 420px) { .steps { grid-template-columns: 1fr; } .steps li { flex-direction: row; align-items: center; gap: .7rem; } }
+    @media print { .steps { display: none; } }
+    #summary h3, .dyn h3 { font-size: 1.05rem; font-weight: 600; }
     .hero h1 { font-size: clamp(1.5rem, 4.6vw, 2.1rem); margin: .4rem 0 1.1rem; line-height: 1.2; }
     button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
     .gi { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -400,7 +410,17 @@
     .modalbtns { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
     :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
     details { border-bottom: 1px solid var(--line); padding: .5rem 0; max-width: 46rem; }
-    details > summary { cursor: pointer; font-weight: 600; }
+    details > summary { cursor: pointer; font-weight: 600; -webkit-tap-highlight-color: transparent; }
+    /* Единая стрелка для всех раскрывающихся пунктов: шеврон справа, поворачивается при открытии, без рамки и фона при наведении */
+    details:not(#plan details) > summary { display: flex; align-items: center; justify-content: space-between; gap: .8rem; list-style: none; }
+    details:not(#plan details) > summary::-webkit-details-marker { display: none; }
+    details:not(#plan details) > summary::after { content: ""; flex: none; width: .5rem; height: .5rem; margin-right: .2rem; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); transition: transform .18s ease; }
+    details[open]:not(#plan details) > summary::after { transform: rotate(45deg); }
+    .icard details:not(#plan details) > summary { justify-content: flex-start; gap: .5rem; }
+    @media print { details > summary::after { display: none; } }
+    details > summary:hover { color: var(--accent); }
+    details > summary:focus:not(:focus-visible) { outline: none; }
+    @media (prefers-reduced-motion: reduce) { details > summary::after { transition: none; } }
     details > p { margin: .5rem 0 .2rem; }
     @media (max-width: 520px) {
       body { margin: 1rem auto; padding: 0 .7rem; }
@@ -431,7 +451,10 @@
       .chipbtn { min-height: 44px; }
       .viewswitch button { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
     }
-    .fbbtn { min-height: 2.75rem; padding: 0 .9rem; background: transparent; color: var(--accent-ink); border: 1px solid var(--accent); border-radius: 999px; font: inherit; font-size: .95rem; cursor: pointer; }
+    .fbbtn { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 .9rem; background: transparent; color: var(--accent-ink); border: 1px solid var(--line); border-radius: 999px; font: inherit; font-size: .92rem; cursor: pointer; transition: border-color .18s, color .18s; }
+    .fbbtn svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; flex: none; }
+    @media (max-width: 520px) { .fbbtn { padding: 0; width: 2.75rem; } .fbbtn .fbt { display: none; } }
+    .fbbtn:hover { border-color: var(--accent); }
     :root[data-theme="dark"] .fbbtn { color: var(--accent); }
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fbbtn { color: var(--accent); } }
     #fbSheet label { font-weight: 600; }
@@ -468,12 +491,17 @@
     <div class="topbar">
       <span class="brand">Анализ выписки</span>
       <span class="topact">
-        <button id="fbOpen" class="fbbtn" type="button" aria-haspopup="dialog">Что не так?</button>
+        <button id="fbOpen" class="fbbtn" type="button" aria-haspopup="dialog" aria-label="Написать нам: ошибка, идея или вопрос" title="Написать нам: ошибка, идея или вопрос"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="fbt">Написать нам</span></button>
         <button id="themeToggle" class="themesw" type="button" role="switch" aria-checked="false" aria-label="Тёмная тема" title="Светлая / тёмная тема"><span class="knob" aria-hidden="true"></span><svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></button>
       </span>
     </div>
     <h1>Загрузите выписку и посмотрите, <span class="hl">куда уходят деньги</span></h1>
     <p class="lede">Банк определится сам, регистрация не нужна. Увидите траты по категориям, регулярные платежи и что можно отложить.</p>
+    <ol class="steps" aria-label="Как это работает">
+      <li><b>1</b><span>Скачайте выписку в банке</span></li>
+      <li><b>2</b><span>Выберите файл здесь</span></li>
+      <li><b>3</b><span>Получите отчёт сразу</span></li>
+    </ol>
     <div id="dropzone" class="upcard">
       <svg class="gi upicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
       <p class="muted upcap" id="banks"></p>
@@ -554,7 +582,7 @@
   </div>
   <div id="fbSheet" class="modal sheet" hidden>
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="fbTitle" tabindex="-1">
-      <h2 id="fbTitle" style="margin-top:0">Что не так?</h2>
+      <h2 id="fbTitle" style="margin-top:0">Написать нам</h2>
       <p class="muted">Выберите тему и напишите своими словами, что случилось. <b>Суммы, номера карт и описания операций писать не нужно.</b> Сайт сам ничего не отправляет: откроется ваше почтовое приложение с готовым письмом, вы просмотрите его и отправите сами.</p>
       <p><label for="fbTopic">Тема</label><br><select id="fbTopic"></select></p>
       <p><label for="fbText">Что случилось</label><br><textarea id="fbText" rows="4" maxlength="1500" style="width:100%;box-sizing:border-box;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:var(--r-s);padding:.5rem;font:inherit" placeholder="Например: после загрузки выписки ВТБ показаны не все месяцы"></textarea></p>
@@ -765,7 +793,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Что не так?</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.56, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.57, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1010,7 +1038,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.56";
+    const FB_VERSION = "v4.57";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -2108,7 +2136,9 @@
     function dynamicsBlock(ctx) {
       const all = ctx.list || txs, list = spendList(all).filter(t => t.date);
       if (!list.length) return null;
-      const days = periodDays(all), mode = days <= 62 ? "day" : days <= 200 ? "week" : "month", DAY = 864e5;
+      // Столбики всегда по месяцам всей выписки (выбранный месяц подсвечен), а «Куда ушло больше всего» считается по выбранному периоду
+      const barList = spendList(txs).filter(t => t.date);
+      const mode = "month", DAY = 864e5;
       const utc = iso => Date.parse(iso + "T00:00:00Z");
       const keyOf = iso => {
         if (mode === "day") return iso;
@@ -2121,55 +2151,59 @@
         return new Date(utc(k) + (mode === "day" ? 1 : 7) * DAY).toISOString().slice(0, 10);
       };
       const sums = new Map();
-      list.forEach(t => { const k = keyOf(t.date); sums.set(k, (sums.get(k) || 0) - t.amount); });
+      barList.forEach(t => { const k = keyOf(t.date); sums.set(k, (sums.get(k) || 0) - t.amount); });
       const keys = [...sums.keys()].sort(), seq = [];
       for (let k = keys[0], guard = 0; k <= keys[keys.length - 1] && guard < 400; k = next(k), guard++) seq.push([k, sums.get(k) || 0]);
       const box = h("div", { class: "dyn" });
-      const dmonths = monthsInStatement(), canOpen = activeTab === "all" && dmonths.length > 1;   // переход к месяцу только из «За весь период»
-      if (seq.length >= 3) {
+      const dmonths = monthsInStatement(), canOpen = dmonths.length > 1;   // месяц можно выбрать (и снять выбор) из любого периода
+      if (seq.length >= 2) {
         const labelOf = k => mode === "month" ? monthTitle(k) : mode === "week" ? `неделя с ${shortDate(k)}` : shortDate(k);
         const tickOf = k => mode === "month" ? `${MON[+k.slice(5, 7) - 1]} ${k.slice(2, 4)}` : shortDate(k);
-        const max = Math.max(...seq.map(s => s[1]), 1), W = 600, H = 120, n = seq.length, step = W / n, bw = Math.max(2, Math.min(28, step * 0.72));
+        const max = Math.max(...seq.map(s => s[1]), 1), W = 600, H = 120, n = seq.length, step = W / n;
+        // Мало месяцев (короткая выписка): столбцы шире, чтобы не было больших пустот между ними; много месяцев: тонкие, как раньше
+        const bw = Math.max(2, Math.min(n <= 3 ? 72 : n <= 6 ? 60 : n <= 12 ? 40 : 28, step * (n <= 12 ? 0.6 : 0.72)));
         let bars = "", hits = "", ticks = "";
         seq.forEach(([k, v], i) => {
           const bh = v ? Math.max(2, v / max * (H - 14)) : 0, x = i * step + (step - bw) / 2;
-          bars += `<rect class="col${v === max ? " max" : ""}" x="${x.toFixed(1)}" y="${(H - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${Math.min(3, bw / 2).toFixed(1)}"/>`;
+          bars += `<rect class="col${v === max ? " max" : ""}${k === activeTab ? " sel" : ""}" x="${x.toFixed(1)}" y="${(H - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${Math.min(3, bw / 2).toFixed(1)}"/>`;
           const go = canOpen ? barMonth(k, mode, dmonths) : null;
-          hits += `<rect class="hit" data-i="${i}"${go ? ` data-m="${go}" tabindex="0" role="button" aria-label="${esc(labelOf(k))}: ${esc(fmt(v))} BYN. Открыть ${esc(monthTitle(go))}"` : ""} x="${(i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"/>`;
+          hits += `<rect class="hit" data-i="${i}"${go ? ` data-m="${go}" tabindex="0" role="button" aria-label="${esc(labelOf(k))}: ${esc(fmt(v))} BYN. Выбрать ${esc(monthTitle(go))}"` : ""} x="${(i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"/>`;
         });
-        const tc = Math.min(n, 5);
+        const tc = n <= 6 ? n : 5;   // до шести месяцев подписан каждый столбец
         for (let j = 0; j < tc; j++) { const i = tc === 1 ? 0 : Math.round(j * (n - 1) / (tc - 1)); ticks += `<text x="${Math.min(W - 30, Math.max(30, i * step + step / 2)).toFixed(1)}" y="${H + 18}" text-anchor="middle">${esc(tickOf(seq[i][0]))}</text>`; }
-        const trendKey = `${ctx.label}|${n}|${max.toFixed(2)}`, freshTrend = trendKey !== lastTrend;
+        const trendKey = `${n}|${max.toFixed(2)}`, freshTrend = trendKey !== lastTrend;
         lastTrend = trendKey;
-        const tip = h("div", { class: "pietip" }, h("span", { class: "muted" }, `Наведи на столбик · максимум ${fmt(max)} BYN`));
+        const selTitle = () => activeTab !== "all" && /^\d{4}-\d{2}$/.test(activeTab) ? `Выбран: ${monthTitle(activeTab)}` : "Выбран весь период";
+        const tip = h("div", { class: "pietip" }, h("span", { class: "muted" }, `${selTitle()} · нажмите на месяц, чтобы выбрать`));
         const holder = document.createElement("span");
-        holder.innerHTML = `<svg class="trend${freshTrend ? " anim" : ""}${canOpen ? " go" : ""}" viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Траты по ${mode === "day" ? "дням" : mode === "week" ? "неделям" : "месяцам"}">${bars}${ticks}${hits}</svg>`;
+        holder.innerHTML = `<svg class="trend${freshTrend ? " anim" : ""}${canOpen ? " go" : ""}${/^\d{4}-\d{2}$/.test(activeTab) ? " hasSel" : ""}" viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Траты по ${mode === "day" ? "дням" : mode === "week" ? "неделям" : "месяцам"}">${bars}${ticks}${hits}</svg>`;
         const show = e => {
           const el = e.target.closest && e.target.closest(".hit");
           if (!el) return;
           const i = +el.getAttribute("data-i");
           holder.querySelectorAll(".col").forEach((b, j) => b.classList.toggle("hot", j === i));
           const m = el.getAttribute("data-m");
-          tip.replaceChildren(h("b", {}, labelOf(seq[i][0])), ` · ${fmt(seq[i][1])} BYN`, ...(m ? [h("span", { class: "muted" }, ` · нажмите, чтобы открыть: ${monthTitle(m)}`)] : []));
+          tip.replaceChildren(h("b", {}, labelOf(seq[i][0])), ` · ${fmt(seq[i][1])} BYN`, ...(m ? [h("span", { class: "muted" }, ` · ${m === activeTab ? "выбран, нажмите ещё раз, чтобы снять" : "нажмите, чтобы выбрать"}`)] : []));
         };
         // Мышь и клавиатура открывают месяц сразу; на сенсорном экране первое касание показывает сумму, второе по тому же столбцу открывает месяц
-        let ptype = "mouse", tapped = -1;
-        const openMonth = m => { activeTab = m; refreshTop(); renderReview(); renderNav(); renderAll(); renderBottom(); try { $("summary").scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) { /* без прокрутки */ } };
+        // Выбор месяца не прокручивает страницу: пользователь остаётся на месте, меняются суммы и «Куда ушло больше всего»; повторное нажатие снимает выбор
+        const openMonth = m => {
+          const y = typeof window !== "undefined" ? window.scrollY : 0;
+          activeTab = m === activeTab ? "all" : m; refreshTop(); renderReview(); renderNav(); renderAll(); renderBottom();
+          try { if (y) window.scrollTo(0, y); } catch (e) { /* без прокрутки */ }
+        };
         const act = e => {
           show(e);
           const el = e.target.closest && e.target.closest(".hit"), m = el && el.getAttribute("data-m");
           if (!m) return;
-          const i = +el.getAttribute("data-i");
-          if (ptype === "touch" && tapped !== i) { tapped = i; return; }
           openMonth(m);
         };
         if (holder.addEventListener) {
-          holder.addEventListener("pointerdown", e => { ptype = e.pointerType || "mouse"; });
           holder.addEventListener("mouseover", show); holder.addEventListener("focusin", show); holder.addEventListener("click", act);
-          holder.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.getAttribute && e.target.getAttribute("data-m")) { e.preventDefault(); ptype = "key"; act(e); } });
+          holder.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.getAttribute && e.target.getAttribute("data-m")) { e.preventDefault(); act(e); } });
         }
         box.append(h("h3", { style: "margin-bottom:.2rem" }, "Динамика трат"),
-          h("div", { class: "muted" }, mode === "day" ? "По дням" : mode === "week" ? "По неделям" : "По месяцам"), tip, holder);
+          h("div", { class: "muted" }, "По месяцам"), tip, holder);
       }
       const groups = new Map();
       const unclear = list.filter(t => REVIEW_CATS.has(displayCat(t)));
@@ -2875,6 +2909,7 @@
           h("div", { style: "font-size:1.1rem" }, h("b", {}, `+${fmt(g.sum)} BYN`), ` · операций: ${items.length}`),
           h("div", { class: "muted" }, `${range}${range ? " · " : ""}суммы: ${amountsText}`),
           h("div", { class: "details" }, g.tx.details || "(описание не найдено)"),
+          ...(Cat.maybeGamblingPayout(g.tx) ? [h("div", { class: "muted", style: "margin-top:.3rem" }, "Похоже на вывод с игровой площадки? ", h("button", { type: "button", class: "linklike", onclick: () => setRule(g.tx, Cat.GAMBLING, Cat.ICONS[Cat.GAMBLING]) }, "Отметить как «Азартные игры»"))] : []),
           h("div", { style: "margin-top:.4rem" }, chooser(scopeText(ruleScope(g.tx)), (cat, icon) => setRule(g.tx, cat, icon)),
             ruleScope(g.tx) > 1 ? h("div", { class: "muted" }, `Выбор сразу применится ко всем ${ruleScope(g.tx)} операциям такого получателя (во всех месяцах) и к будущим выпискам. Только к одной операции: выберите категорию ниже, в списке «Операции по отдельности». Отменить можно в разделе «Ещё» → «Мои правила».`) : ""));
         if (many) {
@@ -3461,7 +3496,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.56", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.57", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }

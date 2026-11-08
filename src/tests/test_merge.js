@@ -127,6 +127,7 @@ check("не в счёт и доходы", sum.includes("Не в счёт: меж
   check("SUPERBEL (онлайн-лотерея): и выигрыш, и пополнение — азартные игры", Cat.categorize({ amount: 100, details: "SUPERBEL MINSK BY Перевод на БПК МТБ в системе Р2Р, номер устройства B2P40001, 31.12.2025" }) === Cat.GAMBLING && Cat.categorize({ amount: -20, details: "SUPERBEL MINSK BY Оплата товаров и услуг" }) === Cat.GAMBLING);
   check("MCC 7995 (ставки): азартные игры", Cat.categorize({ amount: -10, mcc: "7995", details: "SOME SITE" }) === Cat.GAMBLING);
   check("обычные слова вроде «процентная ставка» не считаются азартными играми", Cat.categorize({ amount: -3, details: "Процентная ставка по кредиту" }) !== Cat.GAMBLING);
+  check("подсказка о выводе с площадки: «карточное» название + перевод, но не человек и не обычный приход", Cat.maybeGamblingPayout({ amount: 40, details: "SOMESITE MINSK BY Перевод на БПК МТБ в системе Р2Р" }) === true && Cat.maybeGamblingPayout({ amount: 40, details: "Иванов Иван Перевод на БПК в системе Р2Р" }) === false && Cat.maybeGamblingPayout({ amount: -40, details: "SOMESITE MINSK BY Перевод на БПК Р2Р" }) === false && Cat.maybeGamblingPayout({ amount: 40, details: "Зарплата" }) === false);
   check("у категории есть значок и она в списке", Cat.ICONS[Cat.GAMBLING] && Cat.DEFAULT_CATEGORIES.includes(Cat.GAMBLING));
   // Справочник мест (по открытым источникам)
   const cat = (d, mcc) => Cat.categorize({ amount: -10, mcc, details: d });
