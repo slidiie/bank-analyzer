@@ -177,11 +177,11 @@ check("мастер: файл прочитан, шаг 2 пускает даль
 vm.runInContext(`anonGo(3)`, ctx);
 check("мастер: шаг 3, пока не просмотрены все страницы, дальше нельзя", byId["anonNext"].disabled === true && textOf(byId["anonNeed"]).includes("осталось: 1"));
 vm.runInContext(`anon.seen.add(1); anonNextState(); anonGo(4)`, ctx);
-check("мастер: шаг 4 без подготовленного образца: дальше нельзя", byId["anonNext"].disabled === true);
-vm.runInContext(`anonMade = "file"; anonNextState(); anonGo(5)`, ctx);
-check("мастер: шаг 5, письмо и кнопка «Готово»", byId["anonNext"].textContent === "Готово" && /^mailto:bankanalyzer\.help@gmail\.com/.test(byId["anonMail"].href || ""));
+check("мастер: шаг 4 из 4, главная кнопка недоступна без согласия, закрывать можно", byId["anonSend"].disabled === true && byId["anonNext"].disabled === false && byId["anonNext"].textContent === "Закрыть окно" && textOf(byId["anonStepNo"]).includes("4 из 4"));
+vm.runInContext(`anonMade = "file"; anonPrepareMail()`, ctx);
+check("мастер: письмо mailto собрано, Яндекса нет", /^mailto:bankanalyzer\.help@gmail\.com\?subject=/.test(byId["anonMail"].href || "") && !byId["anonYandex"]);
 byId["anonNext"].listeners.click[0]();
-check("мастер: «Готово» закрывает шторку и стирает образец из памяти", byId["anonSheet"].hidden === true && vm.runInContext(`anon === null && anonStep === 1`, ctx));
+check("мастер: «Закрыть окно» закрывает шторку и стирает образец из памяти", byId["anonSheet"].hidden === true && vm.runInContext(`anon === null && anonStep === 1`, ctx));
 
 // ---- «Как получить выписку»: банки и ссылки ----
 check("справка по банкам: не меньше 15 банков, у каждого шаги и срок", vm.runInContext(`BANK_HELP.length >= 15 && BANK_HELP.every(b => b.name && b.how.length && b.wait)`, ctx));
