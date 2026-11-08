@@ -61,5 +61,11 @@ check("плата за пакет услуг: комиссии банка", Cat.
 check("проценты по овердрафту: комиссии банка", Cat.categorize(txs[5]) === Cat.FEES);
 check("зачисление: пополнение", Cat.categorize(txs[1]) === Cat.INCOME);
 
+// Операции без получателя: платёж из приложения и P2P идут в корзину интернет-банка, магазины и кафе узнаются по названию
+const mk = d => ({ amount: -10, details: "Списание с карточного счета по карточке - Транзакция BLR Minsk " + d });
+check("«SOU Sber Bank»: корзина интернет-банка", Cat.bucket(mk("SOU Sber Bank")) === "Платежи через интернет-банк");
+check("Копеечка и Универсам: продукты", Cat.categorize(mk("SHOP KOPEECHKA")) === "Продукты" && Cat.categorize(mk("UNIVERSAM")) === "Продукты");
+check("кафе и кофе: кафе и рестораны", Cat.categorize(mk("KAFE D")) === "Кафе и рестораны" && Cat.categorize(mk("VASH KOFE")) === "Кафе и рестораны");
+
 console.log(failed ? `\nПровалено: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);
