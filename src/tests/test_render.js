@@ -82,6 +82,7 @@ vm.runInContext(`
     { date: "2026-10-25", time: "10:00:00", amount: -500,  mcc: null,   details: "Оплата в Интернет-банке, перевод", balance: 6 },
     { date: "2026-11-02", time: "10:00:00", amount: -20,   mcc: "5411", details: "SHOP A", balance: 7 },
   ];
+  summaryView = "table";
   render();
 `, ctx);
 
@@ -187,14 +188,12 @@ check("справка по банкам: страница банка со ссы
 vm.runInContext(`showHowList()`, ctx);
 
 // ---- Тема и значки ----
-check("тема по умолчанию «Авто»", document.documentElement.attrs["data-theme"] === "auto" && byId["themeAuto"].attrs["aria-pressed"] === "true");
-byId["themeLight"].listeners.click[0]();
-check("кнопка «Светлая»", document.documentElement.attrs["data-theme"] === "light" && byId["themeLight"].attrs["aria-pressed"] === "true" && byId["themeAuto"].attrs["aria-pressed"] === "false");
-byId["themeDark"].listeners.click[0]();
-check("кнопка «Тёмная»", document.documentElement.attrs["data-theme"] === "dark");
+check("тема по умолчанию следует системе", document.documentElement.attrs["data-theme"] === "auto" && byId["themeToggle"] && byId["themeToggle"].attrs["data-dark"] === "false");
+byId["themeToggle"].listeners.click[0]();
+check("один клик: включается тёмная и запоминается", document.documentElement.attrs["data-theme"] === "dark" && byId["themeToggle"].attrs["data-dark"] === "true");
 check("theme-color следует выбору", byId["themeMetaL"].attrs["content"] === "#0E0F11" && byId["themeMetaD"].attrs["content"] === "#0E0F11");
-byId["themeAuto"].listeners.click[0]();
-check("«Авто» возвращает свои цвета строки браузера", document.documentElement.attrs["data-theme"] === "auto" && byId["themeMetaL"].attrs["content"] === "#EEF0F2" && byId["themeMetaD"].attrs["content"] === "#0E0F11");
+byId["themeToggle"].listeners.click[0]();
+check("второй клик возвращает светлую", document.documentElement.attrs["data-theme"] === "light" && byId["themeMetaL"].attrs["content"] === "#FAF8F4" && byId["themeMetaD"].attrs["content"] === "#FAF8F4");
 check("цвет категории постоянен и из --cat-*", vm.runInContext(`catColor("Продукты") === "var(--cat-food)" && catColor("Прочее") === "var(--cat-other)" && catColor("Моя своя") === catColor("Моя своя") && /^var\\(--cat-/.test(catColor("Моя своя"))`, ctx));
 check("диаграмма: корзины и «Не разобрано» слиты в одну долю «Нужно разобрать» (пунктир), она первая и стоит справа", vm.runInContext(`(() => { const j = JSON.stringify(pieChart({ rows: [["Продукты", 100], ["Платежи через интернет-банк", 60], ["Не разобрано", 20], ["Транспорт", 10]], total: 190 })); return (j.split("data-i=").length - 1) === 3 && !j.includes("pattern") && j.includes("stroke-dasharray") && /data-i=.{1,4}0.{1,4} style=.{1,4}fill:var[(]--surface-2/.test(j); })()`, ctx));
 check("в таблице у категории цветная точка", JSON.stringify(byId["summary"]).includes("var(--cat-"));
@@ -460,6 +459,81 @@ vm.runInContext(`txs = []; header = {}; statements = []; applyBackup({app:"bank-
 check("старая копия без списка выписок: одна запись из шапки", vm.runInContext(`statements.length === 1 && statements[0].bankName === "МТБанк" && statements[0].count === 1`, ctx));
 byId["clearBtn"].listeners.click[0]();
 check("«Убрать выписки»: операции и отчёт убраны, разбор остался", vm.runInContext(`txs.length === 0 && statements.length === 0`, ctx) && byId["report"].hidden === true);
+
+
+// ---- «Нужно разобрать»: быстрые категории, подсказки, ключи памяти, разбор по одной ----
+vm.runInContext(`
+  txs = [
+    { date: "2026-09-07", time: "10:00:00", amount: -50, mcc: null, details: "Оплата услуг ЕРИП", balance: 1 },
+    { date: "2026-10-07", time: "10:00:00", amount: -50, mcc: null, details: "Оплата услуг ЕРИП", balance: 2 },
+    { date: "2026-10-09", time: "11:00:00", amount: -30, mcc: null, details: "Перевод P2P SBERBANK", balance: 3 },
+    { date: "2026-10-12", time: "12:00:00", amount: -75, mcc: null, details: "Перевод P2P SBERBANK", balance: 4 },
+  ];
+  header = { from: "2026-09-01", to: "2026-10-31" };
+  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+`, ctx);
+const rv = textOf(byId["review"]);
+check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
+check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50.00") && html.includes("в приложении банка"));
+check("разбор: есть быстрые категории и «Не помню»", rv.includes("Связь и подписки") && rv.includes("Не помню") && rv.includes("Ещё…"));
+check("разбор: переводы без получателя с разными суммами идут по одной", rv.includes("отметьте каждую операцию") && rv.includes("12.10") && rv.includes("09.10"));
+check("разбор: пояснение короткое, подробности под «Как это работает»", html.includes("Как это работает") && !html.includes("Непонятное и мелкое отправляйте"));
+clickButton(byId["review"], "Подарки");
+check("разбор: клик по быстрой категории в режиме «по одной» применяется только к этой операции", vm.runInContext(`Object.keys(txRules).length === 1 && Object.values(txRules)[0] === "Подарки"`, ctx));
+
+
+// ---- Перевод на конкретный счёт: один вопрос «чей он» вместо общих категорий ----
+vm.runInContext(`
+  const D = n => "MTB MOBILE BANK MINSK BY MP2B 140103 Оплата в Интернет-банке, Наименование операции: Пополнение карточки, номер счета BY00TEST000000000000000007933 3, номер устройства 5M100016, 0" + n + ".11.2026";
+  txs = [
+    { date: "2026-11-02", time: "10:00:00", amount: -10, mcc: "5399", details: D(2), balance: 1 },
+    { date: "2026-11-03", time: "10:00:00", amount: -20, mcc: "5399", details: D(3), balance: 2 },
+    { date: "2026-11-04", time: "10:00:00", amount: -30, mcc: "5399", details: D(4), balance: 3 },
+  ];
+  header = { from: "2026-11-01", to: "2026-11-30" };
+  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+`, ctx);
+const rv2 = textOf(byId["review"]);
+check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Мой счёт") && rv2.includes("Другого человека") && rv2.includes("Оплата услуги или магазина") && !rv2.includes("Продукты"));
+clickButton(byId["review"], "Другого человека");
+check("счёт: «Другого человека» показывает варианты перевода", textOf(byId["review"]).includes("Дал в долг") && textOf(byId["review"]).includes("Подарки"));
+clickButton(byId["review"], "Подарки");
+check("счёт: выбор применяется ко всей группе", vm.runInContext(`Object.values(userRules).includes("Подарки")`, ctx));
+
+
+// ---- Остальные группы тоже начинаются с понятного вопроса ----
+vm.runInContext(`
+  txs = [
+    { date: "2026-10-05", time: "10:00:00", amount: -50, mcc: null, details: "Оплата услуг ЕРИП", balance: 1 },
+    { date: "2026-09-05", time: "10:00:00", amount: -50, mcc: null, details: "Оплата услуг ЕРИП", balance: 2 },
+    { date: "2026-10-07", time: "10:00:00", amount: -80, mcc: null, details: "Платёж по реквизитам", balance: 3 },
+    { date: "2026-10-17", time: "10:00:00", amount: -95, mcc: null, details: "Платёж по реквизитам", balance: 4 },
+    { date: "2026-10-09", time: "10:00:00", amount: -12, mcc: null, details: "НЕИЗВЕСТНЫЙ МАГАЗИН", balance: 5 },
+  ];
+  header = { from: "2026-09-01", to: "2026-10-31" };
+  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+`, ctx);
+const rv3 = textOf(byId["review"]);
+check("вопрос: ЕРИП спрашивает «за что платите»", rv3.includes("За что вы платите через ЕРИП каждый месяц?"));
+check("вопрос: платёж по реквизитам спрашивает «кому или за что» и не предлагает случайные категории", rv3.includes("Кому или за что?") && rv3.includes("Перевод человеку") && rv3.includes("Оплата услуги или магазина"));
+check("вопрос: у прочих групп общий понятный вопрос", rv3.includes("К какой категории это отнести?"));
+
+
+// ---- Хвост: мелкие группы свёрнуты и уходят в «Прочее» одним нажатием, с отменой ----
+vm.runInContext(`
+  txs = [];
+  const sums = [900, 700, 500, 300, 200, 9, 8, 7, 6, 5, 4, 3];
+  sums.forEach((a, i) => txs.push({ date: "2026-10-" + String(i + 1).padStart(2, "0"), time: "10:00:00", amount: -a, mcc: null, details: "ЛАВКА " + ["АЛЬФА","БЕТА","ГАММА","ДЕЛЬТА","ЭПСИЛОН","ДЗЕТА","ЭТА","ТЕТА","ЙОТА","КАППА","ЛЯМБДА","МЮ"][i], balance: i }));
+  header = { from: "2026-10-01", to: "2026-10-31" };
+  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+`, ctx);
+check("хвост: мелкие группы свёрнуты в одну строку", textOf(byId["review"]).includes("Ещё 7 групп") && !textOf(byId["review"]).includes("ЛАВКА МЮ"));
+clickButton(byId["review"], "Всё в «Прочее»");
+check("хвост: перед применением просит подтверждение", textOf(byId["review"]).includes("Отправить все эти группы в «Прочее»?"));
+clickButton(byId["review"], "Да, в «Прочее»");
+check("хвост: группы ушли в «Прочее», есть плашка отмены", vm.runInContext(`Object.values(userRules).filter(v => v === "Прочее").length === 7`, ctx) && textOf(byId["undoBar"]).includes("отправлены в «Прочее»"));
+clickButton(byId["undoBar"], "Отменить");
+check("хвост: отмена возвращает прежнее состояние", vm.runInContext(`Object.keys(userRules).length === 0`, ctx));
 
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
