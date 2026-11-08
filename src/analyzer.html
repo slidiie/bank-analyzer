@@ -479,6 +479,12 @@
     .modalcard { background: var(--bg); color: var(--text); border: 1px solid var(--ctl-border); border-radius: 12px; padding: 1.2rem 1.4rem; max-width: 30rem; max-height: calc(100vh - 2rem); overflow: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
     .modalbtns { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
     :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    /* Без цветных квадратов при нажатии на телефоне: подсветка касания выключена везде, рамка фокуса только с клавиатуры.
+       html.touch ставится при касании и снимается при нажатии клавиши (Chrome на Android иногда считает фокус после касания «видимым»). */
+    *, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+    :focus:not(:focus-visible) { outline: none; }
+    html.touch :is(button, a, summary, label, [role=switch], [tabindex]):focus { outline: none; box-shadow: none; }
+    button::-moz-focus-inner { border: 0; }
     details { border-bottom: 1px solid var(--line); padding: .5rem 0; max-width: 46rem; }
     details > summary { cursor: pointer; font-weight: 600; -webkit-tap-highlight-color: transparent; }
     /* Единая стрелка для всех раскрывающихся пунктов: шеврон справа, поворачивается при открытии, без рамки и фона при наведении */
@@ -915,7 +921,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.75, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.76, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1171,7 +1177,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.75";
+    const FB_VERSION = "v4.76";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1243,6 +1249,9 @@
       $("themeMetaD").setAttribute("content", themeMode === "light" ? THEME_COLOR.light : THEME_COLOR.dark);
       if (typeof txs !== "undefined" && txs.length) refreshTop();   // подписи на диаграмме подбираются под цвета темы
     }
+    // Касание или клавиатура: от этого зависит, показывать ли рамку фокуса (см. html.touch в стилях)
+    document.addEventListener("pointerdown", e => { document.documentElement.classList.toggle("touch", e.pointerType === "touch" || e.pointerType === "pen"); }, true);
+    document.addEventListener("keydown", e => { if (e.key === "Tab" || e.key.startsWith("Arrow")) document.documentElement.classList.remove("touch"); }, true);
     $("themeToggle").addEventListener("click", () => {
       themeMode = effectiveDark() ? "light" : "dark";
       saveJSON("ba_theme_v2", themeMode);
@@ -3712,7 +3721,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.75", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.76", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
