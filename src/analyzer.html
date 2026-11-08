@@ -94,6 +94,28 @@
     .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
     ul.insights { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .7rem; }
     ul.insights li { margin: 0; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+    .hsum { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
+    .hsum.anim { animation: rise .35s ease both; }
+    .hsum .hlabel { font-size: .9rem; }
+    .hsum .hbig { font-size: 2.2rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .hsum .hbig small { font-size: 1rem; font-weight: 500; color: var(--muted); margin-left: .35rem; }
+    .hsum ul { list-style: none; margin: .6rem 0 0; padding: 0; }
+    .hsum li { margin: .25rem 0; padding-left: 1rem; position: relative; font-size: .95rem; }
+    .hsum li::before { content: ""; position: absolute; left: 0; top: .55em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
+    .dyn { margin: 0 0 1.5rem; }
+    .trend { width: 100%; height: auto; display: block; }
+    .trend .col { fill: var(--accent); opacity: .5; transform-box: fill-box; transform-origin: bottom; }
+    .trend.anim .col { animation: grow .5s ease both; }
+    .trend .col.max { opacity: .8; }
+    .trend .col.hot { opacity: 1; }
+    .trend .hit { fill: transparent; cursor: pointer; }
+    .trend text { fill: var(--muted); font-size: 15px; }
+    .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
+    .toprow .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); }
+    .tbar > i { display: block; height: 100%; border-radius: 3px; }
     .icard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: .8rem 1rem; height: 100%; }
     .ibig { font-size: 1.6rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
     .ilabel { margin-top: .15rem; }
@@ -664,7 +686,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.47, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.48, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1826,8 +1848,142 @@
         anyPartial ? h("div", { class: "muted" }, "* месяц неполный: выписка начинается или заканчивается внутри него (или одна из выписок его не покрывает целиком), поэтому сумма может быть меньше обычной.") : "");
     }
 
-    // Показывает траты выбранного периода. Возвращает его статистику и название (для блока «Выводы»).
+    // ---- Обзор: главная мысль сверху, динамика и топ получателей снизу ----
+    const spendList = list => list.filter(t => t.amount < 0 && ![Cat.OWN, Cat.LOAN, Cat.SAVINGS].includes(displayCat(t)));
+    const MON = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+    const shortDate = iso => `${parseInt(iso.slice(8, 10), 10)} ${MON[parseInt(iso.slice(5, 7), 10) - 1]}`;
+    function periodDays(list) {
+      const d = list.map(t => t.date).filter(Boolean).sort();
+      return d.length ? Math.round((Date.parse(d[d.length - 1]) - Date.parse(d[0])) / 864e5) + 1 : 0;
+    }
+    let lastHeadline = "", lastTrend = "";
+    function countUp(el, to) {
+      const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (calm || typeof requestAnimationFrame !== "function" || typeof performance === "undefined") { el.textContent = fmt(to); return; }
+      const t0 = performance.now(), dur = 600;
+      const step = now => {
+        const k = Math.min(1, (now - t0) / dur);
+        el.textContent = fmt(k < 1 ? to * (1 - Math.pow(1 - k, 3)) : to);
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+    // Главная мысль: крупная сумма и 3–5 коротких фактов (без советов, только то, что видно в выписке)
+    function headlineCard(ctx) {
+      const st = ctx.stats;
+      if (!st || !st.total) return null;
+      const all = ctx.list || txs, days = periodDays(all), months = ctx.months || [], facts = [];
+      const cmp = (iNow, iPrev, subject) => {
+        const a = ctx.per[iNow].total, b = ctx.per[iPrev].total;
+        if (!b) return null;
+        const d = Math.round((a - b) / b * 100), name = monthTitle(months[iPrev]);
+        const body = Math.abs(d) < 1 ? `почти как в предыдущем месяце (${name})` : `на ${Math.abs(d)}% ${d > 0 ? "больше" : "меньше"}, чем в предыдущем месяце (${name})`;
+        return subject ? subject + body : body.charAt(0).toUpperCase() + body.slice(1);
+      };
+      if (days >= 2) facts.push(`В среднем ${fmt(st.total / days)} BYN в день`);
+      const fullIdx = months.map((m, i) => i).filter(i => !coverageNote(months[i]));
+      if (ctx.current === undefined && fullIdx.length >= 2) {
+        facts.push(`В среднем ${fmt(fullIdx.reduce((a, i) => a + ctx.per[i].total, 0) / fullIdx.length)} BYN в полный месяц`);
+        const [p, c] = fullIdx.slice(-2);
+        if (c - p === 1) { const t = cmp(c, p, `${monthTitle(months[c])}: `); if (t) facts.push(t); }
+      } else if (ctx.current > 0 && !coverageNote(months[ctx.current]) && !coverageNote(months[ctx.current - 1])) {
+        const t = cmp(ctx.current, ctx.current - 1, ""); if (t) facts.push(t);
+      }
+      const top = st.rows.find(([c]) => !REVIEW_CATS.has(c));
+      if (top) facts.push(`Больше всего: ${top[0]}, ${Math.round(top[1] / st.total * 100)}%`);
+      const unsorted = st.rows.filter(([c]) => REVIEW_CATS.has(c)).reduce((a, [, v]) => a + v, 0) / st.total;
+      if (unsorted >= 0.1) facts.push(`Ещё не разобрано: ${Math.round(unsorted * 100)}% трат`);
+      const biggest = spendList(all).reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
+      if (biggest) facts.push(`Самая крупная трата: ${fmt(-biggest.amount)} BYN${biggest.date ? ", " + shortDate(biggest.date) : ""}`);
+      const big = h("span", {}, fmt(st.total));
+      const key = `${ctx.label}|${st.total.toFixed(2)}`;
+      const fresh = key !== lastHeadline;
+      if (fresh) { lastHeadline = key; countUp(big, st.total); }
+      return h("div", { class: "hsum" + (fresh ? " anim" : "") },
+        h("div", { class: "hlabel muted" }, ctx.label ? `Траты · ${ctx.label}` : "Траты за период"),
+        h("div", { class: "hbig" }, big, h("small", {}, "BYN")),
+        facts.length ? h("ul", {}, facts.slice(0, 5).map(f => h("li", {}, f))) : "");
+    }
+    // Динамика: столбики по дням, неделям или месяцам (по длине периода) и пять самых затратных получателей
+    function dynamicsBlock(ctx) {
+      const all = ctx.list || txs, list = spendList(all).filter(t => t.date);
+      if (!list.length) return null;
+      const days = periodDays(all), mode = days <= 62 ? "day" : days <= 200 ? "week" : "month", DAY = 864e5;
+      const utc = iso => Date.parse(iso + "T00:00:00Z");
+      const keyOf = iso => {
+        if (mode === "day") return iso;
+        if (mode === "month") return iso.slice(0, 7);
+        const t = utc(iso);
+        return new Date(t - ((new Date(t).getUTCDay() + 6) % 7) * DAY).toISOString().slice(0, 10);
+      };
+      const next = k => {
+        if (mode === "month") { let y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } return y + "-" + String(m).padStart(2, "0"); }
+        return new Date(utc(k) + (mode === "day" ? 1 : 7) * DAY).toISOString().slice(0, 10);
+      };
+      const sums = new Map();
+      list.forEach(t => { const k = keyOf(t.date); sums.set(k, (sums.get(k) || 0) - t.amount); });
+      const keys = [...sums.keys()].sort(), seq = [];
+      for (let k = keys[0], guard = 0; k <= keys[keys.length - 1] && guard < 400; k = next(k), guard++) seq.push([k, sums.get(k) || 0]);
+      const box = h("div", { class: "dyn" });
+      if (seq.length >= 3) {
+        const labelOf = k => mode === "month" ? monthTitle(k) : mode === "week" ? `неделя с ${shortDate(k)}` : shortDate(k);
+        const tickOf = k => mode === "month" ? `${MON[+k.slice(5, 7) - 1]} ${k.slice(2, 4)}` : shortDate(k);
+        const max = Math.max(...seq.map(s => s[1]), 1), W = 600, H = 120, n = seq.length, step = W / n, bw = Math.max(2, Math.min(28, step * 0.72));
+        let bars = "", hits = "", ticks = "";
+        seq.forEach(([k, v], i) => {
+          const bh = v ? Math.max(2, v / max * (H - 14)) : 0, x = i * step + (step - bw) / 2;
+          bars += `<rect class="col${v === max ? " max" : ""}" x="${x.toFixed(1)}" y="${(H - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${Math.min(3, bw / 2).toFixed(1)}"/>`;
+          hits += `<rect class="hit" data-i="${i}" x="${(i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"/>`;
+        });
+        const tc = Math.min(n, 5);
+        for (let j = 0; j < tc; j++) { const i = tc === 1 ? 0 : Math.round(j * (n - 1) / (tc - 1)); ticks += `<text x="${Math.min(W - 30, Math.max(30, i * step + step / 2)).toFixed(1)}" y="${H + 18}" text-anchor="middle">${esc(tickOf(seq[i][0]))}</text>`; }
+        const trendKey = `${ctx.label}|${n}|${max.toFixed(2)}`, freshTrend = trendKey !== lastTrend;
+        lastTrend = trendKey;
+        const tip = h("div", { class: "pietip" }, h("span", { class: "muted" }, `Наведи на столбик · максимум ${fmt(max)} BYN`));
+        const holder = document.createElement("span");
+        holder.innerHTML = `<svg class="trend${freshTrend ? " anim" : ""}" viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Траты по ${mode === "day" ? "дням" : mode === "week" ? "неделям" : "месяцам"}">${bars}${ticks}${hits}</svg>`;
+        const show = e => {
+          const el = e.target.closest && e.target.closest(".hit");
+          if (!el) return;
+          const i = +el.getAttribute("data-i");
+          holder.querySelectorAll(".col").forEach((b, j) => b.classList.toggle("hot", j === i));
+          tip.replaceChildren(h("b", {}, labelOf(seq[i][0])), ` · ${fmt(seq[i][1])} BYN`);
+        };
+        if (holder.addEventListener) { holder.addEventListener("mouseover", show); holder.addEventListener("click", show); }
+        box.append(h("h3", { style: "margin-bottom:.2rem" }, "Динамика трат"),
+          h("div", { class: "muted" }, mode === "day" ? "По дням" : mode === "week" ? "По неделям" : "По месяцам"), tip, holder);
+      }
+      const groups = new Map();
+      const unclear = list.filter(t => REVIEW_CATS.has(displayCat(t)));
+      list.filter(t => !REVIEW_CATS.has(displayCat(t))).forEach(t => { const k = Cat.merchantKey(t), g = groups.get(k) || { sum: 0, n: 0, tx: t }; g.sum -= t.amount; g.n++; groups.set(k, g); });
+      const top = [...groups.values()].sort((a, b) => b.sum - a.sum).slice(0, 5);
+      if (top.length) {
+        const topMax = top[0].sum;
+        box.append(h("h3", { style: "margin:1rem 0 .2rem" }, "Куда ушло больше всего"),
+          ...top.map(g => {
+            const nm = friendlyTitle(g.tx);
+            return h("div", { class: "toprow" },
+              h("span", { class: "tname" }, nm === nm.toUpperCase() ? sentence(nm) : nm, h("span", { class: "muted" }, ` · ${g.n} ${opsWord(g.n)}`)),
+              h("span", { class: "num" }, fmt(g.sum)),
+              h("div", { class: "tbar" }, h("i", { style: `width:${(g.sum / topMax * 100).toFixed(1)}%;background:${catColor(displayCat(g.tx))}` })));
+          }),
+          ...(unclear.length ? [h("div", { class: "muted", style: "margin-top:.4rem" }, `Не входит в список: ${fmt(unclear.reduce((a, t) => a - t.amount, 0))} BYN в платежах, где банк не показал получателя (интернет-банк, ЕРИП). Их можно разобрать в разделе «Разобрать».`)] : []));
+      }
+      return box;
+    }
     function renderSummary() {
+      const ctx = renderSummaryCore(), box = $("summary");
+      try {
+        const head = headlineCard(ctx), tabs = [...box.children].filter(c => c.classList && c.classList.contains("tabs")).pop();
+        if (head) { if (tabs && tabs.nextSibling) box.insertBefore(head, tabs.nextSibling); else box.insertBefore(head, box.firstChild); }
+        const dyn = dynamicsBlock(ctx);
+        if (dyn) box.append(dyn);
+      } catch (e) { /* без украшений, основной обзор уже построен */ }
+      return ctx;
+    }
+
+    // Показывает траты выбранного периода. Возвращает его статистику и название (для блока «Выводы»).
+    function renderSummaryCore() {
       const months = monthsInStatement();
       if (activeTab !== "all" && !months.includes(activeTab)) activeTab = "all";
       const box = $("summary");
@@ -3005,7 +3161,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.47", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.48", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }
