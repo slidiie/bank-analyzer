@@ -47,6 +47,7 @@
       pairNo++;
       add(ym, 12, own, null, "Пополнение со своего счёта", pairNo);
       add(ym, 12, -own, null, "Перевод на свой счёт (ЕРИП)", pairNo);
+      add(ym, 20, -sc(25, 70), null, "Перевод с карты на карту, Иванов И.И.");   // для подсказки «Похоже на перевод человеку»
       for (let i = 0, n = count(4, 12); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(6, 58), "5411", pick(['SHOP "EVROOPT"', 'SHOP "GREEN"', 'SHOP "SOSEDI"', "GIPERMARKET GIPPO"]));
       for (let i = 0, n = count(2, 7); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(7, 26), "5812", pick(['RBO "BURGER KING"', "COFFEE HOUSE", "PIZZA CAFE"]));
       for (let i = 0, n = count(2, 9); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(1.5, 14), pick(["4111", "4121"]), pick(["METRO MINSK", "TAXI MINSK"]));
