@@ -598,7 +598,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.41, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.42, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1199,6 +1199,8 @@
       }
       if (Cat.isErip(tx)) return `Платёж через ЕРИП, ${fmt(Math.abs(tx.amount))} BYN`;
       if (/списание при переводе/i.test(tx.details || "")) return "Списание при переводе";
+      if (/p2p|р2р/i.test(tx.details || "")) return "Перевод с карты на карту, получатель не указан";
+      if (/sou sber bank/i.test(tx.details || "")) return "Платёж из приложения Сбера, получатель не указан";
       // Остальное: название места без хвоста «MINSK BY» и без общей фразы «Оплата товаров и услуг»
       return ruleLabel(Cat.merchantKey(tx)).replace(/\s+(MINSK|МИНСК)\s+BY\b/i, " ").replace(/\s*ОПЛАТА ТОВАРОВ И УСЛУГ\s*$/i, "").replace(/\s+BY\s*$/i, "").replace(/\s+/g, " ").trim() || "Без названия";
     }
@@ -2662,7 +2664,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.41", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.42", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }

@@ -165,8 +165,8 @@
     [GAMBLING, GAMBLING_RE],
     ["Подарки", /flowwow|rozi\.?bel|rozibel|florist|цвет[ыов]|букет|flowers/i],
     ["Путешествия", /belavia|белавиа|airline|airways|ryanair|wizz ?air|turkish air|aeroflot|аэрофлот|booking\.com|airbnb|agoda|hostel|hotel|отель|гостиниц|ostrovok|tutu\.ru|aviasales|ржд|rzd|белорусская железная дорога|\bbzd\b|бжд|bus ?for|ecolines|lux ?express/i],
-    ["Продукты", /evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b|korona|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты/i],
-    ["Кафе и рестораны", /kofejn|кофейн|burger king|mcdonald|\bkfc\b|pizza|пицц|coffee|кофе|cafe|кафе|restoran|ресторан|sushi|суши|shaurm|шаурм|bistro|mak\.by|вкусно|vkusno|ksb ?v|dodo|додо|papa ?john|папа джонс|vasilki|васильки|темпо|sushivesla|сушивесла|yandex[. ]?eda|яндекс[. ]?еда|rostic|ростикс|starbucks|кофейн|бургер|burger|столов[аa]я|canteen/i],
+    ["Продукты", /kopeechk|копеечк|universam|универсам|evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b|korona|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты/i],
+    ["Кафе и рестораны", /kofejn|кофейн|burger king|mcdonald|\bkfc\b|pizza|пицц|coffee|кофе|cafe|\bkafe\b|кафе|\bkofe\b|restoran|ресторан|sushi|суши|shaurm|шаурм|bistro|mak\.by|вкусно|vkusno|ksb ?v|dodo|додо|papa ?john|папа джонс|vasilki|васильки|темпо|sushivesla|сушивесла|yandex[. ]?eda|яндекс[. ]?еда|rostic|ростикс|starbucks|кофейн|бургер|burger|столов[аa]я|canteen/i],
     ["Транспорт", /\bmetro\b|метро|minsktrans|минсктранс|taxi|такси|yandex[. ]?go|яндекс[. ]?go|\buber\b|\bmaxim\b|\bbolt\b|belorusneft|белоруснефть|\ba-?100\b|lukoil|лукойл|gazpromneft|газпромнефть|rosneft|роснефть|\btriple\b|трайпл|\bazs\b|\bазс\b|парковк|parking|carsharing|каршеринг/i],
     ["Здоровье", /apteka|аптек|pharm|фармаци|planeta zdorov|планета здоровья|lyubimaya apt|любимая аптека|ostrov zdorov|остров здоровья|zabotliv|заботлив|belfarm|белфарм|optika|оптик|klinik|клиник|clinic|stomatolog|стоматолог|dental|медицин|medcentr|медцентр|laborator|лаборатор|анализ/i],
     ["Красота и уход", /salon|салон красот|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж/i],
@@ -205,7 +205,8 @@
     if (isErip(tx)) return BUCKET_ERIP;
     if (recipient(tx)) return BUCKET_IB;
     // Приорбанк: «MOBILE BANK» и P2P это платежи и переводы через интернет-банк, получателя в выписке нет
-    if (/mobile ?bank|\bp2p/i.test(tx.details || "")) return BUCKET_IB;
+    // Сбер: «SOU Sber Bank» и «P2P» это платежи и переводы из приложения, получателя в выписке нет
+    if (/mobile ?bank|\bp2p|\bsou sber bank/i.test(tx.details || "")) return BUCKET_IB;
     return null;
   }
 
