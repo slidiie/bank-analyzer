@@ -122,6 +122,18 @@
     .icard details { border: 0; padding: 0; margin: .4rem 0 0; }
     .icard details > summary { font-weight: 400; color: var(--accent); font-size: .9rem; }
     .icard details > p { margin: .35rem 0 0; }
+    .goals { margin: 0 0 1.5rem; }
+    .goals h3 { margin: 0 0 .2rem; }
+    .goals .grow { padding: .55rem 0; border-top: 1px solid var(--line); }
+    .goals .grow:first-of-type { border-top: 0; }
+    .goals .gtop { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; justify-content: space-between; }
+    .goals .gname { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+    .goals .gleft { font-variant-numeric: tabular-nums; }
+    .goals .gtrack { height: .5rem; border-radius: 3px; background: var(--surface-2); margin: .3rem 0; overflow: hidden; }
+    .goals .gtrack > i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+    .goals .gnote { font-size: .85rem; overflow-wrap: anywhere; }
+    .goals .lvl-warn, .goals .lvl-risk { color: var(--lvl-warn); } .goals .lvl-over { color: var(--lvl-over); }
+    .goals .gtrack > i.lvl-warn, .goals .gtrack > i.lvl-risk { background: var(--lvl-warn); } .goals .gtrack > i.lvl-over { background: var(--lvl-over); }
     #plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .7rem; align-items: start; }
     #plan details { margin: 0; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-m); padding: .7rem 1rem; max-width: none; }
     #plan details[open] { grid-column: 1 / -1; }
@@ -720,6 +732,7 @@
   <script src="planner.js"></script>
   <script src="backup.js"></script>
   <script src="history.js"></script>
+  <script src="goals.js"></script>
   <script src="anonymize.js"></script>
   <script>
     // Чтение PDF: библиотека pdf.js встроена в страницу (build.py), из интернета ничего не подгружается.
@@ -1880,7 +1893,7 @@
     function statementSummary() {
       const dates = txs.map(t => t.date).filter(Boolean).sort();
       if (!dates.length) return {};
-      const sum = History.summarize(spendList(txs), { from: header.from || dates[0], to: header.to || dates[dates.length - 1], dates });
+      const sum = History.summarize(spendList(txs).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Прочее" })), { from: header.from || dates[0], to: header.to || dates[dates.length - 1], dates });
       Object.keys(sum).forEach(ym => {
         const m = sum[ym], full = m.first === 1 && m.last === new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
         if (full && coverageNote(ym)) delete sum[ym];   // месяц покрыт выписками не целиком: полным его не считаем
@@ -1901,6 +1914,58 @@
       const body = d < 1 ? "почти как" : `на ${d}% ${c.pct > 0 ? "больше" : "меньше"}, чем`;
       return c.full ? `${monthTitle(ym)}: ${body} в предыдущем месяце (${name}), по истории на этом устройстве`
         : `С ${c.a} по ${c.b} число: ${body} за те же числа в предыдущем месяце (${name}), по истории на этом устройстве`;
+    }
+    // Цели и бюджеты: «осталось X на категорию до конца месяца» по лимитам из «Планирования»
+    function goalsBlock(ctx) {
+      const months = ctx.months && ctx.months.length ? ctx.months : monthsInStatement();
+      const ym = ctx.current === undefined ? months[months.length - 1] : months[ctx.current];
+      if (!ym) return null;
+      const dim = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+      const dates = txs.map(t => t.date).filter(Boolean).sort();
+      const dataEnd = [header.to, dates[dates.length - 1]].filter(Boolean).sort().pop() || ym + "-" + String(dim).padStart(2, "0");
+      const day = dataEnd.slice(0, 7) < ym ? 0 : dataEnd.slice(0, 7) > ym ? dim : +dataEnd.slice(8);
+      if (!day) return null;
+      const st = statsFor(txs.filter(t => t.date && t.date.startsWith(ym)));
+      const spentBy = {};
+      st.rows.forEach(([c, v]) => { spentBy[c] = v; });
+      const list = Goals.rows({ budgets, spentBy, day, dim });
+      const box = h("div", { class: "goals" });
+      const partial = coverageNote(ym), startsLate = partial && !/ с 1 по /.test(partial);   // «с 1 по N» это просто конец выписки: он и так виден в подписи
+      if (!list.length) {
+        // Лимитов нет: подсказываем по истории, где обычно уходит больше всего
+        const store = demoMode ? statementSummary() : Object.assign({}, historyStore, statementSummary());
+        const dIn = y => new Date(+y.slice(0, 4), +y.slice(5, 7), 0).getDate();
+        const tips = st.rows.filter(r => !isUnclear(r[0])).slice(0, 5).map(([c]) => [c, Goals.suggestLimit(Goals.historyValues(store, c, ym, dIn))]).filter(x => x[1]).slice(0, 3);
+        if (!tips.length) return null;
+        box.append(h("h3", {}, "Цели и бюджеты"),
+          h("p", { class: "muted" }, "Лимитов на месяц пока нет. Задайте их в разделе «Планирование», и здесь появится, сколько осталось до конца месяца. Обычно за полный месяц у вас уходит:"),
+          h("ul", {}, tips.map(([c, v]) => h("li", {}, `${c}: около ${fmt(v)} BYN`))));
+        return box;
+      }
+      const t = Goals.totals(list);
+      const finished = day >= dim;
+      box.append(h("h3", {}, "Цели и бюджеты · " + monthTitle(ym)),
+        h("div", { class: "muted" }, finished
+          ? `Месяц закончился. Лимиты: ${fmt(t.limit)} BYN, потрачено ${fmt(t.spent)} BYN`
+          : `По выписке до ${dmy(dataEnd)} (${day} из ${dim} дн.). Лимиты: ${fmt(t.limit)} BYN, потрачено ${fmt(t.spent)} BYN`));
+      list.forEach(r => {
+        const left = r.left >= 0 ? `осталось ${fmt(r.left)}` : `перебор ${fmt(-r.left)}`;
+        let note;
+        if (r.level === "over") note = r.finished ? "Лимит превышен." : "Лимит уже превышен: до конца месяца лучше не тратить.";
+        else if (r.finished) note = "Уложились в лимит.";
+        else {
+          note = `Можно тратить около ${fmt(r.perDay)} BYN в день, осталось дней: ${r.daysLeft}`;
+          if (r.level === "risk") note += `. При таком темпе выйдет около ${fmt(r.projected)} BYN: больше лимита`;
+          else if (r.projected !== null) note += `. При таком темпе выйдет около ${fmt(r.projected)} BYN`;
+        }
+        box.append(h("div", { class: "grow" },
+          h("div", { class: "gtop" }, h("span", { class: "gname" }, r.cat), h("span", { class: "gleft lvl-" + r.level }, `${left} из ${fmt(r.limit)} BYN`)),
+          h("div", { class: "gtrack" }, h("i", { class: "lvl-" + r.level, style: `width:${Math.min(100, r.pct).toFixed(1)}%` })),
+          h("div", { class: "gnote " + (r.level === "ok" ? "muted" : "lvl-" + r.level) }, note)));
+      });
+      if (startsLate) box.append(h("p", { class: "muted gnote" }, "Выписка охватывает месяц не с начала (" + partial.replace("неполный месяц: ", "") + "), траты могут быть занижены."));
+      box.append(h("p", { class: "muted gnote" }, "Темп считается по тратам с начала месяца и не знает о будущих разовых платежах. Лимиты меняются в «Планировании»."));
+      return box;
     }
     function countUp(el, to) {
       const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2022,6 +2087,8 @@
       try {
         const head = headlineCard(ctx), tabs = [...box.children].filter(c => c.classList && c.classList.contains("tabs")).pop();
         if (head) { if (tabs && tabs.nextSibling) box.insertBefore(head, tabs.nextSibling); else box.insertBefore(head, box.firstChild); }
+        const goals = goalsBlock(ctx);
+        if (goals) box.append(goals);
         const dyn = dynamicsBlock(ctx);
         if (dyn) box.append(dyn);
       } catch (e) { /* без украшений, основной обзор уже построен */ }
