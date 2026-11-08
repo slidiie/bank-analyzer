@@ -41,7 +41,7 @@
       --bar:var(--accent); --barbg:var(--surface-2); --active-text:var(--on-accent);
       --ctl-bg:var(--surface); --ctl-border:#8F887D; --ctl-text:var(--text);
       --lvl-warn:#8a5f00; --lvl-over:#b3261e;
-      --tab-bg:color-mix(in srgb, var(--accent) 14%, var(--surface)); --tab-fg:var(--accent-ink); --tab-border:var(--accent);
+      --tab-bg:color-mix(in srgb, var(--accent) 14%, var(--surface)); --tab-fg:var(--accent-ink); --tab-border:var(--accent); --link:var(--accent-ink);
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -57,7 +57,7 @@
         --ctl-border:#666D76;
         --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
         --lvl-warn:#d9a400; --lvl-over:#e0554f;
-        --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent);
+        --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent); --link:var(--accent);
       }
     }
     :root[data-theme="dark"] {
@@ -72,7 +72,7 @@
       --ok-border:#2F6B4F; --warn-border:#6A5E32;
       --ctl-border:#666D76; --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
       --lvl-warn:#d9a400; --lvl-over:#e0554f;
-      --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent);
+      --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent); --link:var(--accent);
     }
     :root[data-theme="light"] { color-scheme: light; }
     :root[data-theme="dark"] { color-scheme: dark; }
@@ -97,6 +97,7 @@
     /* Единый вид кнопок: скругление --r-m, высота 44 px, один размер текста. Исключения: значки, переключатели, нижняя панель. */
     button { padding: .5rem 1rem; min-height: 44px; font-size: .95rem; cursor: pointer; }
     .muted { color: var(--muted); font-size: var(--fs-s); }
+    a { color: var(--link); }
     .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
     ul.insights { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .7rem; }
     ul.insights { align-items: start; }
@@ -369,6 +370,8 @@
     .upcard .cta { display: flex; flex-direction: column; gap: .6rem; max-width: 24rem; margin: 0 auto; }
     .upcard .cta button { width: 100%; margin: 0; }
     #demoBtn { background: transparent; color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .quickfaq h2 { margin: 1.4rem 0 .4rem; font-size: 1.1rem; }
+    .quickfaq .qfaqall { margin: .6rem 0 0; font-size: var(--fs-s); }
     .rowcard { display: flex; align-items: center; gap: .7rem; width: 100%; min-height: 3rem; margin-top: .6rem; padding: .6rem 1rem; text-align: left; font-size: var(--fs-m); background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); }
     .rowcard > span { flex: 1 1 auto; min-width: 0; }
     .rowcard .gi { color: var(--accent); }
@@ -579,6 +582,16 @@
     </ol>
     <button id="privRow" class="rowcard" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Файл не покидает ваш браузер</span><svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
     <button id="howRow" class="rowcard" type="button" aria-haspopup="dialog"><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg><span>Как получить выписку</span><svg class="gi chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <section class="quickfaq" aria-labelledby="qfaqH">
+      <h2 id="qfaqH">Коротко о главном</h2>
+      <details><summary>Куда уходит файл?</summary>
+        <p>Никуда. Выписка читается прямо в вашем браузере и на сервер не загружается.</p></details>
+      <details><summary>Какие банки читает?</summary>
+        <p id="qfaqBanks"></p></details>
+      <details><summary>Что если не распозналось?</summary>
+        <p>Сайт скажет, что именно не получилось. Попробуйте скачать выписку в PDF заново или загрузить файл другого периода. Если банк не читается, можно прислать образец (по вашему желанию, без отправки самим сайтом): ссылка в разделе вопросов ниже.</p></details>
+      <p class="muted qfaqall"><a href="#faq">Все вопросы и приватность</a></p>
+    </section>
     <details class="aboutdet"><summary>Что умеет сайт</summary>
     <div class="cards">
       <div class="card"><h3>Банк определяется сам</h3>
@@ -867,7 +880,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.71, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.72, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1059,6 +1072,7 @@
     const $ = id => document.getElementById(id);
     const bankNames = Banks.BANKS.map(b => b.name).reverse().join(", ");
     $("banks").textContent = "PDF или CSV · " + bankNames;
+    $("qfaqBanks").textContent = "Сейчас: " + bankNames + ". Если вашего банка нет, его можно помочь добавить: ссылка в разделе вопросов ниже.";
     $("faqBanks").textContent = "Сейчас разбираются выписки: " + bankNames + ". Для каждого банка формат PDF свой, поэтому новые банки добавляются по мере того, как появляются образцы выписок. Выписку неподдерживаемого банка сайт честно откажется читать, а не покажет неверные суммы.";
     $("landingChips").replaceChildren(...Banks.BANKS.map(b => b.name).reverse().map(n => {
       const chip = h("span", { class: "bankchip" }, h("span", { class: "mono", "aria-hidden": "true" }, n.trim().charAt(0).toUpperCase()), n);
@@ -1123,7 +1137,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.71";
+    const FB_VERSION = "v4.72";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -3631,7 +3645,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.71", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.72", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* пробуем запасной путь */ }

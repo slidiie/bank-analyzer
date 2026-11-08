@@ -2,7 +2,7 @@
 // Данные пользователя сюда не попадают: кэшируются только файлы самого приложения с того же адреса.
 // Версию (метку в имени кэша) подставляет build.py (хэш готовой страницы): новая сборка = новый кэш, старый удаляется.
 "use strict";
-const CACHE = "bank-analyzer-9468062b5f12";
+const CACHE = "bank-analyzer-3cc943a17558";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
