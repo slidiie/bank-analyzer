@@ -38,5 +38,7 @@ check("заметки: берутся только строки, опасные 
 check("заметки: нет поля — пустой словарь", Object.keys(B.sanitize({ app: "bank-analyzer" }).notes).length === 0);
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 check("правила с условиями: оставляются корректные, мусор отбрасывается", (() => { const o = B.sanitize({ app: "bank-analyzer", condRules: [{ t: "Евроопт", min: 1, c: "Продукты" }, { t: "", c: "x" }, 5, { t: "a", min: 9, max: 1, c: "К" }] }); return o.condRules.length === 1 && o.condRules[0].t === "евроопт"; })());
+check("разделения: оставляются корректные, мусор отбрасывается", (() => { const o = B.sanitize({ app: "bank-analyzer", splits: { a: [{ a: 30, c: "Еда" }, { a: 0, c: "x" }], b: 5, c: [] } }); return Object.keys(o.splits).join() === "a" && o.splits.a.length === 1; })());
+check("без разделений в файле получается пустой объект", Object.keys(B.sanitize({ app: "bank-analyzer" }).splits).length === 0);
 check("без правил с условиями в файле получается пустой список", B.sanitize({ app: "bank-analyzer" }).condRules.length === 0);
 process.exit(failed ? 1 : 0);

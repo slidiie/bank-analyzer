@@ -205,6 +205,8 @@
     .opnote { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .25rem; }
     @media (min-width: 768px) { .opnote .qchip { min-height: 32px; padding: 0 .6rem; font-size: var(--fs-xs); } }
     .opnote .tag { color: var(--accent); }
+    .opsplit { display: flex; flex-direction: column; gap: .25rem; margin-top: .25rem; align-items: flex-start; }
+    .opsplit .frow { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
     .notein { flex: 1 1 14rem; min-width: 0; }
     #plan .lvl-warn { color: var(--lvl-warn); } #plan .lvl-over { color: var(--lvl-over); }
     @media (max-width: 520px) {
@@ -989,7 +991,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.84</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.85</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1013,6 +1015,7 @@
   <script src="goals.js"></script>
   <script src="filters.js"></script>
   <script src="condrules.js"></script>
+  <script src="splits.js"></script>
   <script src="feedback.js"></script>
   <script src="hints.js"></script>
   <script src="pwa.js"></script>
@@ -1097,6 +1100,7 @@
     let customCats = loadJSON("ba_cats_v1", []).filter(c => typeof c === "string" && c);   // добавленные пользователем категории
     let txNotes = loadJSON("ba_notes_v1", {});     // заметки к операциям: id операции -> текст до 200 знаков, «#тег» внутри работает как метка
     const noteOf = tx => txNotes[txId(tx)] || "";
+    let splits = Splits.cleanMap(loadJSON("ba_splits_v1", {}));   // разделение операции: id -> части {a: сумма, c: категория}, остаток остаётся в исходной категории
     let condRules = CondRules.cleanList(loadJSON("ba_condrules_v1", []));   // правила с условиями: текст + сумма -> категория
     let txRules = loadJSON("ba_txrules_v1", {});   // выбор для одной конкретной операции
     let customIcons = loadJSON("ba_icons_v1", {}); // значки своих категорий
@@ -1196,10 +1200,10 @@
 
     function enterDemo() {
       const wasDemo = demoMode;
-      if (!demoMode) stash = { condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
+      if (!demoMode) stash = { splits, condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
       demoMode = true;
       document.body.classList.add("demo"); $("demoBtn").textContent = "Показать другой пример";
-      userRules = {}; txRules = {}; condRules = []; txNotes = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
+      userRules = {}; txRules = {}; splits = {}; condRules = []; txNotes = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
       ownUndo.length = 0;
       const d = Demo.make(Math.floor(Math.random() * 4294967296), new Date());
       txs = d.txs; header = d.header;
@@ -1217,7 +1221,7 @@
       if (!demoMode) return;
       demoMode = false;
       document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо";
-      ({ condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
+      ({ splits, condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
       stash = null;
       ownUndo.length = 0;
       openKeys.clear();
@@ -1250,7 +1254,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.84";
+    const FB_VERSION = "v4.85";
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
@@ -1505,7 +1509,7 @@
     };
     const allCategories = () => [...Cat.DEFAULT_CATEGORIES, ...customCats.filter(c => !Cat.DEFAULT_CATEGORIES.includes(c))];
     // Идентификатор конкретной операции (дата, время, сумма, остаток)
-    const txId = tx => [tx.date, tx.time || "", tx.amount, tx.balance].join("|");
+    const txId = tx => tx.sid || [tx.date, tx.time || "", tx.amount, tx.balance].join("|");
     // Приоритет: выбор для этой операции, потом выбор для группы похожих, потом автоматика
     // Пара «пришло и сразу ушло» сильнее общих правил, но слабее выбора пользователя для конкретной операции
     // Для показа: если категории нет, но видно способ оплаты (ЕРИП, интернет-банк), берём «корзину»
@@ -1516,6 +1520,7 @@
     const isRefund = tx => { if (!(tx.amount > 0)) return false; const c = displayCat(tx); return !isUnclear(c) && !NOT_SPEND.includes(c); };
     // Откуда взялась категория: подпись «почему здесь» под выбором категории
     function whyCat(tx) {
+      if (tx.part) return "часть разделённой операции";
       if (txRules[txId(tx)]) return "выбрано вами";
       if (tx.pair) return "пришло и сразу ушло";
       if (userRules[Cat.merchantKey(tx)]) return "ваше правило";
@@ -1524,14 +1529,14 @@
       if (r[0]) return r[1];
       return Cat.bucket(tx) ? "не определено" : "";
     }
-    const categoryOf = tx => txRules[txId(tx)] || (tx.pair ? Cat.OWN : null) || userRules[Cat.merchantKey(tx)] || ((CondRules.firstMatch(condRules, tx) || {}).c) || Cat.categorize(tx);
+    const categoryOf = tx => tx.splitCat || txRules[txId(tx)] || (tx.pair ? Cat.OWN : null) || userRules[Cat.merchantKey(tx)] || ((CondRules.firstMatch(condRules, tx) || {}).c) || Cat.categorize(tx);
 
     // Регулярные платежи: одна и та же сумма в разные месяцы (аренда, связь, подписки, коммуналка).
     // Суммы меньше 10 BYN не учитываем: мелкие одинаковые суммы встречаются слишком часто.
     function findRecurring() {
       const byAmount = new Map();
       for (const tx of txs) {
-        if (!tx.date || Math.abs(tx.amount) < 10) continue;
+        if (!tx.date || tx.part || Math.abs(tx.amount) < 10) continue;
         const k = tx.amount.toFixed(2);
         if (!byAmount.has(k)) byAmount.set(k, []);
         byAmount.get(k).push(tx);
@@ -1579,6 +1584,15 @@
       userRules[Cat.merchantKey(tx)] = category;
       saveJSON("ba_rules_v1", userRules);
       render();
+    }
+    // Разделение операций: в txs лежат «части» (см. splits.js), в файл и при добавлении выписок операции склеиваются обратно
+    function saveSplits() { if (!demoMode) saveJSON("ba_splits_v1", splits); }
+    function applySplits() { txs = Splits.expand(Splits.collapse(txs), splits, txId); }
+    function setSplit(id, parts) { if (parts && parts.length) splits[id] = parts; else delete splits[id]; saveSplits(); applySplits(); render(); }
+    function setPartCat(tx, category) {
+      category = Cat.canonical(category); ensureCategory(category);
+      const p = splits[tx.splitOf]; if (!p || !p[tx.splitIdx]) return;
+      p[tx.splitIdx].c = category; saveSplits(); applySplits(); render();
     }
     // Только для одной операции
     function setTxRule(tx, category, icon) {
@@ -2681,7 +2695,7 @@
       }
       // Аномалии: только подозрения, проверьте сами
       if (ctx && ctx.list) {
-        const an = Planner.findAnomalies(ctx.list.map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP);
+        const an = Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP);
         const fd = d => d.slice(8, 10) + "." + d.slice(5, 7) + "." + d.slice(0, 4);
         if (an.double.length) ul.append(icard(`${an.double.length} ${an.double.length === 1 ? "случай" : "случая"}`, "Возможное двойное списание",
           "Одна и та же сумма под одним названием в один день (от 10 BYN): " + an.double.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} BYN × ${d.count} (${fd(d.date)})`).join("; ") + ". Это может быть и две настоящие покупки: проверьте по чекам."));
@@ -3454,6 +3468,55 @@
         show();
         return box;
       }
+      // Разделение операции: «✂ Разделить» открывает части (сумма + категория); остаток остаётся в исходной категории
+      function splitCtl(tx) {
+        const o = tx._o || tx, id = tx.splitOf || txId(tx);
+        const box = h("div", { class: "opsplit" });
+        const label = `операции ${o.date || ""}, ${fmt(o.amount)} BYN`;
+        if (!Splits.canSplit(o)) return box;
+        const show = () => {
+          box.replaceChildren();
+          if (tx.splitOf) {
+            box.append(h("span", { class: "badge", title: "Одна операция разделена на части по категориям. Итоги считают каждую часть отдельно." }, (tx.part ? "✂ часть " : "✂ остаток ") + "из " + fmt(o.amount)),
+              h("button", { type: "button", class: "qchip ghost", onclick: () => edit(splits[id] || []), "aria-label": "Изменить разделение " + label }, "✎ Изменить"),
+              h("button", { type: "button", class: "qchip ghost", onclick: () => setSplit(id, null), "aria-label": "Отменить разделение " + label }, "Отменить разделение"));
+          } else box.append(h("button", { type: "button", class: "qchip ghost", onclick: () => edit([]), "aria-label": "Разделить " + label }, "✂ Разделить"));
+        };
+        function edit(initial) {
+          const rows = initial.length ? initial.map(p => ({ a: String(p.a), c: p.c })) : [{ a: "", c: "" }];
+          const draw = () => {
+            box.replaceChildren();
+            const info = h("div", { class: "muted why", "aria-live": "polite" });
+            const parsed = () => rows.map(r => ({ a: parseFloat(String(r.a).replace(/[\s ]/g, "").replace(",", ".")), c: r.c }));
+            const upd = () => {
+              const p = parsed(), sum = p.reduce((a, x) => a + (x.a > 0 ? Math.round(x.a * 100) : 0), 0), rest = Math.round(-o.amount * 100) - sum;
+              info.textContent = rest < 0 ? `Части больше суммы операции (${fmt(o.amount)} BYN) на ${fmt(-rest / 100)}.` : `Остаток ${fmt(rest / 100)} BYN останется в категории «${displayCat(o) || "Не разобрано"}».`;
+              return rest;
+            };
+            rows.forEach((r, i) => {
+              const inp = h("input", { type: "text", class: "fa", inputmode: "decimal", autocomplete: "off", placeholder: "сумма", "aria-label": `Сумма части ${i + 1}` });
+              inp.value = r.a; inp.addEventListener("input", () => { r.a = inp.value; upd(); });
+              const line = h("div", { class: "frow" }, inp, categorySelect(r.c, v => { if (v) { ensureCategory(Cat.canonical(v)); r.c = Cat.canonical(v); } }, `Категория части ${i + 1}`));
+              if (rows.length > 1) line.append(h("button", { type: "button", class: "qchip ghost", "aria-label": `Убрать часть ${i + 1}`, onclick: () => { rows.splice(i, 1); draw(); } }, "✕"));
+              box.append(line);
+            });
+            const msg = h("div", { class: "muted why", role: "status" });
+            const add = h("button", { type: "button", class: "qchip ghost", onclick: () => { if (rows.length < Splits.MAX_PARTS) { rows.push({ a: "", c: "" }); draw(); } } }, "＋ Часть");
+            const save = h("button", { type: "button", class: "qchip primary", onclick: () => {
+              const p = parsed();
+              if (p.some(x => !(x.a >= 0.01) || !x.c)) { msg.textContent = "У каждой части нужны сумма и категория."; return; }
+              const clean = Splits.cleanParts(p);
+              if (!Splits.valid(o, clean)) { msg.textContent = "Сумма частей не может быть больше суммы операции."; return; }
+              setSplit(id, clean);
+            } }, "Сохранить");
+            box.append(info, h("div", { class: "frow" }, add, save, h("button", { type: "button", class: "qchip ghost", onclick: show }, "Отмена")), msg);
+            upd();
+          };
+          draw();
+        }
+        show();
+        return box;
+      }
       function renderTable() {
         // Поиск и фильтры (текст, расходы/поступления, сумма, категория) оставляют в списке только подходящие операции
         const sorted = [...byMonth].sort(SORTS[allSort]);
@@ -3480,14 +3543,14 @@
         tbody.replaceChildren(...view.map(tx => h("tr", { class: isOwn(tx) ? "own" : "" },
           h("td", {}, tx.date || "", recurLabel(tx) ? h("span", { title: recurLabel(tx) }, " ↻") : ""),
           h("td", { class: "num" }, (tx.amount > 0 ? "+" : "") + fmt(tx.amount)),
-          h("td", {}, categorySelect(displayCat(tx), v => v && setTxRule(tx, v), `Категория операции ${tx.date || ""}, ${fmt(tx.amount)} BYN`),
+          h("td", {}, categorySelect(displayCat(tx), v => v && (tx.part ? setPartCat(tx, v) : setTxRule(tx, v)), `Категория операции ${tx.date || ""}, ${fmt(tx.amount)} BYN`),
             h("div", { class: "muted why" }, whyCat(tx))),
           h("td", { class: "details" },
             isOwn(tx) ? h("span", { class: "badge", title: tx.pair
               ? "Пришло и сразу ушло ровно столько же. Не считается ни доходом, ни расходом. Если это не так, выберите другую категорию."
               : "Перевод между своими счетами: не считается ни доходом, ни расходом." }, "⇄ между своими") : "",
             tx.pending ? h("span", { class: "badge", title: "Банк деньги заблокировал, но ещё не провёл операцию. В следующей выписке она появится уже проведённой." }, "⏳ не проведена") : "",
-            tx.details, noteCtl(tx)))));
+            tx.details, splitCtl(tx), noteCtl(tx)))));
         if (!list.length && filtered) tbody.append(h("tr", {}, h("td", { colspan: "4" }, "Ничего не найдено. ", h("button", { type: "button", onclick: resetFilters }, "Сбросить фильтры"))));
         if (more > 0) {
           tbody.append(h("tr", {}, h("td", { colspan: "4" },
@@ -3576,6 +3639,7 @@
       if (!files.length) return;
       leaveDemo();
       const notes = [];
+      txs = Splits.collapse(txs);
       let loaded = 0, unsupportedFile = null;
       for (let k = 0; k < files.length; k++) {
         const f = files[k];
@@ -3601,6 +3665,7 @@
         header = Merge.mergedHeader(statements);
         bottomTab = null;
         curSection = "overview";
+        applySplits();
         render();
         $("backupMsg").textContent = backupSummary();
         try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
@@ -3617,6 +3682,7 @@
       Object.assign(txRules, data.txRules || {});
       if ((data.condRules || []).length) { condRules = CondRules.cleanList(condRules.concat(data.condRules.filter(n => !condRules.some(o => JSON.stringify(o) === JSON.stringify(n))))); saveCond(); }
       Object.assign(txNotes, data.notes || {}); saveJSON("ba_notes_v1", txNotes);
+      Object.assign(splits, data.splits || {}); saveSplits(); applySplits();
       Object.assign(customIcons, data.icons || {});
       Object.assign(acctNames, data.acctNames || {}); saveJSON("ba_acctnames_v1", acctNames);
       Object.assign(budgets, data.budgets || {}); Object.assign(calc, data.calc || {}); savePlan();
@@ -3637,10 +3703,11 @@
           Merge.markCrossPairs(txs, isRetail);
         }
         header = Merge.mergedHeader(statements);
+        applySplits();
       }
     }
     const backupData = () => ({ app: "bank-analyzer", version: 3, saved: new Date().toISOString(),
-      rules: userRules, txRules: txRules, condRules: condRules, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
+      rules: userRules, txRules: txRules, condRules: condRules, splits: splits, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: Splits.collapse(txs), header: header, statements: statements });
     $("exportBtn").addEventListener("click", () => {
       const data = backupData();
       const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
@@ -3768,7 +3835,7 @@
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeReset(); });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
     $("resetYes").addEventListener("click", () => {
-      userRules = {}; customCats = []; txRules = {}; condRules = []; saveJSON("ba_condrules_v1", condRules); txNotes = {}; saveJSON("ba_notes_v1", txNotes); customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
+      userRules = {}; customCats = []; txRules = {}; condRules = []; saveJSON("ba_condrules_v1", condRules); splits = {}; saveJSON("ba_splits_v1", splits); applySplits(); txNotes = {}; saveJSON("ba_notes_v1", txNotes); customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
       ownUndo.length = 0; saveJSON("ba_acctnames_v1", acctNames);
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
@@ -3911,7 +3978,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.84", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.85", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
