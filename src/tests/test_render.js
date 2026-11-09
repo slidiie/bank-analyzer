@@ -669,5 +669,10 @@ check("разделение: в файл уходит исходная опер�
 check("разделение: CSV помечает часть", vm.runInContext(`Exporter.operationsCsv(txs, exportOpts()).includes("часть разделённой операции")`, ctx));
 check("разделение: отмена склеивает обратно", vm.runInContext(`splits = {}; applySplits(); txs.length === 1 && txs[0].amount === -100`, ctx));
 vm.runInContext(`txs = []; txRules = {};`, ctx);
+// Передача на телефон: без операций в файле нет ни операций, ни выписок; правила и заметки остаются
+vm.runInContext(`txs = [{ date: "2026-03-05", amount: -10, balance: 1, details: "X" }]; txNotes = { a: "заметка" }; statements = [{ bank: "mtb" }]; header = { from: "2026-03-01" };`, ctx);
+check("передача: без операций файл пустой по операциям, заметки остаются", vm.runInContext(`(() => { const d = backupData(false); return d.txs.length === 0 && d.statements.length === 0 && Object.keys(d.header).length === 0 && d.notes.a === "заметка"; })()`, ctx));
+check("передача: с операциями в файле операции есть", vm.runInContext(`backupData(true).txs.length === 1`, ctx));
+vm.runInContext(`txs = []; txNotes = {}; statements = []; header = {};`, ctx);
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
