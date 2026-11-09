@@ -570,6 +570,8 @@
     .warn.revcard, .warn.revcard .oprow { border-color: var(--line); }   /* А6: карточка разбора не предупреждение */
     .trend { max-width: 40rem; }   /* А8: на ПК подписи месяцев были 25 px, столбцы во весь экран */
     @media (max-width: 520px) { .trend text { font-size: 22px; } }   /* А8: на телефоне подписи были 9 px */
+    @media (max-width: 520px) { .secthint button, #reviewBanner button { display: block; margin: .4rem 0 0; } }   /* А7: «Сменить период» и «Разобрать» не ломают строку подписи */
+    #reviewBanner { border-color: var(--line); }   /* сводка разбора: сведения, а не предупреждение */
     @media (pointer: coarse), (max-width: 768px) {
       details > summary, #plan .chip, select { min-height: 44px; }   /* А1, А2, А3 */
     }
