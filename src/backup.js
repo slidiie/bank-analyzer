@@ -84,6 +84,7 @@
       txRules: cleanStrMap(data.txRules, 80),
       notes: cleanStrMap(data.notes, 200),
       condRules: (typeof require !== "undefined" ? require("./condrules.js") : root.CondRules).cleanList(data.condRules),
+      splits: (typeof require !== "undefined" ? require("./splits.js") : root.Splits).cleanMap(data.splits),
       icons: cleanStrMap(data.icons, 30),
       acctNames: cleanStrMap(data.acctNames, 40),
       budgets: cleanBudgets(data.budgets),

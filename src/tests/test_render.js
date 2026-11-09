@@ -17,6 +17,7 @@ const Backup = require("../backup.js");
 const History = require("../history.js");
 const Filters = require("../filters.js");
 const CondRules = require("../condrules.js");
+const Splits = require("../splits.js");
 const Feedback = require("../feedback.js");
 const Hints = require("../hints.js");
 const Merchants = require("../merchants.js");
@@ -66,7 +67,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Feedback, Hints, Merchants,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Feedback, Hints, Merchants,
 });
 vm.runInContext(script, ctx);
 
@@ -659,5 +660,14 @@ check("значок «constructor» из файла разбора и катег
 check("правило с условием: даёт категорию операции без других правил", vm.runInContext(`condRules = CondRules.cleanList([{ t: "зюзя маркет", max: 20, c: "Продукты" }]); categoryOf({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 }) === "Продукты" && categoryOf({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -50 }) !== "Продукты"`, ctx));
 check("правило с условием: выбор для получателя главнее", vm.runInContext(`userRules[Cat.merchantKey({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 })] = "Развлечения"; const r = categoryOf({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 }) === "Развлечения"; delete userRules[Cat.merchantKey({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 })]; r`, ctx));
 vm.runInContext(`condRules = [];`, ctx);
+// Разделение операции: чек на 100 BYN, 30 из них в «Товары для дома»; остаток 70 остаётся в категории операции
+vm.runInContext(`txs = [{ date: "2026-03-05", time: "10:00", amount: -100, balance: 500, details: "ЗЮЗЯ МАРКЕТ Минск" }]; txRules = {}; userRules = {}; condRules = []; splits = {}; txRules[txId(txs[0])] = "Продукты"; splits[txId(txs[0])] = [{ a: 30, c: "Товары для дома" }]; applySplits();`, ctx);
+check("разделение: операция стала остатком и частью", vm.runInContext(`txs.length === 2 && txs[0].amount === -70 && txs[1].amount === -30`, ctx));
+check("разделение: остаток сохраняет выбор для операции, часть берёт свою категорию", vm.runInContext(`categoryOf(txs[0]) === "Продукты" && categoryOf(txs[1]) === "Товары для дома"`, ctx));
+check("разделение: итоги по категориям делятся, общая сумма та же", vm.runInContext(`(() => { const r = statsFor(txs); const m = new Map(r.rows); return Math.abs(m.get("Продукты") - 70) < 1e-9 && Math.abs(m.get("Товары для дома") - 30) < 1e-9 && Math.abs(r.total - 100) < 1e-9; })()`, ctx));
+check("разделение: в файл уходит исходная операция", vm.runInContext(`(() => { const d = backupData(); return d.txs.length === 1 && d.txs[0].amount === -100 && d.splits[txId(d.txs[0])].length === 1; })()`, ctx));
+check("разделение: CSV помечает часть", vm.runInContext(`Exporter.operationsCsv(txs, exportOpts()).includes("часть разделённой операции")`, ctx));
+check("разделение: отмена склеивает обратно", vm.runInContext(`splits = {}; applySplits(); txs.length === 1 && txs[0].amount === -100`, ctx));
+vm.runInContext(`txs = []; txRules = {};`, ctx);
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
