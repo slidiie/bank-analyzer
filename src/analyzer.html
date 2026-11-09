@@ -202,9 +202,9 @@
     #plan .prow .pbar { flex: 2 1 10rem; }
     #plan .pnote { flex: 1 1 100%; font-size: var(--fs-s); }
     td .why { font-size: var(--fs-xs); margin-top: .15rem; }
-    .note { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .25rem; }
-    @media (min-width: 768px) { .note .qchip { min-height: 32px; padding: 0 .6rem; font-size: var(--fs-xs); } }
-    .note .tag { color: var(--accent); }
+    .opnote { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .25rem; }
+    @media (min-width: 768px) { .opnote .qchip { min-height: 32px; padding: 0 .6rem; font-size: var(--fs-xs); } }
+    .opnote .tag { color: var(--accent); }
     .notein { flex: 1 1 14rem; min-width: 0; }
     #plan .lvl-warn { color: var(--lvl-warn); } #plan .lvl-over { color: var(--lvl-over); }
     @media (max-width: 520px) {
@@ -839,6 +839,7 @@
     <p id="status" data-sec="overview more"></p>
     <div id="bankChips" class="bankchips" data-sec="overview more" aria-label="Загруженные банки"></div>
     <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
+    <div id="keepNote" class="note" data-sec="overview" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
       <span><b>Демо на выдуманных данных.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
       <button id="demoExit" type="button">✕ Выйти из демо</button>
@@ -1227,7 +1228,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.80";
+    const FB_VERSION = "v4.81";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1792,6 +1793,17 @@
     }
 
     // ---------- Отрисовка отчёта ----------
+    // Одноразовая плашка после загрузки настоящей выписки: операции не хранятся, правила и итоги месяцев остаются
+    function renderKeepNote() {
+      const box = $("keepNote");
+      if (demoMode || !txs.length || loadJSON("ba_keepnote_v1", false)) { box.hidden = true; return; }
+      const msg = h("span", {}, "Сайт не запоминает саму выписку: если закрыть страницу, загрузите её снова. Ваши категории, заметки и итоги месяцев останутся в этом браузере. Чтобы вернуть всё сразу, сохраните файл разбора. ");
+      const save = h("button", { type: "button", class: "primary", onclick: () => { $("exportBtn").click(); box.replaceChildren(h("span", {}, "Файл «мой-разбор-трат.json» сохранён в папку загрузок. "), ok); } }, "Сохранить файл");
+      const ok = h("button", { type: "button", onclick: () => { saveJSON("ba_keepnote_v1", true); box.hidden = true; } }, "Понятно");
+      box.replaceChildren(msg, save, " ", ok);
+      box.hidden = false;
+    }
+
     function render() {
       $("report").hidden = false;
       $("exportBox").hidden = false;
@@ -1805,6 +1817,7 @@
       recurring = findRecurring();
       saveHistory();
       renderCheck();
+      renderKeepNote();
       refreshTop();
       renderReview();
       renderNav();
@@ -3350,7 +3363,7 @@
       // Заметка к операции: «＋ Заметка» или текст с метками #тег (нажатие на метку ищет по ней); хранится в браузере, входит в файл разбора и CSV
       function noteCtl(tx) {
         const id = txId(tx);
-        const box = h("div", { class: "note" });
+        const box = h("div", { class: "opnote" });
         const label = `операции ${tx.date || ""}, ${fmt(tx.amount)} BYN`;
         const show = () => {
           box.replaceChildren();
@@ -3836,7 +3849,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.80", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.81", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
