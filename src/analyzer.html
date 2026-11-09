@@ -326,6 +326,7 @@
     .pie .pct { fill: #16161a; font-weight: 700; pointer-events: none; }
     .pieleft { flex: none; width: 21rem; max-width: 100%; }
     .pietip { min-height: 6rem; margin-bottom: .9rem; }
+    .dyn .pietip { min-height: 1.6rem; margin-bottom: .4rem; }
     .pietip .sw { display: inline-block; vertical-align: middle; margin-right: .4rem; }
     .pie .slice.hot { filter: brightness(1.12); }
     /* ПРАВИЛО ВЁРСТКИ (iPhone): в контейнерах с flex-wrap у каждого блока задаём базу (flex: 1 1 Nrem), никогда «flex: 1» без базы
@@ -777,7 +778,6 @@
           <ul class="wizlist">
             <li><b>Файл никуда не отправляется.</b> Он читается прямо в вашем браузере.</li>
             <li><b>Личное закроет сайт, остальное решаете вы.</b> ФИО, счета, карты, телефоны и адреса закрываются автоматически, остальное вы проверите и при желании закроете вручную.</li>
-            <li><b>Сам файл не попадает в образец</b>, только тексты и их положение на странице. Поэтому «закрашено, но выделяется» невозможно.</li>
             <li><b>Отправляете вы сами</b>, письмом и только когда решите.</li>
           </ul>
         </div>
@@ -829,7 +829,7 @@
 
   <main id="app">
     <h2 id="appTitle" data-sec="overview more">Ваш анализ</h2>
-    <p class="muted" data-sec="overview more" style="margin:.2rem 0 .6rem">Выписки обрабатываются только в этом браузере и никуда не отправляются. Можно добавлять несколько файлов: повторы пропускаются.</p>
+    <p class="muted" data-sec="overview more" style="margin:.2rem 0 .6rem">Можно добавлять несколько файлов: повторы пропускаются.</p>
     <p data-sec="overview more" class="filerow">
       <input type="file" id="file" class="vh" accept="application/pdf,.pdf,.csv,text/csv" multiple aria-label="Выберите файлы выписок (PDF или CSV)">
       <label for="file" class="filebtn">Добавить выписки</label>
@@ -970,7 +970,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.82</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.83</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1229,7 +1229,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.82";
+    const FB_VERSION = "v4.83";
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
@@ -3856,7 +3856,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.82", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.83", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
