@@ -102,7 +102,7 @@ check("есть вкладки: весь период и три месяца",
   ["За весь период", "Сентябрь 2026", "Октябрь 2026", "Ноябрь 2026"].every(t => s.includes(t)));
 check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноябрь 2026 *"));
 check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170.00"));
-check("на вкладке «весь период» есть «Сравнение месяцев»", s.includes("Сравнение месяцев"));
+check("на вкладке «весь период» нет отдельного «Сравнения месяцев» (его заменяет «Динамика трат»)", !s.includes("Сравнение месяцев"));
 check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250.00"));
 
 // Отмечаем 500 как «Дал в долг»: уходит из трат и показывается отдельной строкой
@@ -320,13 +320,13 @@ check("разбор: в навигации счётчик по выбранно�
 clickButton(byId["reviewOther"], "Октябрь");
 check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("плашка «Ждут разбора» первая в отчёте, вкладки внизу", html.indexOf('id="reviewBanner"') < html.indexOf('id="check"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
-check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Ждут разбора") && textOf(byId["reviewBanner"]).includes("Разобрать"));
+check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Можно уточнить") && textOf(byId["reviewBanner"]).includes("Уточнить"));
 check("есть нижние вкладки «Все операции» и «Нужно разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
 vm.runInContext(`bottomTab = null; render();`, ctx);
 check("если есть неразобранное, открыта вкладка «Нужно разобрать»", byId["reviewSection"].hidden === false && byId["allPanel"].hidden === true);
 clickButton(byId["bottomTabs"], "Все операции");
 check("клик по вкладке «Все операции» переключает панель", byId["reviewSection"].hidden === true && byId["allPanel"].hidden === false);
-clickButton(byId["reviewBanner"], "Разобрать");
+clickButton(byId["reviewBanner"], "Уточнить");
 check("кнопка на плашке открывает «Нужно разобрать»", byId["reviewSection"].hidden === false);
 // Разбираем всё: операция уходит из «Нужно разобрать» и попадает в «Все операции»
 vm.runInContext(`txs.filter(t => !categoryOf(t)).forEach(t => setTxRule(t, "Прочее"));`, ctx);
@@ -343,11 +343,11 @@ clickButton(byId["bottomTabs"], "Все операции");
 check("клик по вкладке снова: список открыт", byId["allPanel"].hidden === false);
 
 // ---- Разделы-экраны и панель разделов ----
-check("панель: шесть разделов", ["Обзор", "Разобрать", "Выводы", "Подписки", "План", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)));
+check("панель: пять разделов", ["Обзор", "Уточнить", "Регулярные", "Бюджет", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)) && !textOf(byId["tabbar"]).includes("Выводы"));
 vm.runInContext(`curSection = "overview"; render();`, ctx);
 check("панель: у «Обзора» отмечен текущий раздел", vm.runInContext("curSection", ctx) === "overview" && byId["tabbar"].children[0].className === "active");
-clickButton(byId["tabbar"], "Выводы");
-check("раздел «Выводы»: data-view и активная кнопка", document.body.attrs["data-view"] === "insights" && byId["tabbar"].children[2].className === "active");
+clickButton(byId["tabbar"], "Регулярные");
+check("раздел «Регулярные»: data-view и активная кнопка", document.body.attrs["data-view"] === "subs" && byId["tabbar"].children[2].className === "active");
 clickButton(byId["tabbar"], "Ещё");
 check("раздел «Ещё»: data-view", document.body.attrs["data-view"] === "more");
 clickButton(byId["tabbar"], "Обзор");
@@ -512,7 +512,7 @@ vm.runInContext(`
 const rv = textOf(byId["review"]);
 check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
 check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50.00") && html.includes("в приложении банка"));
-check("разбор: есть быстрые категории и «Не помню»", rv.includes("Связь и подписки") && rv.includes("Не помню") && rv.includes("Ещё…"));
+check("разбор: есть быстрые категории и «Пропустить»", rv.includes("Связь и подписки") && rv.includes("Пропустить") && rv.includes("Ещё…"));
 check("разбор: переводы без получателя с разными суммами идут по одной", rv.includes("отметьте каждую операцию") && rv.includes("12.10") && rv.includes("09.10"));
 check("разбор: пояснение короткое, подробности под «Как это работает»", html.includes("Как это работает") && !html.includes("Непонятное и мелкое отправляйте"));
 clickButton(byId["review"], "Подарки");
@@ -590,7 +590,7 @@ check("история: в демо сравнения нет", !headText().inclu
 vm.runInContext(`demoMode = false;`, ctx);
 
 // ---- Раздел «Подписки» ----
-clickButton(byId["tabbar"], "Подписки");
+clickButton(byId["tabbar"], "Регулярные");
 check("раздел «Подписки»: data-view", document.body.attrs["data-view"] === "subs");
 vm.runInContext(`
   header = { from: "2026-07-01", to: "2026-10-31" };
@@ -605,9 +605,9 @@ vm.runInContext(`
   render(); renderSubs();
 `, ctx);
 const subsText = textOf(byId["subs"]);
-check("подписки: сумма в месяц и число платежей", /30\.00\s*BYN/.test(subsText) && subsText.includes("регулярные платежи в месяц"));
+check("подписки: сумма в месяц и число платежей", /30\.00\s*BYN/.test(subsText) && subsText.includes("BYN в месяц") && subsText.includes("Обязательные"));
 check("подписки: ближайшее списание 07.11", subsText.includes("Ближайшие списания") && subsText.includes("07.11"));
-check("подписки: есть полный список и оговорка про совпадение сумм", subsText.includes("Все регулярные платежи") && subsText.includes("совпадение сумм"));
+check("подписки: есть полный список и оговорка про совпадение сумм", subsText.includes("Все регулярные платежи") && subsText.includes("по одинаковым суммам"));
 vm.runInContext(`txs = txs.slice(0, 2); header = { from: "2026-07-05", to: "2026-08-31" }; render(); renderSubs();`, ctx);
 check("подписки: мало месяцев — пояснение, а не список", textOf(byId["subs"]).includes("минимум два полных месяца") && !textOf(byId["subs"]).includes("Ближайшие списания"));
 
@@ -694,5 +694,11 @@ vm.runInContext(`txs = [{ date: "2026-03-05", amount: -10, balance: 1, details: 
 check("передача: без операций файл пустой по операциям, заметки остаются", vm.runInContext(`(() => { const d = backupData(false); return d.txs.length === 0 && d.statements.length === 0 && Object.keys(d.header).length === 0 && d.notes.a === "заметка"; })()`, ctx));
 check("передача: с операциями в файле операции есть", vm.runInContext(`backupData(true).txs.length === 1`, ctx));
 vm.runInContext(`txs = []; txNotes = {}; statements = []; header = {};`, ctx);
+// Пример на главной совпадает с последним месяцем постоянного демо, а кнопка «Посмотреть такой отчёт» открывает этот месяц
+vm.runInContext(`enterDemo(true);`, ctx);
+check("демо постоянное: два входа дают одни и те же операции", vm.runInContext(`JSON.stringify(Demo.make(undefined, new Date()).txs) === JSON.stringify(Demo.make(undefined, new Date()).txs)`, ctx));
+check("«Посмотреть такой отчёт» открывает последний месяц демо", vm.runInContext(`activeTab === header.to.slice(0, 7)`, ctx));
+check("пример на главной = последний месяц демо", vm.runInContext(`(() => { const st = statsFor(txs.filter(t => t.date.startsWith(activeTab))); const got = st.rows.map(r => [r[0], Math.round(r[1] * 100) / 100]); return JSON.stringify(got) === JSON.stringify(LANDING_SAMPLE); })()`, ctx));
+vm.runInContext(`leaveDemo();`, ctx);
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
