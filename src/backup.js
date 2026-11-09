@@ -53,6 +53,9 @@
     for (const k of ["regDate", "time", "type", "currency", "cur", "mcc", "card", "bank", "purpose", "place", "bankCat"]) {
       const v = str(t[k], 300); if (v !== null) o[k] = v;
     }
+    // Формат проверяем там, где он известен: файл разбора мог прийти от другого человека (формула вместо валюты и т. п.)
+    if (o.currency !== undefined && !/^[A-Z]{3}$/.test(o.currency)) delete o.currency;
+    if (o.time !== undefined && !/^\d{2}:\d{2}(:\d{2})?$/.test(o.time)) delete o.time;
     if (t.pending === true) o.pending = true;
     for (const k of ["balance", "origAmount", "orig", "src", "pair"]) {
       const v = num(t[k]); if (v !== null) o[k] = v;
