@@ -55,7 +55,11 @@
       for (let i = 0, n = count(10, 16); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(8, 45), "5411", pick(['SHOP "EVROOPT"', 'SHOP "GREEN"', 'SHOP "SOSEDI"', "GIPERMARKET GIPPO"]));
       for (let i = 0, n = count(4, 8); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(7, 26), "5812", pick(['RBO "BURGER KING"', "COFFEE HOUSE", "PIZZA CAFE"]));
       for (let i = 0, n = count(2, 9); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(1.5, 14), pick(["4111", "4121"]), pick(["METRO MINSK", "TAXI MINSK"]));
-      for (let i = 0, n = count(1, 3); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(10, 40), null, pick(["Оплата услуг ЕРИП", "Оплата в интернет-банке, перевод", "Платёж по реквизитам"]));
+      for (let i = 0, n = count(1, 3); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(10, 40), null, pick(fixed && ym !== months[2][0]
+        // В постоянном демо непонятные платежи оставлены только в последнем месяце (2–3 штуки показывают функцию «Уточнить»,
+        // но не создают впечатление, что сайт не справился). Число обращений к генератору то же, суммы не меняются.
+        ? ["Оплата коммунальных услуг: электроэнергия", "BELTELECOM интернет", "Квартплата за месяц"]
+        : ["Оплата услуг ЕРИП", "Оплата в интернет-банке, перевод", "Платёж по реквизитам"]));
     });
     add(months[0][0], 19, -Math.round(9.3 * k * 10) / 10, "5912", "APTEKA N 16");
     add(months[1][0], 21, -Math.round(140 * k), "5651", "SHOP CLOTHES");

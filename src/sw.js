@@ -17,6 +17,15 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;   // чужое и не-GET: как есть
-  // Страница открыта с «?что-то»: отдаём ту же страницу из кэша
-  e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req)));
+  const fromCache = () => caches.match(req, { ignoreSearch: true });   // «?что-то» в адресе: та же страница
+  if (req.mode === "navigate") {
+    // Саму страницу сначала берём из сети: иначе после обновления сайта человек один раз видит старую версию.
+    // Нет сети или она дольше 3 секунд: отдаём сохранённую копию, сайт работает и офлайн.
+    const net = fetch(req, { cache: "no-cache" });
+    const slow = new Promise(r => setTimeout(r, 3000)).then(fromCache);
+    e.respondWith(Promise.race([net.catch(() => fromCache()), slow.then(hit => hit || net)])
+      .then(res => res || net).catch(() => fromCache()));
+    return;
+  }
+  e.respondWith(fromCache().then(hit => hit || fetch(req)));
 });

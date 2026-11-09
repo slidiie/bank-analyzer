@@ -161,9 +161,12 @@
     const byCat = new Map();
     for (const t of exp) { if (!byCat.has(t.cat)) byCat.set(t.cat, []); byCat.get(t.cat).push(-t.amount); }
     const big = [];
+    // Трата, которая повторяется в другом месяце с похожей суммой (аренда, кредит), не «необычная»
+    const repeats = t => exp.some(u => u !== t && u.name === t.name && u.date.slice(0, 7) !== t.date.slice(0, 7) && Math.abs(u.amount - t.amount) <= 0.15 * -t.amount);
     for (const t of exp) {
       const a = byCat.get(t.cat);
       if (-t.amount < 100 || a.length < 5) continue;
+      if (repeats(t)) continue;
       const med = median(a);
       if (med > 0 && -t.amount >= 4 * med) big.push({ date: t.date, name: t.name, cat: t.cat, amount: -t.amount, usual: med });
     }

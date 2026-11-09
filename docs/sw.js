@@ -3,7 +3,7 @@
 // При установке файлы берутся мимо HTTP-кэша браузера (cache: "reload"), иначе в новый кэш мог лечь старый index.html.
 // Версию (метку в имени кэша) подставляет build.py (хэш готовой страницы): новая сборка = новый кэш, старый удаляется.
 "use strict";
-const CACHE = "bank-analyzer-9f8def6a9d04";
+const CACHE = "bank-analyzer-908e4f6e91c4";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -17,6 +17,15 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;   // чужое и не-GET: как есть
-  // Страница открыта с «?что-то»: отдаём ту же страницу из кэша
-  e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req)));
+  const fromCache = () => caches.match(req, { ignoreSearch: true });   // «?что-то» в адресе: та же страница
+  if (req.mode === "navigate") {
+    // Саму страницу сначала берём из сети: иначе после обновления сайта человек один раз видит старую версию.
+    // Нет сети или она дольше 3 секунд: отдаём сохранённую копию, сайт работает и офлайн.
+    const net = fetch(req, { cache: "no-cache" });
+    const slow = new Promise(r => setTimeout(r, 3000)).then(fromCache);
+    e.respondWith(Promise.race([net.catch(() => fromCache()), slow.then(hit => hit || net)])
+      .then(res => res || net).catch(() => fromCache()));
+    return;
+  }
+  e.respondWith(fromCache().then(hit => hit || fetch(req)));
 });
