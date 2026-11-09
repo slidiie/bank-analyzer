@@ -4,7 +4,7 @@ import os, re, hashlib, base64, shutil
 d = os.path.dirname(os.path.abspath(__file__))
 rd = lambda *p: open(os.path.join(d, *p), encoding='utf8').read()
 s = rd('analyzer.html')
-for f in ('parser.js', 'categories.js', 'vtb.js', 'belarusbank.js', 'belinvest.js', 'prior.js', 'priorcsv.js', 'alfa.js', 'sber.js', 'transfers.js', 'merchants.js', 'banks.js', 'demo.js', 'merge.js', 'export.js', 'planner.js', 'backup.js', 'history.js', 'goals.js', 'filters.js', 'condrules.js', 'splits.js', 'feedback.js', 'hints.js', 'pwa.js', 'anonymize.js'):
+for f in ('parser.js', 'categories.js', 'vtb.js', 'belarusbank.js', 'belinvest.js', 'prior.js', 'priorcsv.js', 'alfa.js', 'sber.js', 'transfers.js', 'merchants.js', 'banks.js', 'demo.js', 'merge.js', 'export.js', 'planner.js', 'backup.js', 'history.js', 'goals.js', 'filters.js', 'condrules.js', 'splits.js', 'rates.js', 'feedback.js', 'hints.js', 'pwa.js', 'anonymize.js'):
     tag = f'<script src="{f}"></script>'
     assert tag in s, tag
     s = s.replace(tag, '<script>\n' + rd(f) + '\n</script>', 1)

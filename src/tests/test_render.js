@@ -18,6 +18,7 @@ const History = require("../history.js");
 const Filters = require("../filters.js");
 const CondRules = require("../condrules.js");
 const Splits = require("../splits.js");
+const Rates = require("../rates.js");
 const Feedback = require("../feedback.js");
 const Hints = require("../hints.js");
 const Merchants = require("../merchants.js");
@@ -67,7 +68,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Feedback, Hints, Merchants,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Rates, Feedback, Hints, Merchants,
 });
 vm.runInContext(script, ctx);
 
@@ -669,6 +670,25 @@ check("разделение: в файл уходит исходная опер�
 check("разделение: CSV помечает часть", vm.runInContext(`Exporter.operationsCsv(txs, exportOpts()).includes("часть разделённой операции")`, ctx));
 check("разделение: отмена склеивает обратно", vm.runInContext(`splits = {}; applySplits(); txs.length === 1 && txs[0].amount === -100`, ctx));
 vm.runInContext(`txs = []; txRules = {};`, ctx);
+// Валюты и ручной курс: счёт в USD, курс вводится вручную
+vm.runInContext(`txs = [{ date: "2026-03-05", time: "10:00", amount: -10, orig: -10, cur: "USD", balance: 90, details: "ЗЮЗЯ МАРКЕТ Минск" }]; rates = {}; splits = {}; txRules = {}; demoMode = false; render();`, ctx);
+const findInput = n => (n.tag === "input" ? n : n.children.map(c => (typeof c === "string" ? null : findInput(c))).find(Boolean));
+const rateInput = () => findInput(byId["ratesList"]);
+check("валюты: без курса карточка показана, суммы как были", vm.runInContext(`!$("ratesBox").hidden && txs[0].amount === -10`, ctx) && !!rateInput());
+rateInput().value = "3,2"; rateInput().listeners.change[0]();
+check("валюты: курс пересчитал суммы в BYN и сохранён", vm.runInContext(`txs[0].amount === -32 && rates.USD.r === 3.2 && backupData().rates.USD.r === 3.2 && backupData().txs[0].orig === -10`, ctx));
+check("валюты: идентификатор операции не зависит от курса", vm.runInContext(`(() => { const a = txId(txs[0]); rates = Rates.clean({ USD: 3.5 }); applyRates(); return a === txId(txs[0]) && txs[0].amount === -35; })()`, ctx));
+check("валюты: в операции виден оригинал и курс", vm.runInContext(`rates = Rates.clean({ USD: 3.2 }); applyRates(); txs[0].rate === 3.2 && txs[0].orig === -10`, ctx));
+{
+  // курс с даты: операция от 2026-03-05 считается по курсу с 2026-03-01
+  vm.runInContext(`rates = Rates.clean({ USD: { r: 3, at: [{ d: "2026-03-01", r: 4 }] } }); ratesSig = ""; applyRates(); render();`, ctx);
+  check("валюты: курс с даты применён к операции", vm.runInContext(`txs[0].amount === -40 && txs[0].rate === 4`, ctx));
+  check("валюты: в карточке есть строка курса с даты", textOf(byId["ratesList"]).includes("с "));
+  const kids = byId["ratesList"].children[0].children;
+  check("валюты: у валюты подпись, основная строка, одна строка даты и кнопка добавления", kids.length === 4);
+}
+vm.runInContext(`rates = {}; ratesSig = ""; applyRates(); txs = []; render();`, ctx);
+check("валюты: без валютных операций карточки нет", vm.runInContext(`$("ratesBox").hidden`, ctx));
 // Передача на телефон: без операций в файле нет ни операций, ни выписок; правила и заметки остаются
 vm.runInContext(`txs = [{ date: "2026-03-05", amount: -10, balance: 1, details: "X" }]; txNotes = { a: "заметка" }; statements = [{ bank: "mtb" }]; header = { from: "2026-03-01" };`, ctx);
 check("передача: без операций файл пустой по операциям, заметки остаются", vm.runInContext(`(() => { const d = backupData(false); return d.txs.length === 0 && d.statements.length === 0 && Object.keys(d.header).length === 0 && d.notes.a === "заметка"; })()`, ctx));
