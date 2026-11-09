@@ -102,7 +102,11 @@
     .map(i => i.text).join(" ").replace(/\s+/g, " ").trim();
 
   function parseOp(items) {
-    const get = (col, re) => items.find(i => inCol(i.x, col) && re.test(i.text));
+    // Опорная строка операции: строка с валютой. Из подходящих фрагментов берём ближайший к ней по высоте:
+    // шапка таблицы или подпись на краю страницы, попавшие в группу, не должны перебить данные самой операции
+    const curAny = items.find(i => inCol(i.x, COL.cur) && CUR_RE.test(i.text));
+    const ay = curAny ? curAny.y : 0;
+    const get = (col, re) => items.filter(i => inCol(i.x, col) && re.test(i.text)).sort((a, b) => Math.abs(a.y - ay) - Math.abs(b.y - ay) || a.y - b.y)[0];
     const accItem = get(COL.amtAcc, NUM_RE);
     const balItem = get(COL.balance, NUM_RE);
     const cur = get(COL.cur, CUR_RE);

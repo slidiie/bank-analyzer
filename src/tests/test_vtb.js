@@ -90,6 +90,13 @@ if (closing) closing.text = money(100);
 check("банк ВТБ определяется", V.detect(pages) === true);
 check("общий реестр выбирает ВТБ", B.detect(pages) && B.detect(pages).id === "vtb");
 
+// Чужая дата в колонке даты чуть выше первой операции (попала в ту же группу строк) не перебивает дату операции
+{
+  const noisy = [page(ops.slice(0, 5), true, false), pages[1]];
+  noisy[0].unshift(it(X.post, 293, "01.01.2020"));
+  const nr = B.parse(noisy);
+  check("ВТБ: берётся ближайшая к строке операции дата, а не первая попавшаяся", nr.txs.length === ops.length - 1 && nr.txs.every(t => t.date >= "2026-03-01"));
+}
 const res = B.parse(pages);
 const txs = res.txs;
 check("шапка: период", res.header.from === "2026-03-01" && res.header.to === "2026-03-31");

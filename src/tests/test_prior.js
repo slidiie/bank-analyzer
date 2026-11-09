@@ -68,8 +68,8 @@ check("сверка итогов с шапкой сходится", v.ok === tru
 check("при потере операции сверка не сходится", PR.validate(t.slice(1), res.header).ok === false);
 check("баланс сходится: 100 + операции = конечный", Math.round((100 + t.reduce((a, x) => a + x.amount, 0)) * 100) / 100 === 980.8);
 check("кофейня без MCC определяется по названию", Cat.categorize(t[5]) === "Кафе и рестораны");
-check("«Mobile bank» и P2P без получателя попадают в корзину интернет-банка, а не в «Не разобрано»",
-  Cat.bucket({ amount: -20, details: "Retail BLR MINSK MOBILE BANK" }) === "Платежи через интернет-банк" && Cat.bucket({ amount: -5, details: "CH Debit BLR MINSK P2P_SDBO" }) === "Платежи через интернет-банк");
+check("«Mobile bank» и P2P без получателя попадают в корзины («интернет-банк» и «Переводы на карты и счета»), а не в «Не разобрано»",
+  Cat.bucket({ amount: -20, details: "Retail BLR MINSK MOBILE BANK" }) === "Платежи через интернет-банк" && Cat.bucket({ amount: -5, details: "CH Debit BLR MINSK P2P_SDBO" }) === "Переводы на карты и счета");
 
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

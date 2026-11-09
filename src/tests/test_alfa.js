@@ -92,6 +92,12 @@ check("карта: дата и время", cr.txs[0].date === "2026-11-07" && c
 check("карта: описание из мест и детализации", /ONLINE SERVIC/.test(cr.txs[0].details) && /TRANSFERS AK AM/.test(cr.txs[0].details));
 check("карта: пришло и сразу ушло найдено как пара", cr.header.pairs === 1 && cr.txs.filter(t => t.pair).length === 2);
 check("карта: проверка состава пройдена", cr.bank.validate(cr.txs, cr.header).ok === true);
+// Чужая дата и сумма рядом с первой операцией (например, подпись на краю страницы) не перебивают её данные
+{
+  const noisy = [cardPage.slice(0, 6).concat([it(122, 363, "2026-01-01"), it(355, 363, "99.99 BYN")], cardPage.slice(6))];
+  const nr = Banks.parse(noisy);
+  check("карта: берётся ближайшая к операции дата и сумма, а не первая попавшаяся", nr.txs[0].date === "2026-11-07" && Math.abs(nr.txs[0].amount) === 3.96);
+}
 
 const v = AL.validate(txs, header);
 check("проверка состава пройдена", v.ok === true && v.outside === 0 && v.count === 9);
