@@ -932,6 +932,18 @@
         <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Файл разбора">
       </div>
       <p class="muted" id="backupMsg"></p>
+      <h3 id="phoneH" style="margin-top:1rem">Передать на телефон</h3>
+      <p class="muted">Без сервера: файл вы отправляете себе сами (мессенджер, почта, «Файлы»), сайт ничего не отправляет. Только правила и заметки: в файле нет сумм и названий операций. Вместе с операциями: на телефоне сразу откроется вся выписка.</p>
+      <div class="cardbtns">
+        <button id="phoneRules" type="button" class="primary">Только правила и заметки</button>
+        <button id="phoneAll" type="button">Вместе с операциями</button>
+      </div>
+      <ol class="muted" id="phoneSteps" hidden>
+        <li>Отправьте скачанный файл себе: в мессенджер, на почту или сохраните в «Файлы».</li>
+        <li>Откройте этот сайт на телефоне.</li>
+        <li>Раздел «Ещё», «Мой разбор», «Загрузить из файла»: выберите этот файл.</li>
+      </ol>
+      <p class="muted" id="phoneMsg" role="status"></p>
       <details id="rulesBox" class="datablock">
         <summary id="rulesSummary">Мои правила</summary>
         <div id="rulesList"></div>
@@ -1008,7 +1020,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.86</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.87</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1282,7 +1294,7 @@
       openSheet("faqSheet", a.id === "privFaq" ? $("privRow") : a);
     }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.86";
+    const FB_VERSION = "v4.87";
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
@@ -3739,8 +3751,8 @@
         applySplits();
       }
     }
-    const backupData = () => ({ app: "bank-analyzer", version: 3, saved: new Date().toISOString(),
-      rules: userRules, txRules: txRules, condRules: condRules, splits: splits, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: Splits.collapse(txs), header: header, statements: statements });
+    const backupData = (withTxs = true) => ({ app: "bank-analyzer", version: 3, saved: new Date().toISOString(),
+      rules: userRules, txRules: txRules, condRules: condRules, splits: splits, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: withTxs ? Splits.collapse(txs) : [], header: withTxs ? header : {}, statements: withTxs ? statements : [] });
     $("exportBtn").addEventListener("click", () => {
       const data = backupData();
       const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
@@ -3750,6 +3762,32 @@
       a.click();
       $("backupMsg").textContent = "Сохранено: " + txs.length + " операций выписки и ваш выбор категорий. Файл «мой-разбор-трат.json» в папке загрузок.";
     });
+    // Передача на телефон: системное «Поделиться» с файлом (телефон), иначе скачивание и три шага. Сайт сам ничего не отправляет.
+    async function sendToPhone(withTxs) {
+      const name = withTxs ? "разбор-с-операциями.json" : "разбор-правила.json";
+      const text = JSON.stringify(backupData(withTxs), null, 1);
+      const msg = $("phoneMsg");
+      if (withTxs && !txs.length) { msg.textContent = "Выписка не загружена, поэтому операций нет. Выберите «Только правила и заметки» или сначала загрузите выписку."; return; }
+      $("phoneSteps").hidden = false;
+      try {
+        const file = new File([text], name, { type: "application/json" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Мой разбор трат" });
+          msg.textContent = "Файл передан в выбранное приложение. Дальше шаги ниже.";
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === "AbortError") { msg.textContent = "Отправка отменена."; return; }
+        /* «Поделиться» не сработало: скачиваем файл */
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      a.download = name;
+      a.click();
+      msg.textContent = `Файл «${name}» сохранён в папке загрузок` + (withTxs ? ` (в нём ${txs.length} операций)` : " (сумм и названий операций в нём нет)") + ". Дальше шаги ниже.";
+    }
+    $("phoneRules").addEventListener("click", () => sendToPhone(false));
+    $("phoneAll").addEventListener("click", () => sendToPhone(true));
     function backupSummary() {
       const n = Object.keys(txRules).length, g = Object.keys(userRules).length;
       if (txs.length) {
@@ -4011,7 +4049,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.86", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.87", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
