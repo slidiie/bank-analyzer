@@ -193,6 +193,7 @@
     #subs .sname { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
     #subs .swhen { color: var(--muted); font-size: var(--fs-s); }
     #subs .samount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #subs .samount .syr { display: block; font-size: var(--fs-xs); text-align: right; }   /* годовая цена под суммой платежа */
     #plan summary { cursor: pointer; font-weight: 600; list-style: none; min-height: 44px; }
     #plan summary::-webkit-details-marker { display: none; }
     #plan .pbig { display: block; font-size: var(--fs-xl); line-height: 1.2; font-weight: 700; }
@@ -3175,10 +3176,10 @@
       const nSubs = regular.filter(r => kindOf(r) === "subs").length;
       box.append(h("div", { class: "scard" },
         h("div", { class: "muted" }, "Подписки и сервисы"),
-        h("div", { class: "sbig" }, `${money(subsSum)} BYN в месяц`, h("span", { class: "syear" }, `≈ ${money(subsSum * 12)} BYN в год`)),
+        h("div", { class: "sbig" }, `≈ ${money(subsSum * 12)} BYN в год`, h("span", { class: "syear" }, `${money(subsSum)} BYN в месяц`)),
         h("div", { class: "muted" }, nSubs ? `Найдено: ${nSubs}. Проверьте, всеми ли вы пользуетесь.` : "Подписок среди регулярных платежей не нашлось."),
-        h("div", { class: "muted" }, `Обязательные (аренда, коммуналка, ЕРИП): ${money(mustSum)} BYN в месяц` + (otherSum ? ` · другие регулярные: ${money(otherSum)} BYN` : "") + (share != null ? ` · всего около ${share}% трат` : "")),
-        h("div", { class: "muted" }, `По последним ${full.length} полным месяцам (${monthTitle(full[0])} — ${monthTitle(full[full.length - 1])}). Найдены по одинаковым суммам: проверьте список сами.`)));
+        h("div", { class: "muted" }, `Обязательные (аренда, коммуналка, ЕРИП): ≈ ${money(mustSum * 12)} BYN в год` + (otherSum ? ` · другие регулярные: ≈ ${money(otherSum * 12)} BYN` : "") + (share != null ? ` · всего около ${share}% трат` : "")),
+        h("div", { class: "muted" }, `Год посчитан так: если платить, как в последние ${full.length} полных месяцев (${monthTitle(full[0])} — ${monthTitle(full[full.length - 1])}), умножено на 12. Найдены по одинаковым суммам: проверьте список сами.`)));
       const when = d => {
         const n = Planner.daysBetween(today, d);
         return n < 0 ? `по выписке (она до ${dmy(dataEnd)})` : n === 0 ? "сегодня" : n === 1 ? "завтра" : `через ${n} дн.`;
@@ -3195,7 +3196,7 @@
       const liOf = x => h("li", {},
         h("span", { class: "sname" }, softCase(x.r.name), h("span", { class: "muted" }, ` · ${x.r.cat}`)),
         h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
-        h("span", { class: "samount" }, `${money(x.r.amount)} BYN`));
+        h("span", { class: "samount" }, `${money(x.r.amount)} BYN`, h("small", { class: "syr muted" }, `≈ ${money(x.r.perMonth * 12)} в год`)));
       const solid = rows.filter(x => x.s.kind === "month" || x.s.kind === "days"), loose = rows.filter(x => !(x.s.kind === "month" || x.s.kind === "days"));
       const main = solid.length ? solid : rows;
       [["subs", "Подписки и сервисы"], ["must", "Обязательные"], ["other", "Другие регулярные"]].forEach(([k, title]) => {
