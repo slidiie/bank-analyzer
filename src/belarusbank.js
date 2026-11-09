@@ -32,6 +32,8 @@
   const TIME_RE = /^\d{2}:\d{2}$/;
   const CUR_RE = /^[A-Z]{3}$/;
   const NUM_RE = /^-?\d+\.\d{2}$/;
+  // Подписи шапки таблицы (повторяется на каждой странице)
+  const HEAD_RE = /^(Дата|и время|Место|Валюта|Приход\/|Приход\/ ?Расход|Номер карты|Наименование операции|МСС|MCC)$/;
 
   const inCol = (x, c) => x >= c[0] && x < c[1];
   const toIso = d => { const [dd, mm, yyyy] = d.split("."); return `${yyyy}-${mm}-${dd}`; };
@@ -85,6 +87,7 @@
     if (!anchors.length) return [];
     const groups = anchors.map(a => ({ a, items: [] }));
     for (const it of items) {
+      if (HEAD_RE.test(it.text)) continue;   // подписи шапки таблицы в название операции не попадают
       let best = null, bd = Infinity;
       for (const g of groups) { const d = Math.abs(it.y - g.a.y); if (d < bd) { bd = d; best = g; } }
       if (best && bd <= MAX_DY) best.items.push(it);
@@ -94,7 +97,9 @@
 
   function parseOp(g, currency) {
     const it = g.items;
-    const get = (col, re) => it.filter(i => inCol(i.x, col) && re.test(i.text)).sort((a, b) => a.y - b.y)[0];
+    // Из подходящих фрагментов берём ближайший к опорной строке: шапка таблицы на новой странице («Приход/ Расход»)
+    // может оказаться рядом с первой операцией, и её слово не должно перебить направление самой операции
+    const get = (col, re) => it.filter(i => inCol(i.x, col) && re.test(i.text)).sort((a, b) => Math.abs(a.y - g.a.y) - Math.abs(b.y - g.a.y) || a.y - b.y)[0];
     const dirItem = get(COL.dir, /^(Приход|Расход)$/);
     const accItem = get(COL.amtAcc, NUM_RE);
     const balItem = get(COL.balance, NUM_RE);

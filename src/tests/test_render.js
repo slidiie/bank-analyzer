@@ -699,6 +699,18 @@ vm.runInContext(`enterDemo(true);`, ctx);
 check("демо постоянное: два входа дают одни и те же операции", vm.runInContext(`JSON.stringify(Demo.make(undefined, new Date()).txs) === JSON.stringify(Demo.make(undefined, new Date()).txs)`, ctx));
 check("«Посмотреть такой отчёт» открывает последний месяц демо", vm.runInContext(`activeTab === header.to.slice(0, 7)`, ctx));
 check("пример на главной = последний месяц демо", vm.runInContext(`(() => { const st = statsFor(txs.filter(t => t.date.startsWith(activeTab))); const got = st.rows.map(r => [r[0], Math.round(r[1] * 100) / 100]); return JSON.stringify(got) === JSON.stringify(LANDING_SAMPLE); })()`, ctx));
+// Нажатие на категорию в «Обзоре» открывает её операции в «Все операции»
+check("категория из «Обзора»: открываются её операции", vm.runInContext(`(() => { openCatOps("Продукты"); return allCat === "Продукты" && bottomTab === "all"; })()`, ctx));
+check("категория из «Обзора»: в таблице строки нажимаются, в примере на главной нет", vm.runInContext(`(() => { const st = statsFor(txs); const t1 = catTable(st, openCatOps), t2 = catTable(st); const has = (n, c) => String(n.className || (n.attrs && n.attrs.class) || "").includes(c) || (n.children || []).some(x => typeof x !== "string" && has(x, c)); return has(t1, "catopen") && !has(t2, "catopen"); })()`, ctx));
 vm.runInContext(`leaveDemo();`, ctx);
+// Файл напоминания: запятые экранированы, строки не длиннее 75 байт, переносы CRLF
+{
+  const ics = vm.runInContext(`remindIcs(30)`, ctx);
+  const lines = ics.split("\r\n");
+  check("напоминание: запятая в названии экранирована", ics.includes("SUMMARY:Проверить\\, куда"));
+  check("напоминание: строки не длиннее 75 байт", lines.every(l => Buffer.byteLength(l, "utf8") <= 75));
+  check("напоминание: после склейки текст целый", ics.replace(/\r\n /g, "").includes("загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории"));
+  check("напоминание: только CRLF и событие на весь день", !/[^\r]\n/.test(ics) && /DTSTART;VALUE=DATE:\d{8}\r\n/.test(ics));
+}
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

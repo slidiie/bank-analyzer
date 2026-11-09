@@ -138,7 +138,7 @@
     .ftile { background: var(--surface-2); border-radius: var(--r-m); padding: .6rem .8rem; min-width: 0; }
     .ftile .flabel { font-size: var(--fs-s); color: var(--muted); }
     .ftile .fval { font-size: 1.45rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-    .ftile .fval small { font-size: var(--fs-s); font-weight: 500; color: var(--muted); margin-left: .25rem; }
+    .ftile .fval small { font-size: var(--fs-s); font-weight: 500; color: var(--muted); margin-left: .25rem; white-space: nowrap; display: inline-block; overflow-wrap: normal; }
     .ftile .fhint { font-size: var(--fs-xs); color: var(--muted); }
     .ftile.pos .fval { color: var(--pos, inherit); }
     .ftile.neg .fval { color: var(--neg, inherit); }
@@ -568,6 +568,9 @@
     td.muted { overflow-wrap: break-word; }   /* короткие подписи (~7-го) не рвутся по буквам, длинные (категория) переносятся по словам */
     #all { overflow-x: auto; }
     .pie .lname, .lrow > span { overflow-wrap: break-word; min-width: 0; }
+    .catopen { cursor: pointer; }
+    .catopen:hover { background: var(--surface-2); }
+    .catopen:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
     button, .tab { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
     /* Доступность: цели нажатия не меньше 44 px на телефоне и сенсорных экранах */
     @media (pointer: coarse), (max-width: 768px) {
@@ -2406,10 +2409,12 @@
         const si = sliceOf.get(cat);
         const sw = h("span", { class: slices[si].review ? "sw review" : "sw" });
         if (!slices[si].review) sw.style.background = slices[si].color;
-        const row = h("div", { class: "lrow" }, sw, h("span", { class: "lname" }, iconEl(iconKey(cat)), cat),
+        const oa = catOpenAttrs(cat, opts.onCat);
+        const row = h("div", { ...oa, class: "lrow" + (oa.class ? " " + oa.class : "") }, sw, h("span", { class: "lname" }, iconEl(iconKey(cat)), cat),
           h("span", { class: "num" }, fmt(sum) + " · " + pctText(sum, st.total)));
         row.addEventListener("mouseenter", () => { show(si); markSlice(si); });
         row.addEventListener("mouseleave", () => { hideTip(); markSlice(-1); });
+        bindCatOpen(row, cat, opts.onCat);
         legend.append(row);
       });
       wrap.append(legend);
@@ -2496,16 +2501,28 @@
       intro();
       return box;
     }
+    // Нажатие на категорию в «Обзоре»: её операции в «Уточнить» → «Все операции», там категорию можно сменить
+    function openCatOps(cat) {
+      if (REVIEW_CATS.has(cat)) { bottomTab = "review"; bottomOpen = true; showSection("review"); renderBottom(); return; }
+      allCat = cat; allFilt = Filters.empty(); bottomTab = "all"; bottomOpen = true; showSection("review"); renderAll(); renderBottom();
+    }
+    const catOpenAttrs = (cat, onCat) => onCat ? { class: "catopen", role: "button", tabindex: "0", title: "Показать операции и поменять категорию", "aria-label": `${cat}: показать операции` } : {};
+    function bindCatOpen(el, cat, onCat) {
+      if (!onCat || !el.addEventListener) return el;
+      el.addEventListener("click", () => onCat(cat));
+      el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onCat(cat); } });
+      return el;
+    }
     // Таблица трат по категориям с полосками (в отчёте и в примере на стартовом экране)
-    function catTable(st) {
+    function catTable(st, onCat) {
       const max = st.rows.length ? st.rows[0][1] : 1;
       return h("table", {},
           h("tr", {}, h("th", {}, "Категория"), h("th", { class: "num" }, "Сумма, BYN"), h("th", { class: "num" }, "Доля"), h("th", { style: "width:35%" }, "")),
-          st.rows.map(([cat, sum]) => h("tr", {},
+          st.rows.map(([cat, sum]) => bindCatOpen(h("tr", catOpenAttrs(cat, onCat),
             h("td", {}, h("span", { class: REVIEW_CATS.has(cat) ? "sw review" : "sw", style: REVIEW_CATS.has(cat) ? "" : `background:${catColor(cat)}` }), iconEl(iconKey(cat)), cat),
             h("td", { class: "num" }, fmt(sum)),
             h("td", { class: "num" }, st.total ? pctText(sum, st.total) : ""),
-            h("td", {}, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${sum / max * 100}%;background:${catColor(cat)}` }))))),
+            h("td", {}, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${sum / max * 100}%;background:${catColor(cat)}` })))), cat, onCat)),
           h("tr", {}, h("th", {}, "Итого"), h("th", { class: "num" }, fmt(st.total)), h("th", {}, ""), h("th", {}, "")));
     }
     function summarySection(title, note, st) {
@@ -2518,12 +2535,13 @@
       } else if (summaryView === "pie") {
         const plate = otherPlate(st);
         if (plate) parts.push(plate);
-        parts.push(viewSwitch(), pieChart(st));
+        parts.push(viewSwitch(), pieChart(st, { onCat: openCatOps }));
       } else {
         { const plate = otherPlate(st); if (plate) parts.push(plate); }
         parts.push(viewSwitch());
-        parts.push(catTable(st));
+        parts.push(catTable(st, openCatOps));
       }
+      parts.push(h("div", { class: "muted" }, "Нажмите на категорию, чтобы увидеть её операции и поменять категорию."));
       { const cash = st.rows.find(r => /^Наличные/.test(r[0])); if (cash && st.total && cash[1] / st.total >= 0.05) parts.push(h("div", { class: "muted" }, `Наличные (${fmt(cash[1])} BYN): по выписке не видно, на что они потрачены.`)); }
       if (st.rows.some(r => Cat.BUCKETS.includes(r[0]))) parts.push(h("div", { class: "muted" }, "«Платежи ЕРИП» и «Платежи через интернет-банк»: по выписке видно только способ оплаты, но не то, на что потрачено. Разберите получателей в разделе «Уточнить»."));
       const extra = [];
@@ -2823,15 +2841,29 @@
     }
 
     // Напоминание через месяц: файл .ics открывается календарём телефона или компьютера (Google, Apple, Outlook)
+    // Файл календаря по RFC 5545: в тексте экранируются \ ; , и перевод строки, строки длиннее 75 байт переносятся (продолжение начинается с пробела)
+    const icsText = t => String(t).replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
+    function icsFold(line) {
+      const enc = typeof TextEncoder === "function" ? new TextEncoder() : null;
+      const bytes = ch => enc ? enc.encode(ch).length : (ch.charCodeAt(0) < 128 ? 1 : 2);
+      const out = []; let cur = "", n = 0;
+      for (const ch of line) {
+        const b = bytes(ch);
+        if (n + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; n = 0; }
+        cur += ch; n += b;
+      }
+      out.push(cur);
+      return out.join("\r\n ");
+    }
     function remindIcs(days) {
       const d = new Date(Date.now() + days * 864e5), pad = n => String(n).padStart(2, "0");
       const day = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
       const next = new Date(d.getTime() + 864e5), day2 = `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`;
       const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
       return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//bank-analyzer//RU", "BEGIN:VEVENT", `UID:${now}-${Math.random().toString(36).slice(2)}@bank-analyzer`, `DTSTAMP:${now}`,
-        `DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${day2}`, "SUMMARY:Проверить, куда ушли деньги за месяц",
-        "DESCRIPTION:Скачайте выписку из банка за прошлый месяц и загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории уже запомнены в браузере.",
-        "BEGIN:VALARM", "TRIGGER:PT10H", "ACTION:DISPLAY", "DESCRIPTION:Проверить траты за месяц", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+        `DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${day2}`, "SUMMARY:" + icsText("Проверить, куда ушли деньги за месяц"),
+        "DESCRIPTION:" + icsText("Скачайте выписку из банка за прошлый месяц и загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории уже запомнены в браузере."),
+        "BEGIN:VALARM", "TRIGGER:PT10H", "ACTION:DISPLAY", "DESCRIPTION:" + icsText("Проверить траты за месяц"), "END:VALARM", "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
     }
     function remindCard() {
       const btn = h("button", { type: "button" }, "Напомнить через месяц");
@@ -3247,6 +3279,7 @@
         slider.value = budgets[c] > 0 ? budgets[c] : 0;
         const paint = () => {
           const s = Planner.budgetStatus(spent, budgets[c]);
+          if (s && period === "all" && s.level === "warn") s.level = "ok";   // среднее против лимита по среднему: «близко» ничего не значит
           bar.style.width = (s ? Math.min(100, s.pct) : 0) + "%";
           // Дорожка и бегунок цветом категории; уровень (жёлтый/красный) только в рамке бегунка и подписи
           const ring = s && s.level === "over" ? "var(--lvl-over)" : s && s.level === "warn" ? "var(--lvl-warn)" : "var(--surface)";
@@ -3269,7 +3302,7 @@
           paint(); savePlan(); renderPlan();
         };
         const chips = h("span", { class: "limchips" },
-          ...(spent >= 10 ? [h("button", { type: "button", class: "chip", onclick: () => setLimit(Math.round(spent / 10) * 10 || Math.round(spent)) }, "по факту: " + Math.round(spent / 10) * 10)] : []),
+          ...(spent >= 10 && budgets[c] !== Math.ceil(spent / 10) * 10 ? [h("button", { type: "button", class: "chip", onclick: () => setLimit(Math.ceil(spent / 10) * 10) }, (period === "all" ? "по среднему: " : "по факту: ") + Math.ceil(spent / 10) * 10)] : []),
           ...(budgets[c] > 0 ? [h("button", { type: "button", class: "chip", "aria-label": "Убрать лимит: " + c, onclick: () => setLimit(0) }, "убрать")] : []));
         slider.addEventListener("input", () => {
           const v = Number(slider.value);
@@ -3280,7 +3313,12 @@
         slider.addEventListener("change", () => renderPlan());   // после отпускания обновляем итоги
         d.append(h("div", { class: "prow" }, h("span", { class: "pname" }, c), h("span", { class: "moneyfield" }, input, h("span", { class: "unit", "aria-hidden": "true" }, "BYN")), chips, slider, h("div", { class: "pbar barwrap" }, bar), note));
       });
-      if (over || warn) d.append(h("p", { class: "muted" }, `Превышено лимитов: ${over}, близко к лимиту (от 80%): ${warn}.`));
+      if (period === "all") {
+        // Лимит по среднему сравнивается с тем же средним: полоски почти полные, «близко к лимиту» тут ничего не значит
+        if (Object.keys(budgets).length) d.append(h("p", { class: "muted" }, over
+          ? `Ваш средний месяц выше лимита в категориях: ${over}. Как вы укладываетесь в конкретном месяце, видно в «Обзоре»: выберите месяц или загрузите следующую выписку.`
+          : "Если лимит равен вашему среднему, полоски почти полные: это нормально. Как вы укладываетесь в конкретном месяце, видно в «Обзоре»: выберите месяц или загрузите следующую выписку."));
+      } else if (over || warn) d.append(h("p", { class: "muted" }, `Превышено лимитов: ${over}, близко к лимиту (от 80%): ${warn}.`));
       return d;
     }
 
