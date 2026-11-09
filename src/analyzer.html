@@ -128,6 +128,8 @@
     .hsum li { margin: .25rem 0; padding-left: 1rem; position: relative; font-size: .95rem; }
     .hsum li::before { content: ""; position: absolute; left: 0; top: .55em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
     .dyn { margin: 0 0 1.5rem; }
+    .skipall { margin: .3rem 0 .5rem; }
+    h4.skind { margin: .8rem 0 .2rem; font-size: var(--fs-m); }
     /* Обзор v3 (9.11.2026): блоки в карточках, как пример на главной */
     .ocard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
     .ocard > h3.ohead, .ocard > h3:first-child { margin-top: 0; }
@@ -580,7 +582,7 @@
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fbbtn { color: var(--accent); } }
     #fbSheet label { font-weight: 600; }
     #fbSheet select { max-width: 100%; }
-    #printBtn[hidden] { display: none; }
+    #printBtn[hidden], #dlBtn[hidden] { display: none; }
     /* ===== Строже, без «ИИ-вида» (v4.77). Весь блок можно удалить целиком: остальная вёрстка от него не зависит. =====
        Плоские карточки с тонкой рамкой вместо мягких теней, меньше скруглений, чёткие заголовки и крупные числа,
        меньше декоративных значков, плотнее таблицы. */
@@ -935,6 +937,7 @@
       <input type="file" id="file" class="vh" accept="application/pdf,.pdf,.csv,text/csv" multiple aria-label="Выберите файлы выписок (PDF или CSV)">
       <label for="file" class="filebtn">Добавить выписки</label>
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
+      <button id="dlBtn" type="button" hidden title="Все операции одной таблицей (CSV): открывается в Excel и Google Таблицах">Скачать таблицу</button>
       <button id="printBtn" type="button" hidden title="Откроется окно печати браузера: там можно выбрать «Сохранить как PDF». Печатается открытый раздел.">Печать / PDF</button>
     </p>
     <p id="status" data-sec="overview more"></p>
@@ -963,7 +966,7 @@
         <h3 style="margin-top:0">Нужно разобрать <span id="reviewCount"></span></h3>
         <div id="reviewOther" class="muted" style="margin-bottom:.6rem"></div>
         <div id="reviewTools" style="margin-bottom:.8rem"></div>
-        <p class="muted" style="margin:.2rem 0 .4rem">Выберите категорию для группы. Не знаете, кому платёж: найдите его в приложении банка по дате и сумме или нажмите «Не помню» (операция отложится).</p>
+        <p class="muted" style="margin:.2rem 0 .4rem">Выберите категорию для группы. Не знаете, кому платёж: найдите его в приложении банка по дате и сумме или нажмите «Пропустить»: операция останется «Не разобрано».</p>
         <details class="howto"><summary>Как это работает</summary>
           <p class="muted">Похожие операции собраны в группы, крупные сверху: категория выбирается сразу для всей группы и запоминается для будущих выписок. ↻ — сумма повторялась в разные месяцы. Мелочь можно одним нажатием отправить в «Прочее», любую операцию потом можно поменять во вкладке «Все операции».</p>
         </details>
@@ -982,19 +985,19 @@
         <div id="all"></div>
       </div>
     </div>
-    <p class="muted" id="roughNote" data-sec="insights plan" hidden></p>
-    <section class="sect" id="insightsBox" data-sec="insights">
-      <h2 id="insightsTitle">Выводы</h2>
-      <p class="muted secthint">Период выбирается на экране «Обзор».<button id="insPeriod" type="button">Сменить период</button></p>
+    <p class="muted" id="roughNote" data-sec="overview plan" hidden></p>
+    <section class="sect" id="insightsBox" data-sec="overview">
+      <h2 id="insightsTitle">Подробнее о тратах</h2>
+      <button id="insPeriod" type="button" hidden>Сменить период</button>
       <ul class="insights" id="insights"></ul>
     </section>
     <section class="sect" id="subsBox" data-sec="subs">
-      <h2 id="subsTitle">Подписки и регулярные</h2>
+      <h2 id="subsTitle">Регулярные платежи</h2>
       <p class="muted secthint">Период выбирается на экране «Обзор». Здесь считаются полные месяцы.<button id="subsPeriod" type="button">Сменить период</button></p>
       <div id="subs"></div>
     </section>
     <section class="sect" id="planBox" data-sec="plan">
-      <h2 id="planTitle">План</h2>
+      <h2 id="planTitle">Бюджет</h2>
       <p class="muted secthint">Период выбирается на экране «Обзор».<button id="planPeriod" type="button">Сменить период</button></p>
       <div id="plan"></div>
     </section>
@@ -1931,7 +1934,7 @@
       }
       for (const e of otherUndo) {
         box.append(h("div", { class: "ok", style: "margin:.4rem 0" },
-          `✓ ${e.n} ${opsWord(e.n)} возвращены в «Разобрать». `,
+          `✓ ${e.n} ${opsWord(e.n)} возвращены в «Уточнить». `,
           h("button", { type: "button", onclick: () => {
             Object.assign(userRules, e.rules); Object.assign(txRules, e.tx);
             saveJSON("ba_rules_v1", userRules); saveJSON("ba_txrules_v1", txRules);
@@ -2032,6 +2035,7 @@
       $("demoBar").hidden = !demoMode;
       $("clearBtn").hidden = demoMode || !txs.length;
       $("printBtn").hidden = !txs.length && !demoMode;
+      $("dlBtn").hidden = !txs.length || demoMode;
       $("dataRules").hidden = demoMode;
       $("shareBox").hidden = !txs.length;
       $("resetRow").hidden = demoMode;
@@ -2164,11 +2168,11 @@
         const more = reviewOther ? ` (и ещё ${reviewOther} в других месяцах)` : "";
         const pct = periodSpend > 0 ? Math.max(0, Math.min(100, Math.round((1 - reviewSum / periodSpend) * 100))) : 100;
         banner.replaceChildren(
-          reviewOps ? h("div", {}, h("b", {}, `Разобрано на ${pct}% трат по сумме. `), `Ждут разбора: ${reviewOps} ${opsWord(reviewOps)}${more}. `,
-            h("button", { type: "button", onclick: () => openBottom("review") }, "Разобрать"))
-            : h("div", {}, h("b", {}, "В этом месяце всё разобрано. "), `Ждут разбора ещё ${reviewOther} ${opsWord(reviewOther)} в других месяцах. `,
-              h("button", { type: "button", onclick: () => openBottom("review") }, "Разобрать")),
-          reviewOps ? h("div", { class: "barwrap", style: "margin-top:.4rem", role: "img", "aria-label": `Разобрано ${pct}%` }, h("div", { class: "bar", style: `width:${pct}%` })) : "");
+          reviewOps ? h("div", {}, h("b", {}, `Отчёт готов, категории определены для ${pct}% трат. `), `Можно уточнить ещё ${reviewOps} ${opsWord(reviewOps)}${more}, и отчёт станет точнее. Это необязательно: остальное показано долей «Не разобрано». `,
+            h("button", { type: "button", onclick: () => openBottom("review") }, "Уточнить"))
+            : h("div", {}, h("b", {}, "В этом месяце всё уточнено. "), `В других месяцах можно уточнить ещё ${reviewOther} ${opsWord(reviewOther)}. `,
+              h("button", { type: "button", onclick: () => openBottom("review") }, "Уточнить")),
+          reviewOps ? h("div", { class: "barwrap", style: "margin-top:.4rem", role: "img", "aria-label": `Категории определены для ${pct}% трат` }, h("div", { class: "bar", style: `width:${pct}%` })) : "");
       }
     }
 
@@ -2473,7 +2477,7 @@
         const tx = Object.keys(txRules).filter(k => txRules[k] === "Прочее");
         const n = txs.filter(t => displayCat(t) === "Прочее" && !t.pair).length;
         box.replaceChildren(
-          h("b", {}, `Вернуть в «Разобрать» всё, что сейчас в «Прочее»: ${n} ${opsWord(n)}?`),
+          h("b", {}, `Вернуть в «Уточнить» всё, что сейчас в «Прочее»: ${n} ${opsWord(n)}?`),
           h("div", { class: "muted" }, "Вернутся и те, что вы отметили «Прочее» сами. Остальной ваш выбор не меняется. Сразу после этого можно отменить."),
           h("div", { class: "chips" },
             qchip("Да, вернуть", () => {
@@ -2518,7 +2522,7 @@
         parts.push(catTable(st));
       }
       { const cash = st.rows.find(r => /^Наличные/.test(r[0])); if (cash && st.total && cash[1] / st.total >= 0.05) parts.push(h("div", { class: "muted" }, `Наличные (${fmt(cash[1])} BYN): по выписке не видно, на что они потрачены.`)); }
-      if (st.rows.some(r => Cat.BUCKETS.includes(r[0]))) parts.push(h("div", { class: "muted" }, "«Платежи ЕРИП» и «Платежи через интернет-банк»: по выписке видно только способ оплаты, но не то, на что потрачено. Разберите получателей на вкладке «Нужно разобрать»."));
+      if (st.rows.some(r => Cat.BUCKETS.includes(r[0]))) parts.push(h("div", { class: "muted" }, "«Платежи ЕРИП» и «Платежи через интернет-банк»: по выписке видно только способ оплаты, но не то, на что потрачено. Разберите получателей в разделе «Уточнить»."));
       const extra = [];
       if (st.own) extra.push(`переводы между своими: ${fmt(st.own)}`);
       if (st.loan) extra.push(`дал в долг: ${fmt(st.loan)}`);
@@ -2590,13 +2594,13 @@
         const tips = st.rows.filter(r => !isUnclear(r[0])).slice(0, 5).map(([c]) => [c, Goals.suggestLimit(Goals.historyValues(store, c, ym, dIn))]).filter(x => x[1]).slice(0, 3);
         if (!tips.length) return null;
         box.append(h("h3", {}, "Цели и бюджеты"),
-          h("p", { class: "muted" }, "Лимитов на месяц пока нет. Задайте их в разделе «План», и здесь появится, сколько осталось до конца месяца. Обычно за полный месяц у вас уходит:"),
+          h("p", { class: "muted" }, "Лимитов на месяц пока нет. Задайте их в разделе «Бюджет», и здесь появится, сколько осталось до конца месяца. Обычно за полный месяц у вас уходит:"),
           h("ul", {}, tips.map(([c, v]) => h("li", {}, `${c}: около ${fmt(v)} BYN`))));
         return box;
       }
       if (ym < prevYm) {
         // Лимиты из «Планирования» заданы на текущий месяц: к давним периодам их не применяем
-        box.append(h("p", { class: "muted gnote" }, `Лимиты из «Планирования» действуют на текущий месяц, поэтому за ${monthTitle(ym).toLowerCase()} мы их не сравниваем.`));
+        box.append(h("p", { class: "muted gnote" }, `Лимиты из «Бюджета» действуют на текущий месяц, поэтому за ${monthTitle(ym).toLowerCase()} мы их не сравниваем.`));
         return box;
       }
       const t = Goals.totals(list);
@@ -2622,7 +2626,7 @@
       });
       if (closed && dataEnd < ym + "-" + String(dim).padStart(2, "0")) box.append(h("p", { class: "muted gnote" }, "Выписка заканчивается " + dmy(dataEnd) + ", траты за остаток месяца в неё не попали."));
       if (startsLate) box.append(h("p", { class: "muted gnote" }, "Выписка охватывает месяц не с начала (" + partial.replace("неполный месяц: ", "") + "), траты могут быть занижены."));
-      box.append(h("p", { class: "muted gnote" }, finished ? "Лимиты меняются в «Планировании»." : "Темп считается по тратам с начала месяца и не знает о будущих разовых платежах. Лимиты меняются в «Планировании»."));
+      box.append(h("p", { class: "muted gnote" }, finished ? "Лимиты меняются в разделе «Бюджет»." : "Темп считается по тратам с начала месяца и не знает о будущих разовых платежах. Лимиты меняются в разделе «Бюджет»."));
       const sm = Goals.summary(list, finished);
       const word = sm.level === "over" ? `превышено ${sm.over} из ${sm.n}` : sm.level === "warn" ? `${sm.near} из ${sm.n} близко к лимиту` : sm.n === 1 ? "в норме" : `все ${sm.n} в норме`;
       box._sum = { level: sm.level, text: `Лимиты · ${monthTitle(ym).toLowerCase()}: ${word}` };
@@ -2782,7 +2786,7 @@
               h("span", { class: "num" }, fmt(g.sum)),
               h("div", { class: "tbar" }, h("i", { style: `width:${(g.sum / topMax * 100).toFixed(1)}%;background:${catColor(displayCat(g.tx))}` })));
           }),
-          ...(unclear.length ? [h("div", { class: "muted", style: "margin-top:.4rem" }, `Не входит в список: ${fmt(unclear.reduce((a, t) => a - t.amount, 0))} BYN в платежах, где банк не показал получателя (интернет-банк, ЕРИП). Их можно разобрать в разделе «Разобрать».`)] : []));
+          ...(unclear.length ? [h("div", { class: "muted", style: "margin-top:.4rem" }, `Не входит в список: ${fmt(unclear.reduce((a, t) => a - t.amount, 0))} BYN в платежах, где банк не показал получателя (интернет-банк, ЕРИП). Их можно уточнить в разделе «Уточнить».`)] : []));
       }
       return box;
     }
@@ -2974,7 +2978,7 @@
         }
       }
       const unkSum = rows.filter(r => isUnclear(r[0])).reduce((a, r) => a + r[1], 0);
-      if (unkSum > 0) ul.append(icard(`${fmt(unkSum)} BYN`, `Пока без понятной категории · ${Math.round(unkSum / total * 100)}%`, "По выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Разобрать», и картина станет точнее."));
+      if (unkSum > 0) ul.append(icard(`${fmt(unkSum)} BYN`, `Пока без понятной категории · ${Math.round(unkSum / total * 100)}%`, "По выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Уточнить», и картина станет точнее."));
     }
 
     // ---------- Планирование: регулярные платежи, прогноз, накопления, бюджеты, «сколько остаётся» ----------
@@ -3016,6 +3020,9 @@
     const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 
     // Экран «Подписки и регулярные»: сколько уходит в месяц, ближайшие списания, весь список
+    // Регулярные платежи делятся на подписки (то, что можно отменить) и обязательные (жильё, коммуналка)
+    const SUBS_CATS = ["Связь и подписки", "Развлечения", "Образование"];
+    const MUST_CATS = ["Аренда и жильё", "Комиссии банка", "Здоровье"];
     function renderSubs() {
       const box = $("subs");
       if (!box) return;
@@ -3032,11 +3039,16 @@
       const spend = full.map(ym => statsFor(txs.filter(t => t.date && t.date.startsWith(ym))).total);
       const avg = spend.reduce((a, v) => a + v, 0) / spend.length;
       const share = avg > 0 ? Math.round(Math.min(100, sum / avg * 100)) : null;
-      box.append(h("p", { class: "muted subsnote" }, "Это совпадение сумм, а не подтверждённые подписки: проверьте список сами."));
+      const kindOf = r => SUBS_CATS.includes(r.cat) ? "subs" : (MUST_CATS.includes(r.cat) || Cat.BUCKETS.includes(r.cat)) ? "must" : "other";
+      const sumOf = k => regular.filter(r => kindOf(r) === k).reduce((a, r) => a + r.perMonth, 0);
+      const subsSum = sumOf("subs"), mustSum = sumOf("must"), otherSum = sumOf("other");
+      const nSubs = regular.filter(r => kindOf(r) === "subs").length;
       box.append(h("div", { class: "scard" },
-        h("div", { class: "sbig" }, `${money(sum)} BYN`, h("span", { class: "syear" }, `≈ ${money(sum * 12)} BYN в год`)),
-        h("div", { class: "muted" }, `Уходит на регулярные платежи в месяц · ${regular.length}` + (share != null ? ` · около ${share}% трат` : "")),
-        h("div", { class: "muted" }, `По последним ${full.length} полным месяцам (${monthTitle(full[0])} — ${monthTitle(full[full.length - 1])})`)));
+        h("div", { class: "muted" }, "Подписки и сервисы"),
+        h("div", { class: "sbig" }, `${money(subsSum)} BYN в месяц`, h("span", { class: "syear" }, `≈ ${money(subsSum * 12)} BYN в год`)),
+        h("div", { class: "muted" }, nSubs ? `Найдено: ${nSubs}. Проверьте, всеми ли вы пользуетесь.` : "Подписок среди регулярных платежей не нашлось."),
+        h("div", { class: "muted" }, `Обязательные (аренда, коммуналка, ЕРИП): ${money(mustSum)} BYN в месяц` + (otherSum ? ` · другие регулярные: ${money(otherSum)} BYN` : "") + (share != null ? ` · всего около ${share}% трат` : "")),
+        h("div", { class: "muted" }, `По последним ${full.length} полным месяцам (${monthTitle(full[0])} — ${monthTitle(full[full.length - 1])}). Найдены по одинаковым суммам: проверьте список сами.`)));
       const when = d => {
         const n = Planner.daysBetween(today, d);
         return n < 0 ? `по выписке (она до ${dmy(dataEnd)})` : n === 0 ? "сегодня" : n === 1 ? "завтра" : `через ${n} дн.`;
@@ -3055,7 +3067,11 @@
         h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
         h("span", { class: "samount" }, `${money(x.r.amount)} BYN`));
       const solid = rows.filter(x => x.s.kind === "month" || x.s.kind === "days"), loose = rows.filter(x => !(x.s.kind === "month" || x.s.kind === "days"));
-      box.append(h("ul", { class: "slist" }, (solid.length ? solid : rows).map(liOf)));
+      const main = solid.length ? solid : rows;
+      [["subs", "Подписки и сервисы"], ["must", "Обязательные"], ["other", "Другие регулярные"]].forEach(([k, title]) => {
+        const part = main.filter(x => kindOf(x.r) === k);
+        if (part.length) box.append(h("h4", { class: "skind" }, `${title} · ${part.length}`), h("ul", { class: "slist" }, part.map(liOf)));
+      });
       if (solid.length && loose.length) box.append(h("details", {}, h("summary", {}, `Без ровного срока: ${loose.length} (скорее всего, не подписки)`), h("ul", { class: "slist" }, loose.map(liOf))));
     }
 
@@ -3093,12 +3109,15 @@
       const head = (big, cap) => h("summary", {}, h("span", { class: "pbig" }, big), h("span", { class: "pcap" }, cap));
       const limitSum = Object.values(budgets).reduce((a, v) => a + v, 0);
       const regSum = x.regular.reduce((a, r) => a + r.perMonth, 0);
-      const save = savingsBlock(x, head(x.plan.amount > 0 ? `${money(x.plan.amount)} BYN` : "—", x.plan.amount > 0 ? "Сколько откладывать в месяц" : "Сколько откладывать: пока не задано"));
+      const saveCap = x.plan.amount > 0
+        ? "Откладывать в месяц: " + (x.plan.pct != null ? `${Math.round(x.plan.pct * 10) / 10}% от дохода ${money(x.income)} BYN` : `${money(x.plan.amount)} BYN из дохода ${money(x.income)} BYN`)
+        : "Сколько откладывать в месяц: нажмите, чтобы задать";
+      const save = savingsBlock(x, head(x.plan.amount > 0 ? `${money(x.plan.amount)} BYN` : "Не задано", saveCap));
       calcBlock(x, save);
       const blocks = [
         save,
-        regularBlock(x.regular, fc, months, full, fullAll.length, head(x.regular.length ? `${money(regSum)} BYN` : "—", x.regular.length ? `Регулярные платежи в месяц · ${x.regular.length}` : "Регулярные платежи")),
-        budgetBlock(x, head(limitSum > 0 ? `${money(limitSum)} BYN` : "—", limitSum > 0 ? "Бюджет: сумма лимитов в месяц" : "Бюджет: задайте первый лимит")),
+        regularBlock(x.regular, fc, months, full, fullAll.length, head(x.regular.length ? `${money(regSum)} BYN` : "Не найдено", x.regular.length ? `Регулярные платежи в месяц · ${x.regular.length}: сумма одинаковых платежей` : "Регулярные платежи")),
+        budgetBlock(x, head(limitSum > 0 ? `${money(limitSum)} BYN` : "Нет лимитов", limitSum > 0 ? `Лимиты на месяц: сумма по ${Object.keys(budgets).length} категориям` : "Лимиты на месяц: можно поставить одним нажатием")),
       ];
       blocks.forEach((d, i) => {
         if (planOpen[i]) d.setAttribute("open", "");
@@ -3123,7 +3142,7 @@
           h("td", { class: "muted" }, `~${r.day}-го`), h("td", {}, r.name), h("td", { class: "muted" }, r.cat), h("td", { class: "num" }, money(r.amount))))));
         if (regular.length > 12) d.append(h("p", { class: "muted" }, `…и ещё ${regular.length - 12}.`));
         d.append(h("p", { class: "muted" }, "Это совпадение сумм, а не подтверждённые подписки: проверьте список сами."));
-        d.append(h("p", {}, h("button", { type: "button", onclick: () => showSection("subs") }, "Открыть «Подписки»: ближайшие списания и весь список")));
+        d.append(h("p", {}, h("button", { type: "button", onclick: () => showSection("subs") }, "Открыть «Регулярные»: ближайшие списания и весь список")));
       }
       if (fc) {
         const from = Planner.addMonths(full[full.length - 1], 1);
@@ -3168,14 +3187,21 @@
       const st = statsFor(inPeriod);
       const perMonthDiv = period === "all" ? Math.max(1, x.useM.length) : 1;
       const spentOf = new Map(st.rows.filter(r => !isUnclear(r[0])).map(r => [r[0], r[1] / perMonthDiv]));
-      const cats = [...spentOf.keys()].slice(0, 8);
+      const cats = [...spentOf.keys()].filter(c => !MUST_CATS.includes(c)).slice(0, 8);
       Object.keys(budgets).forEach(c => { if (!cats.includes(c)) cats.push(c); });
+      const fixedCats = [...spentOf.keys()].filter(c => MUST_CATS.includes(c) && !budgets[c]);
+      if (fixedCats.length) d.append(h("p", { class: "muted" }, `${fixedCats.join(", ")}: обязательные платежи, лимит для них не нужен.`));
+      const autoCats = cats.filter(c => !(budgets[c] > 0) && (spentOf.get(c) || 0) >= 10);
+      if (autoCats.length) d.append(h("p", {}, h("button", { type: "button", class: "primary", onclick: () => {
+        autoCats.forEach(c => { budgets[c] = Math.ceil((spentOf.get(c) || 0) / 10) * 10; });
+        savePlan(); renderPlan(); try { renderSummary(); } catch (e) { /* обзор обновится при следующей отрисовке */ }
+      } }, `Поставить лимиты по моему среднему (${autoCats.length})`), " ", h("span", { class: "muted" }, "Лимит = ваш средний расход за месяц, округлённый вверх до 10. Потом любой можно поменять.")));
       d.append(h("p", { class: "muted" }, period === "all"
-        ? "Лимит задаётся на месяц. Сейчас показан период целиком, поэтому сравниваем со средним за полный месяц (по последним полным месяцам). Выберите вкладку месяца сверху, чтобы увидеть точный расход."
-        : `Лимит задаётся на месяц. Сравниваем с расходом за ${monthTitle(period)}.`));
+        ? "Лимиты на месяц. Сравниваем с вашим средним расходом за полный месяц."
+        : `Лимиты на месяц. Сравниваем с расходом за ${monthTitle(period)}.`));
       const limitSum = Object.values(budgets).reduce((a, v) => a + v, 0);
       if (x.plan.amount > 0) {
-        d.append(h("p", {}, `Доступно на траты после накоплений: ${money(x.available)} BYN.` + (limitSum > 0 ? ` Сумма ваших лимитов: ${money(limitSum)} BYN.` : "")));
+        d.append(h("p", {}, `Доступно на траты в месяц: доход ${money(x.income)} − накопления ${money(x.plan.amount)} = ${money(x.available)} BYN.` + (limitSum > 0 ? ` Сумма ваших лимитов: ${money(limitSum)} BYN.` : "")));
         if (limitSum > x.available && limitSum > 0) d.append(h("p", { class: "lvl-over" }, `Лимиты превышают доступное на ${money(limitSum - x.available)} BYN: сократите их или план накоплений.`));
       }
       if (!cats.length) { d.append(h("p", { class: "muted" }, "Пока нет разобранных категорий.")); return d; }
@@ -3295,13 +3321,13 @@
       hint.cat ? h("button", { type: "button", class: "linklike", onclick: () => setRule(tx, hint.cat, Cat.ICONS[hint.cat]) }, "Отметить как «" + hint.cat + "»") : "") : "";
     const qchip = (label, onclick, title, cls) => h("button", { type: "button", class: "qchip" + (cls ? " " + cls : ""), onclick, title: title || "" }, label);
 
-    const deferred = new Set();                // отложено кнопкой «Не помню»: только в памяти страницы, категория не назначается
+    const deferred = new Set();                // отложено кнопкой «Пропустить»: только в памяти страницы, категория не назначается
     const deferKey = k => { deferred.add(k); render(); };
     function renderReview() {
       const period = currentPeriod();
       const groups = new Map();
       const other = new Map();                 // месяц -> сколько неразобранных там, вне выбранной вкладки
-      const parked = [];                       // операции, отложенные кнопкой «Не помню»
+      const parked = [];                       // операции, отложенные кнопкой «Пропустить»
       for (const tx of txs) {
         if (categoryOf(tx)) continue;
         if (period !== "all" && !(tx.date && tx.date.startsWith(period))) {
@@ -3343,6 +3369,27 @@
         tools.append(h("p", { class: "muted", style: "margin:.2rem 0" }, h("b", {}, k === 1 ? "Начните с первой группы: " : `Начните с первых ${k} групп: `),
           `это ${Math.round(acc / reviewSum * 100)}% неразобранной суммы.`));
       }
+      if (list.length > 1) {
+        const allOps = list.reduce((a, g) => a + g.items.length, 0);
+        const skipBox = h("div", { class: "skipall" });
+        const skipIntro = () => skipBox.replaceChildren(qchip("Пропустить всё", skipAsk, "Все оставшиеся группы попадут в «Прочее», это можно отменить", "ghost"),
+          " ", h("span", { class: "muted" }, "Отчёт уже готов: уточнять необязательно."));
+        const skipAsk = () => skipBox.replaceChildren(h("b", {}, "Отправить всё оставшееся в «Прочее»? "),
+          `${list.length} групп, ${allOps} ${opsWord(allOps)}, ${fmt(reviewSum)} BYN. Это можно отменить.`,
+          h("div", { class: "chips" },
+            qchip("Да, в «Прочее»", () => {
+              const prev = list.map(g => [g.key, userRules[g.key]]);
+              list.forEach(g => { userRules[g.key] = "Прочее"; });
+              saveJSON("ba_rules_v1", userRules);
+              tailUndo.push({ prev, groups: list.length, ops: allOps, sum: reviewSum });
+              if (tailUndo.length > 3) tailUndo.shift();
+              render();
+            }, "", "primary"),
+            qchip("Отмена", skipIntro)));
+        skipIntro();
+        tools.append(skipBox);
+      }
+      if (!demoMode) tools.append(h("p", { class: "muted", style: "margin:.2rem 0" }, "Ваш выбор категорий запоминается в этом браузере: со следующей выпиской уточнять придётся меньше."));
       // Мелочь одним нажатием в «Прочее»
       const smallTx = list.flatMap(g => g.items).filter(t => Math.abs(t.amount) < SMALL_LIMIT);
       if (smallTx.length) {
@@ -3452,7 +3499,7 @@
               h("div", { class: "chips" }, (rec ? [Cat.LOAN, "Подарки", "Прочее"] : [Cat.OWN, Cat.LOAN, "Подарки", "Прочее"]).map(c => qchip(chipLabel(c), () => setRule(g.tx, c)))))),
             qchip("Оплата услуги или магазина", () => show(h("div", { class: "muted" }, "За что?"),
               h("div", { class: "chips" }, sug.cats.map(c => qchip(chipLabel(c), () => setRule(g.tx, c))), qchip("Ещё…", () => { extra.hidden = !extra.hidden; }, "Выбрать из полного списка", "ghost")), extra)),
-            qchip("Не помню", () => deferKey(g.key), "Группа будет отложена, её можно вернуть внизу списка", "ghost"));
+            qchip("Пропустить", () => deferKey(g.key), "Пока пропустить: останется «Не разобрано», вернуться можно внизу списка", "ghost"));
           card = h("div", { class: "warn revcard", style: "margin-bottom:.5rem" }, head, sub,
             h("div", { class: "ask" }, rec ? (isBalance ? `Пополнение баланса, ${n} ${times}. Что это: телефон, кошелёк, сервис или чей-то счёт?` : `Чей этот счёт или карта? Переводов: ${n}.`) : `Платёж без названия получателя, ${n} ${times}. Кому или за что?`), keysLine, askRow, panel, more);
         } else if (split) {
@@ -3464,15 +3511,15 @@
               whatBlock(tx),
               h("div", { class: "chips" },
                 [Cat.OWN, Cat.LOAN, "Подарки"].map(c => qchip(chipLabel(c), () => setTxRule(tx, c))),
-                qchip("Не помню", () => deferKey(txId(tx)), "Операция будет отложена, её можно вернуть внизу списка", "ghost")))),
+                qchip("Пропустить", () => deferKey(txId(tx)), "Пока пропустить: останется «Не разобрано», вернуться можно внизу списка", "ghost")))),
             items.length > SPLIT_MAX ? h("div", { class: "muted", style: "margin-top:.4rem" }, `Ещё ${items.length - SPLIT_MAX} ${opsWord(items.length - SPLIT_MAX)}: появятся после этих.`) : "",
-            h("div", { style: "margin-top:.4rem" }, qchip("Все не помню", () => deferKey(g.key), "Вся группа будет отложена, её можно вернуть внизу списка", "ghost")),
+            h("div", { style: "margin-top:.4rem" }, qchip("Пропустить все", () => deferKey(g.key), "Пока пропустить всю группу: останется «Не разобрано»", "ghost")),
             more);
         } else {
           const chips = h("div", { class: "chips" },
             sug.cats.map(c => qchip(chipLabel(c), () => setRule(g.tx, c))),
             qchip("Ещё…", () => { extra.hidden = !extra.hidden; }, "Выбрать из полного списка", "ghost"),
-            qchip("Не помню", () => deferKey(g.key), "Группа будет отложена, её можно вернуть внизу списка", "ghost"));
+            qchip("Пропустить", () => deferKey(g.key), "Пока пропустить: останется «Не разобрано», вернуться можно внизу списка", "ghost"));
           card = h("div", { class: "warn revcard", style: "margin-bottom:.5rem" }, head, sub,
             h("div", { class: "ask" }, sug.q), sug.hint ? h("div", { class: "muted" }, "Предположение: " + sug.hint) : "", keysLine, chips,
             sc > 1 ? h("div", { class: "muted", style: "margin-top:.3rem" }, `Применится ко всем ${sc}.`) : "",
@@ -3520,8 +3567,8 @@
       if (parked.length) {
         const pv = [...parked].sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
         box.append(h("details", { class: "parkbox" },
-          h("summary", {}, `Отложено: ${parked.length} ${opsWord(parked.length)}`),
-          h("p", { class: "muted" }, "Вы нажали «Не помню»: категория этим операциям не назначена, в итогах они остаются «не разобрано». Найдите платёж в приложении банка по дате и сумме: там часто виден получатель."),
+          h("summary", {}, `Пропущено: ${parked.length} ${opsWord(parked.length)}`),
+          h("p", { class: "muted" }, "Вы их пропустили: категория не назначена, в отчёте они в доле «Не разобрано». Найдите платёж в приложении банка по дате и сумме: там часто виден получатель."),
           pv.slice(0, 15).map(t => h("div", { class: "muted" }, `${dm(t.date)} · ${t.amount > 0 ? "+" : "−"}${fmt(Math.abs(t.amount))} BYN · ${txWhat(t).dir.toLowerCase()}: ${friendlyTitle(t)}`)),
           parked.length > 15 ? h("div", { class: "muted" }, `…и ещё ${parked.length - 15}.`) : "",
           h("p", {}, h("button", { type: "button", class: "primary", onclick: () => { deferred.clear(); render(); } }, "Вернуться к ним"))));
@@ -4372,14 +4419,15 @@
         const ico = h("span", { class: "tabico" });
         ico.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + TAB_ICONS[id] + "</svg>";
         const kids = [ico, short ? [h("span", { class: "l-f" }, label), h("span", { class: "l-s" }, short)] : h("span", {}, label)];
-        if (id === "review" && todo) kids.push(h("span", { class: "tabbadge", "aria-label": `${todo} ждут разбора` }, todo > 99 ? "99+" : String(todo)));
+        if (id === "review" && todo) kids.push(h("span", { class: "tabbadge", "aria-label": `${todo} можно уточнить` }, todo > 99 ? "99+" : String(todo)));
         const attrs = { type: "button", class: id === curSection ? "active" : "", onclick: () => showSection(id) };
         if (id === curSection) attrs["aria-current"] = "page";
         return h("button", attrs, ...kids);
       };
-      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Разобрать"), btn("insights", "Выводы"), btn("subs", "Подписки"), btn("plan", "План"), btn("more", "Ещё"));
+      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Уточнить"), btn("subs", "Регулярные"), btn("plan", "Бюджет"), btn("more", "Ещё"));
     }
     $("insPeriod").addEventListener("click", () => showSection("overview"));
+    $("dlBtn").addEventListener("click", () => $("expOps").click());
     $("planPeriod").addEventListener("click", () => showSection("overview"));
     $("subsPeriod").addEventListener("click", () => showSection("overview"));
     renderRules();
