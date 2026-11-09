@@ -22,6 +22,7 @@ const Rates = require("../rates.js");
 const Feedback = require("../feedback.js");
 const Hints = require("../hints.js");
 const Merchants = require("../merchants.js");
+const Recap = require("../recap.js");
 const lsWrites = [];
 
 // ---- Заглушка страницы ----
@@ -68,7 +69,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Rates, Feedback, Hints, Merchants,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Rates, Feedback, Hints, Merchants, Recap,
 });
 vm.runInContext(script, ctx);
 
@@ -101,6 +102,12 @@ let s = summaryText();
 check("есть вкладки: весь период и три месяца",
   ["За весь период", "Сен", "Окт", "Ноя"].every(t => s.includes(t)) && !s.includes("Октябрь 2026"));
 check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноя *"));
+{
+  const rc = textOf(byId["recap"]);
+  check("«Итог месяца»: последний полный месяц — октябрь, неполный ноябрь не подводится", rc.includes("Итог октября") && !rc.includes("Итог ноября"));
+  check("«Итог месяца»: всего за октябрь 900 и сравнение с сентябрём", /Всего потрачено 900 BYN/.test(rc) && /чем в сентябре/.test(rc));
+  check("«Итог месяца»: оговорка про неразобранное (500 из 900 не разобрано)", /по разобранным 44/.test(rc));
+}
 check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170.00"));
 check("на вкладке «весь период» нет отдельного «Сравнения месяцев» (его заменяет «Динамика трат»)", !s.includes("Сравнение месяцев"));
 check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250.00"));
