@@ -7,14 +7,16 @@
 //   страница не шире экрана, Tab и Shift+Tab по кругу внутри каждого окна (настоящие нажатия клавиш).
 // Печатает только нарушения и итог; код возврата 1, если нарушения есть.
 import { spawn } from 'node:child_process';
-import { rmSync, existsSync } from 'node:fs';
+import { rmSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const args = process.argv.slice(2);
-const url = args.find(a => !a.startsWith('--')) || 'http://localhost:8765/';
+const url = args.find((a, i) => /^https?:/.test(a) && args[i - 1] !== '--shots') || 'http://localhost:8765/';
 const WIDTHS = args.includes('--quick') ? [390, 1280] : [320, 390, 768, 1280];
 const THEMES = ['light', 'dark'];
+const shotsDir = args.includes('--shots') ? args[args.indexOf('--shots') + 1] : null;   // снимки экранов сценариев (мастер, ошибки, печать…)
+if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 const EDGE = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(existsSync);
 if (!EDGE) { console.log('ОШИБКА: не найден Microsoft Edge'); process.exit(2); }
 try { await fetch(url); } catch (e) { console.log('ОШИБКА: сервер не отвечает по адресу ' + url + ' (запусти сервер site)'); process.exit(2); }
@@ -37,9 +39,16 @@ const ev = async expr => {
 };
 await send('Page.enable');
 await send('Runtime.enable');
+await send('DOM.enable');
+// Выдуманные файлы для сценариев ошибок и мастера образца (никаких настоящих данных)
+mkdirSync(prof, { recursive: true });
+const FAKE_CSV = join(prof, 'neizvestny-bank.csv'), BROKEN_PDF = join(prof, 'bity.pdf');
+writeFileSync(FAKE_CSV, 'Дата;Описание;Сумма;Валюта\n' + Array.from({ length: 12 }, (_, i) => `0${1 + (i % 9)}.10.2026;Магазин Тест ${i + 1};-${(i + 1) * 3},50;BYN`).join('\n') + '\n');
+writeFileSync(BROKEN_PDF, '%PDF-1.4\nэто не настоящий PDF\n%%EOF');
 
 // Код, который выполняется в странице: собирает нарушения в текущем состоянии
 const PAGE_CHECK = `(() => {
+  const print = matchMedia('print').matches;
   const W = innerWidth, mobile = W < 768, minT = mobile ? 44 : 32, out = [];
   document.getAnimations().forEach(a => { try { a.finish(); } catch (e) { /* бесконечная анимация */ } });
   const dlg = [...document.querySelectorAll('.modal:not([hidden]) [role=dialog]')].pop() || null;
@@ -49,7 +58,7 @@ const PAGE_CHECK = `(() => {
     const t = (el.getAttribute('aria-label') || el.textContent || el.value || '').replace(/\\s+/g, ' ').trim().slice(0, 32); return t ? s + ' «' + t + '»' : s; };
   // 1) зоны нажатия
   const sel = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=switch], [role=tab]';
-  for (const el of root.querySelectorAll(sel)) {
+  for (const el of print ? [] : root.querySelectorAll(sel)) {
     if (!vis(el) || el.disabled) continue;
     let box = el;
     if (el.matches('input[type=checkbox], input[type=radio], input[type=file]')) { const l = el.closest('label') || (el.id && document.querySelector('label[for="' + el.id + '"]')); if (!l) { if (el.type === 'file') continue; } else box = l; }
@@ -128,6 +137,19 @@ async function closeDialog() {
   await wait(250);
   await ev(`document.querySelectorAll('.modal:not([hidden])').forEach(d => d.hidden = true)`);
 }
+async function setFile(sel, path) {
+  const doc = await send('DOM.getDocument', { depth: 0 });
+  const q = await send('DOM.querySelector', { nodeId: doc.result.root.nodeId, selector: sel });
+  await send('DOM.setFileInputFiles', { nodeId: q.result.nodeId, files: [path] });
+}
+async function shot(name, tag) {
+  if (!shotsDir) return;
+  const w = await ev('innerWidth');
+  const h = Math.min(await ev('Math.ceil(Math.max(document.documentElement.scrollHeight, innerHeight))'), 4000);
+  const r = await send('Page.captureScreenshot', { format: 'jpeg', quality: 72, clip: { x: 0, y: 0, width: w, height: h, scale: 1 }, captureBeyondViewport: true });
+  writeFileSync(join(shotsDir, (tag + ' ' + name).replace(/[«»:\/]/g, '').replace(/\s+/g, '-') + '.jpg'), Buffer.from(r.result.data, 'base64'));
+}
+const clickText = (sel, re) => `(() => { const b = [...document.querySelectorAll(${JSON.stringify(sel)})].find(x => ${re}.test(x.textContent.trim())); if (b) b.click(); return !!b; })()`;
 async function dialog(where, tag, openJs) {
   await ev(openJs); await wait(400);
   await check(where, tag);
@@ -155,6 +177,46 @@ for (const w of WIDTHS) for (const theme of THEMES) {
     await check('демо: ' + tabs[i], tag);
   }
   await dialog('окно сброса', tag, `document.getElementById("reset").click()`);
+
+  // «Все операции» с поиском и фильтром, «Своя категория»
+  await ev(`[...document.querySelectorAll("#tabbar button")].find(b => /Разобрать/.test(b.textContent)).click()`); await wait(400);
+  if (await ev(clickText('button', '/^Все операции/'))) {
+    await ev(`(() => { const q = document.querySelector(".fq"); if (q) { q.value = "кофе"; q.dispatchEvent(new Event("input", { bubbles: true })); } })()`); await wait(500);
+    await check('демо: «Все операции» с поиском', tag); await shot('все-операции-поиск', tag);
+    await ev(`(() => { const q = document.querySelector(".fq"); if (q) { q.value = ""; q.dispatchEvent(new Event("input", { bubbles: true })); } })()`);
+  } else note('демо', 'сценарий', 'нет кнопки «Все операции»', tag);
+  if (await ev(clickText('button', '/Своя категория/'))) { await wait(500); await check('демо: «Своя категория»', tag); await shot('своя-категория', tag); }
+  else note('демо', 'сценарий', 'нет кнопки «Своя категория»', tag);
+  // Печать: обе темы печатаются светлыми
+  await send('Emulation.setEmulatedMedia', { media: 'print', features: [{ name: 'prefers-color-scheme', value: theme }] }); await wait(400);
+  const bgL = await ev(`(() => { const c = document.createElement("canvas").getContext("2d"); c.fillStyle = getComputedStyle(document.body).backgroundColor; c.fillRect(0, 0, 1, 1); const d = c.getImageData(0, 0, 1, 1).data; return d[3] ? (d[0] + d[1] + d[2]) / 3 : 255; })()`);
+  if (bgL < 200) note('печать', 'печать', 'фон страницы при печати тёмный', tag);
+  await check('печать (обзор)', tag); await shot('печать', tag);
+  await send('Emulation.setEmulatedMedia', { media: '', features: [{ name: 'prefers-color-scheme', value: theme }] });
+
+  // Мастер образца, шаги 2–4 на выдуманном файле
+  await ev(`document.getElementById("anonOpen").click()`); await wait(300);
+  await ev(`document.getElementById("anonNext").click()`); await wait(300);
+  await check('мастер образца, шаг 2', tag); await tabCycle('мастер образца, шаг 2', tag);
+  await setFile('#anonFile', FAKE_CSV); await wait(1200);
+  await check('мастер образца, шаг 2 (файл прочитан)', tag); await shot('мастер-2', tag);
+  await ev(`document.getElementById("anonNext").click()`); await wait(400);
+  for (let i = 0; i < 20 && await ev('document.getElementById("anonNext").disabled'); i++) { await ev(clickText('#anonPager button', '/Дальше|Следующ|→|›|»/')); await wait(150); }
+  await check('мастер образца, шаг 3', tag); await tabCycle('мастер образца, шаг 3', tag); await shot('мастер-3', tag);
+  await ev(`document.getElementById("anonNext").click()`); await wait(400);
+  await check('мастер образца, шаг 4', tag); await tabCycle('мастер образца, шаг 4', tag); await shot('мастер-4', tag);
+  await ev(`(() => { const c = document.getElementById("anonOk"); if (c && !c.checked) c.click(); })()`); await wait(300);
+  await check('мастер образца, шаг 4 (согласие)', tag);
+  await closeDialog();
+
+  // Ошибки загрузки: битый файл, банк не поддерживается (сразу открывается мастер)
+  await setFile('#file', BROKEN_PDF); await wait(1500);
+  await check('ошибка: битый файл', tag); await shot('ошибка-битый-файл', tag);
+  await setFile('#file', FAKE_CSV); await wait(1500);
+  await check('ошибка: банк не поддерживается', tag); await shot('ошибка-банк-не-поддерживается', tag);
+  await tabCycle('ошибка: банк не поддерживается (мастер)', tag);
+  await closeDialog(); await wait(200);
+  await check('ошибка: банк не поддерживается (после окна)', tag); await shot('ошибка-после-окна', tag);
 }
 sock.close(); edge.kill(); await wait(400);
 try { rmSync(prof, { recursive: true, force: true }); } catch (e) { /* профиль занят */ }
