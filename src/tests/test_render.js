@@ -340,7 +340,7 @@ clickButton(byId["bottomTabs"], "Все операции");
 check("клик по вкладке снова: список открыт", byId["allPanel"].hidden === false);
 
 // ---- Разделы-экраны и панель разделов ----
-check("панель: шесть разделов", ["Обзор", "Разобрать", "Выводы", "Подписки", "Планирование", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)));
+check("панель: шесть разделов", ["Обзор", "Разобрать", "Выводы", "Подписки", "План", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)));
 vm.runInContext(`curSection = "overview"; render();`, ctx);
 check("панель: у «Обзора» отмечен текущий раздел", vm.runInContext("curSection", ctx) === "overview" && byId["tabbar"].children[0].className === "active");
 clickButton(byId["tabbar"], "Выводы");

@@ -583,7 +583,7 @@
       th.sortable { height: 44px; }   /* Н3: заголовки сортировки были 35 px */
     }
     /* Печать / сохранение в PDF средствами браузера: печатается открытый раздел, всегда светлая тема, без кнопок и навигации */
-    @media print {
+    @media print { #keepNote, #demoMore { display: none !important; }
       html:root:not([data-p1]):not([data-p2]) {
         color-scheme: light;
         --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#EBEFF5; --line:#C9D0DB;
@@ -696,7 +696,7 @@
     <details><summary>Что сайт запоминает?</summary>
       <p>В памяти этого браузера (localStorage) хранятся: ваши правила категорий, свои категории и значки, лимиты бюджета и введённые числа калькулятора, выбранные тема и вид, итоги трат по месяцам для сравнения с прошлыми выписками (только суммы по дням и категориям, без описаний операций и без номеров счетов), а также выбор категории для отдельных операций (он привязан к дате, времени и сумме операции). Сами выписки и операции автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора.</p></details>
     <details><summary>Как всё стереть?</summary>
-      <p>Кнопка «Забыть мои категории» в разделе «Ещё» удаляет ваши правила и выбор по операциям. Загруженные выписки убираются кнопкой «Убрать загруженные выписки» или просто закрытием вкладки. Полностью очистить сохранённое можно в настройках браузера: «Данные сайтов».</p></details>
+      <p>Кнопка «Забыть мои данные» в разделе «Ещё» удаляет ваши правила и выбор по операциям. Загруженные выписки убираются кнопкой «Убрать загруженные выписки» или просто закрытием вкладки. Полностью очистить сохранённое можно в настройках браузера: «Данные сайтов».</p></details>
     <details><summary>Что в файле разбора?</summary>
       <p>Кнопка «Сохранить в файл» создаёт файл с вашими правилами и операциями, то есть с реальными тратами. Храните его у себя и никому не отправляйте. На чужом компьютере после работы сотрите сохранённое, как описано выше.</p></details>
     <details><summary>Насколько точны итоги?</summary>
@@ -727,7 +727,7 @@
       <h3>Как это проверить?</h3>
       <p>Отключите интернет перед загрузкой выписки: всё продолжит работать. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда.</p>
       <h3>Что хранится на устройстве?</h3>
-      <p>Только ваши настройки: правила и свои категории, лимиты и числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций. Сами выписки автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора. Стереть всё можно кнопкой «Забыть мои категории» в разделе «Ещё» или в настройках браузера: «Данные сайтов».</p>
+      <p>Только ваши настройки: правила и свои категории, лимиты и числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций. Сами выписки автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или восстановить из файла разбора. Стереть всё можно кнопкой «Забыть мои данные» в разделе «Ещё» или в настройках браузера: «Данные сайтов».</p>
       <div class="modalbtns"><button id="privClose" type="button">Понятно</button> <a href="#faq" id="privFaq">Все вопросы</a></div>
     </div>
   </div>
@@ -839,7 +839,6 @@
     <p id="status" data-sec="overview more"></p>
     <div id="bankChips" class="bankchips" data-sec="overview more" aria-label="Загруженные банки"></div>
     <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
-    <div id="keepNote" class="note" data-sec="overview" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
       <span><b>Демо на выдуманных данных.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
       <button id="demoExit" type="button">✕ Выйти из демо</button>
@@ -847,12 +846,14 @@
 
 
   <div id="report" hidden>
+    <div id="demoMore" class="note" data-sec="more" hidden><p style="margin:0 0 .5rem">В демо ничего не сохраняется и не загружается. Выйдите из демо, чтобы добавить свою выписку.</p><button type="button" class="primary" id="demoMoreExit">Выйти из демо</button></div>
     <nav id="tabbar" aria-label="Разделы"></nav>
     <div id="reviewBanner" class="warn" data-sec="overview" hidden style="margin-bottom:.8rem"></div>
     <div id="check" data-sec="overview"></div>
     <div class="nav" id="nav" hidden></div>
     <h2 id="secSummary" data-sec="overview" style="margin-top:1rem">Траты по категориям</h2>
     <div id="summary" data-sec="overview"></div>
+    <div id="keepNote" class="note" data-sec="overview" hidden style="margin:.6rem 0"></div>
     <div id="bottom" data-sec="review">
       <div id="undoBar"></div>
       <div class="tabs" id="bottomTabs"></div>
@@ -861,7 +862,7 @@
         <h3 style="margin-top:0">Нужно разобрать <span id="reviewCount"></span></h3>
         <div id="reviewOther" class="muted" style="margin-bottom:.6rem"></div>
         <div id="reviewTools" style="margin-bottom:.8rem"></div>
-        <p class="muted" style="margin:.2rem 0 .4rem">Выберите категорию для группы похожих операций. Не знаете: найдите платёж в приложении банка по дате и сумме (там часто виден получатель) или нажмите «Не помню»: операция отложится, и к ней можно вернуться внизу списка.</p>
+        <p class="muted" style="margin:.2rem 0 .4rem">Выберите категорию для группы. Не знаете, кому платёж: найдите его в приложении банка по дате и сумме или нажмите «Не помню» (операция отложится).</p>
         <details class="howto"><summary>Как это работает</summary>
           <p class="muted">Похожие операции собраны в группы, крупные сверху: категория выбирается сразу для всей группы и запоминается для будущих выписок. ↻ — сумма повторялась в разные месяцы. Мелочь можно одним нажатием отправить в «Прочее», любую операцию потом можно поменять во вкладке «Все операции».</p>
         </details>
@@ -892,7 +893,7 @@
       <div id="subs"></div>
     </section>
     <section class="sect" id="planBox" data-sec="plan">
-      <h2 id="planTitle">Планирование</h2>
+      <h2 id="planTitle">План</h2>
       <p class="muted secthint">Период выбирается на экране «Обзор».<button id="planPeriod" type="button">Сменить период</button></p>
       <div id="plan"></div>
     </section>
@@ -969,7 +970,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.78, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.82</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -1228,7 +1229,8 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.81";
+    const FB_VERSION = "v4.82";
+    { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1288,6 +1290,7 @@
       setStatus("Выписки убраны. Ваш выбор категорий сохранён.");
       $("backupMsg").textContent = backupSummary();
     });
+    $("demoMoreExit").addEventListener("click", () => $("demoExit").click());
     $("demoExit").addEventListener("click", () => { leaveDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
 
     // ---------- Тема оформления: Авто (как в системе) / Светлая / Тёмная; выбор запоминается ----------
@@ -1797,7 +1800,7 @@
     function renderKeepNote() {
       const box = $("keepNote");
       if (demoMode || !txs.length || loadJSON("ba_keepnote_v1", false)) { box.hidden = true; return; }
-      const msg = h("span", {}, "Сайт не запоминает саму выписку: если закрыть страницу, загрузите её снова. Ваши категории, заметки и итоги месяцев останутся в этом браузере. Чтобы вернуть всё сразу, сохраните файл разбора. ");
+      const msg = h("span", {}, "Выписка не сохраняется: после закрытия страницы загрузите её снова. Категории и заметки остаются в браузере. ");
       const save = h("button", { type: "button", class: "primary", onclick: () => { $("exportBtn").click(); box.replaceChildren(h("span", {}, "Файл «мой-разбор-трат.json» сохранён в папку загрузок. "), ok); } }, "Сохранить файл");
       const ok = h("button", { type: "button", onclick: () => { saveJSON("ba_keepnote_v1", true); box.hidden = true; } }, "Понятно");
       box.replaceChildren(msg, save, " ", ok);
@@ -1806,6 +1809,7 @@
 
     function render() {
       $("report").hidden = false;
+      $("demoMore").hidden = !demoMode;
       $("exportBox").hidden = false;
       document.body.setAttribute("data-view", curSection);
       $("demoBar").hidden = !demoMode;
@@ -2301,7 +2305,7 @@
         const tips = st.rows.filter(r => !isUnclear(r[0])).slice(0, 5).map(([c]) => [c, Goals.suggestLimit(Goals.historyValues(store, c, ym, dIn))]).filter(x => x[1]).slice(0, 3);
         if (!tips.length) return null;
         box.append(h("h3", {}, "Цели и бюджеты"),
-          h("p", { class: "muted" }, "Лимитов на месяц пока нет. Задайте их в разделе «Планирование», и здесь появится, сколько осталось до конца месяца. Обычно за полный месяц у вас уходит:"),
+          h("p", { class: "muted" }, "Лимитов на месяц пока нет. Задайте их в разделе «План», и здесь появится, сколько осталось до конца месяца. Обычно за полный месяц у вас уходит:"),
           h("ul", {}, tips.map(([c, v]) => h("li", {}, `${c}: около ${fmt(v)} BYN`))));
         return box;
       }
@@ -2628,7 +2632,7 @@
         if (an.double.length) ul.append(icard(`${an.double.length} ${an.double.length === 1 ? "случай" : "случая"}`, "Возможное двойное списание",
           "Одна и та же сумма под одним названием в один день (от 10 BYN): " + an.double.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} BYN × ${d.count} (${fd(d.date)})`).join("; ") + ". Это может быть и две настоящие покупки: проверьте по чекам."));
         if (an.big.length) ul.append(icard(`${fmt(an.big[0].amount)} BYN`, `Необычно крупная трата · ${an.big[0].cat}`,
-          "Минимум в 4 раза больше обычного в своей категории: " + an.big.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} BYN (${fd(d.date)}, обычно около ${fmt(d.usual)} BYN)`).join("; ") + "."));
+          "Проверьте в приложении банка. Минимум в 4 раза больше обычного в своей категории: " + an.big.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} BYN (${fd(d.date)}, обычно около ${fmt(d.usual)} BYN)`).join("; ") + "."));
       }
       // Азартные игры: внесено (расходы) и выведено (поступления с этой категорией): итог за период
       if (ctx && ctx.list) {
@@ -2655,7 +2659,7 @@
     const PLAN_SKIP = [Cat.OWN, Cat.LOAN, Cat.SAVINGS, Cat.GAMBLING, "Наличные"];
     const money = n => fmt(Math.round(n * 100) / 100);
     const num = v => { const x = parseFloat(String(v).replace(",", ".")); return Number.isFinite(x) && x >= 0 ? x : null; };
-    let planOpen = [false, false, false];           // какие карточки раскрыты: накопления, регулярные, бюджет
+    let planOpen = [false, false, !Object.keys(budgets || {}).length];           // какие карточки раскрыты: накопления, регулярные, бюджет
 
     // Поле для числа: любое изменение пересчитывает весь блок, а курсор возвращается в то же поле
     function numInput(id, value, onValue, attrs) {
@@ -2715,10 +2719,13 @@
       } else box.append(h("p", { class: "muted" }, "Назвать ближайшие списания нельзя: у найденных платежей нет ровного срока или они не прошли в срок (ниже в списке)."));
       const stepName = s => s.kind === "month" ? "раз в месяц" : s.kind === "days" ? `каждые ${s.step} дн.` : "без чёткого срока";
       box.append(h("h3", {}, `Все регулярные платежи · ${rows.length}`));
-      box.append(h("ul", { class: "slist" }, rows.map(x => h("li", {},
+      const liOf = x => h("li", {},
         h("span", { class: "sname" }, x.r.name, h("span", { class: "muted" }, ` · ${x.r.cat}`)),
         h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
-        h("span", { class: "samount" }, `${money(x.r.amount)} BYN`)))));
+        h("span", { class: "samount" }, `${money(x.r.amount)} BYN`));
+      const solid = rows.filter(x => x.s.kind === "month" || x.s.kind === "days"), loose = rows.filter(x => !(x.s.kind === "month" || x.s.kind === "days"));
+      box.append(h("ul", { class: "slist" }, (solid.length ? solid : rows).map(liOf)));
+      if (solid.length && loose.length) box.append(h("details", {}, h("summary", {}, `Без ровного срока: ${loose.length} (скорее всего, не подписки)`), h("ul", { class: "slist" }, loose.map(liOf))));
       box.append(h("p", { class: "muted" }, "Это совпадение сумм, а не подтверждённые подписки: проверьте список сами."));
     }
 
@@ -2761,7 +2768,7 @@
       const blocks = [
         save,
         regularBlock(x.regular, fc, months, full, fullAll.length, head(x.regular.length ? `${money(regSum)} BYN` : "—", x.regular.length ? `Регулярные платежи в месяц · ${x.regular.length}` : "Регулярные платежи")),
-        budgetBlock(x, head(limitSum > 0 ? `${money(limitSum)} BYN` : "—", limitSum > 0 ? "Бюджет: сумма лимитов в месяц" : "Бюджет: лимитов пока нет")),
+        budgetBlock(x, head(limitSum > 0 ? `${money(limitSum)} BYN` : "—", limitSum > 0 ? "Бюджет: сумма лимитов в месяц" : "Бюджет: задайте первый лимит")),
       ];
       blocks.forEach((d, i) => {
         if (planOpen[i]) d.setAttribute("open", "");
@@ -3002,7 +3009,7 @@
       if (list.length > 3 && reviewSum > 0) {
         let acc = 0, k = 0;
         while (k < list.length && k < 10 && acc < reviewSum * 0.6) { acc += Math.abs(list[k].sum); k++; }
-        tools.append(h("p", { class: "muted", style: "margin:.2rem 0" }, h("b", {}, `Начните с первых ${k} групп: `),
+        tools.append(h("p", { class: "muted", style: "margin:.2rem 0" }, h("b", {}, k === 1 ? "Начните с первой группы: " : `Начните с первых ${k} групп: `),
           `это ${Math.round(acc / reviewSum * 100)}% неразобранной суммы.`));
       }
       // Мелочь одним нажатием в «Прочее»
@@ -3091,7 +3098,7 @@
         const sumText = `${fmt(g.sum)} BYN`;
         const head = h("div", { class: "revhead" }, h("b", {}, title), h("span", { class: "revsum" }, sumText));
         const sub = h("div", { class: "muted" }, `${items.length} ${opsWord(items.length)}` + (rhythm ? " · " + rhythm : ""),
-          recurCount ? h("span", { class: "recur", title: "Суммы повторяются: похоже на аренду, связь, подписку или коммуналку" }, "регулярный платёж") : "");
+          recurCount ? h("span", { class: "recur", title: "Суммы повторяются: похоже на аренду, связь, подписку или коммуналку" }, "повторяется") : "");
         // Ключи для памяти: последние операции с датой и суммой видны сразу
         const last = [...items].reverse().slice(0, 3).map(t => `${dm(t.date)} · ${fmt(Math.abs(t.amount))}`).join("; ");
         const keysLine = h("div", { class: "muted" }, `Последние: ${last}` + (items.length > 3 ? `; и ещё ${items.length - 3}` : ""));
@@ -3849,7 +3856,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.81", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.82", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
@@ -3933,7 +3940,7 @@
         if (id === curSection) attrs["aria-current"] = "page";
         return h("button", attrs, ...kids);
       };
-      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Разобрать"), btn("insights", "Выводы"), btn("subs", "Подписки"), btn("plan", "Планирование", "План"), btn("more", "Ещё"));
+      bar.replaceChildren(btn("overview", "Обзор"), btn("review", "Разобрать"), btn("insights", "Выводы"), btn("subs", "Подписки"), btn("plan", "План"), btn("more", "Ещё"));
     }
     $("insPeriod").addEventListener("click", () => showSection("overview"));
     $("planPeriod").addEventListener("click", () => showSection("overview"));
