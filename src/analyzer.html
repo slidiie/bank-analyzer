@@ -557,6 +557,17 @@
     #plan input[type=text], #plan input[type=number] { border-radius: var(--r-s); }
     #plan .chip, .recur, .howtag, .bankchip { border-radius: var(--r-s); }
     .steps b { border-radius: var(--r-s); }
+    /* Находки аудита v4.77 (А1–А8 в HANDOFF.md) */
+    details > summary { min-height: 36px; }   /* А1: пункты FAQ, «Подробнее» и т.п. были высотой 20–24 px */
+    select { min-height: 36px; padding: .3rem .5rem; }   /* А2 */
+    .wizx { width: 2.75rem; height: 2.75rem; }   /* А4 */
+    .chips > button { flex: 1 1 9rem; }   /* А5: кнопки выбора ровными рядами, а не «лесенкой» */
+    .warn.revcard, .warn.revcard .oprow { border-color: var(--line); }   /* А6: карточка разбора не предупреждение */
+    .trend { max-width: 40rem; }   /* А8: на ПК подписи месяцев были 25 px, столбцы во весь экран */
+    @media (max-width: 520px) { .trend text { font-size: 22px; } }   /* А8: на телефоне подписи были 9 px */
+    @media (pointer: coarse), (max-width: 768px) {
+      details > summary, #plan .chip, select { min-height: 44px; }   /* А1, А2, А3 */
+    }
     /* Печать / сохранение в PDF средствами браузера: печатается открытый раздел, всегда светлая тема, без кнопок и навигации */
     @media print {
       html:root:not([data-p1]):not([data-p2]) {
