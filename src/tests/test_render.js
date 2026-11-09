@@ -27,7 +27,7 @@ class El extends Node {
   constructor(tag) {
     super();
     this.tag = tag; this.children = []; this.attrs = {}; this.listeners = {};
-    this.className = ""; this.textContent = ""; this.hidden = false; this.style = {};
+    this.className = ""; this.textContent = ""; this.hidden = false; this.classList = { _s: new Set(), add(c) { this._s.add(c); }, remove(c) { this._s.delete(c); }, contains(c) { return this._s.has(c); }, toggle(c, on) { if (on === undefined) on = !this._s.has(c); on ? this._s.add(c) : this._s.delete(c); return on; } }; this.style = { setProperty(k, v) { this[k] = v; } };
     this.open = false; this.selected = false; this.value = "";
   }
   append(...kids) { this.children.push(...kids); }
@@ -40,6 +40,8 @@ const byId = {};
 const document = {
   getElementById: id => (byId[id] = byId[id] || new El("#" + id)),
   createElement: tag => new El(tag),
+  listeners: {},
+  addEventListener(type, fn) { (this.listeners[type] = this.listeners[type] || []).push(fn); },
   documentElement: new El("html"),
   body: Object.assign(new El("body"), { classList: { _s: new Set(), add(c) { this._s.add(c); }, remove(c) { this._s.delete(c); }, contains(c) { return this._s.has(c); } } }),
 };
@@ -176,7 +178,7 @@ vm.runInContext(`anon = { model: [[[]], [[]]], kind: "csv", page: 0, seen: new S
 check("мастер: файл прочитан, шаг 2 пускает дальше", byId["anonNext"].disabled === false);
 vm.runInContext(`anonGo(3)`, ctx);
 check("мастер: шаг 3, пока не просмотрены все страницы, дальше нельзя", byId["anonNext"].disabled === true && textOf(byId["anonNeed"]).includes("осталось: 1"));
-vm.runInContext(`anon.seen.add(1); anonNextState(); anonGo(4)`, ctx);
+vm.runInContext(`anon.seen.add(1); anonNextState(); anonGo(4); anonUpdateButtons()`, ctx);
 check("мастер: шаг 4 из 4, главная кнопка недоступна без согласия, закрывать можно", byId["anonSend"].disabled === true && byId["anonNext"].disabled === false && byId["anonNext"].textContent === "Закрыть окно" && textOf(byId["anonStepNo"]).includes("4 из 4"));
 vm.runInContext(`anonMade = "file"; anonPrepareMail()`, ctx);
 check("мастер: письмо mailto собрано, Яндекса нет", /^mailto:bankanalyzer\.help@gmail\.com\?subject=/.test(byId["anonMail"].href || "") && !byId["anonYandex"]);
@@ -196,9 +198,9 @@ vm.runInContext(`showHowList()`, ctx);
 check("тема по умолчанию следует системе", document.documentElement.attrs["data-theme"] === "auto" && byId["themeToggle"] && byId["themeToggle"].attrs["data-dark"] === "false");
 byId["themeToggle"].listeners.click[0]();
 check("один клик: включается тёмная и запоминается", document.documentElement.attrs["data-theme"] === "dark" && byId["themeToggle"].attrs["data-dark"] === "true");
-check("theme-color следует выбору", byId["themeMetaL"].attrs["content"] === "#0E0F11" && byId["themeMetaD"].attrs["content"] === "#0E0F11");
+check("theme-color следует выбору", byId["themeMetaL"].attrs["content"] === "#0E1116" && byId["themeMetaD"].attrs["content"] === "#0E1116");
 byId["themeToggle"].listeners.click[0]();
-check("второй клик возвращает светлую", document.documentElement.attrs["data-theme"] === "light" && byId["themeMetaL"].attrs["content"] === "#FAF8F4" && byId["themeMetaD"].attrs["content"] === "#FAF8F4");
+check("второй клик возвращает светлую", document.documentElement.attrs["data-theme"] === "light" && byId["themeMetaL"].attrs["content"] === "#F4F6F9" && byId["themeMetaD"].attrs["content"] === "#F4F6F9");
 check("цвет категории постоянен и из --cat-*", vm.runInContext(`catColor("Продукты") === "var(--cat-food)" && catColor("Прочее") === "var(--cat-other)" && catColor("Моя своя") === catColor("Моя своя") && /^var\\(--cat-/.test(catColor("Моя своя"))`, ctx));
 check("диаграмма: корзины и «Не разобрано» слиты в одну долю «Нужно разобрать» (пунктир), она первая и стоит справа", vm.runInContext(`(() => { const j = JSON.stringify(pieChart({ rows: [["Продукты", 100], ["Платежи через интернет-банк", 60], ["Не разобрано", 20], ["Транспорт", 10]], total: 190 })); return (j.split("data-i=").length - 1) === 3 && !j.includes("pattern") && j.includes("stroke-dasharray") && /data-i=.{1,4}0.{1,4} style=.{1,4}fill:var[(]--surface-2/.test(j); })()`, ctx));
 check("в таблице у категории цветная точка", JSON.stringify(byId["summary"]).includes("var(--cat-"));
