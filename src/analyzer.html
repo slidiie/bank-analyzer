@@ -217,6 +217,11 @@
     }
     #rulesList .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
     #rulesList .prow .pname { flex: 1 1 12rem; }
+    #condList .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
+    #condList .prow .pname { flex: 1 1 12rem; }
+    .condform { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+    .condform input, .condform select { flex: 1 1 8rem; min-height: 44px; padding: .4rem .6rem; font-size: var(--fs-m); box-sizing: border-box; }
+    .condform input#condText { flex: 1 1 100%; }
     #plan .result { font-size: 1.1rem; margin: .5rem 0; }
     .anonpage { border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem; max-height: 22rem; overflow: auto; font-size: var(--fs-s); }
     /* Мастер «образец выписки»: шторка, на телефоне во весь экран; шапка и кнопки закреплены, прокручивается только середина */
@@ -912,6 +917,20 @@
         <summary id="rulesSummary">Мои правила</summary>
         <div id="rulesList"></div>
       </details>
+      <details id="condBox" class="datablock">
+        <summary id="condSummary">Правила с условиями</summary>
+        <p class="muted">Например: «Евроопт» и сумма до 20 BYN → «Продукты». Правило сработает на новых и старых операциях, если для получателя нет вашего выбора. Первое подходящее правило в списке главнее следующих.</p>
+        <div id="condList"></div>
+        <div class="condform">
+          <input type="text" id="condText" maxlength="40" placeholder="Текст в названии (необязательно)" aria-label="Текст в названии операции">
+          <input type="text" id="condMin" inputmode="decimal" placeholder="Сумма от" aria-label="Сумма от">
+          <input type="text" id="condMax" inputmode="decimal" placeholder="Сумма до" aria-label="Сумма до">
+          <select id="condKind" aria-label="Вид операции"><option value="any">Любые</option><option value="expense">Расходы</option><option value="income">Поступления</option></select>
+          <select id="condCat" aria-label="Категория"></select>
+          <button id="condAdd" type="button" class="primary">Добавить правило</button>
+        </div>
+        <p class="muted" id="condMsg"></p>
+      </details>
       <details id="backup" class="datablock fallback">
         <summary>Файл не скачивается или не открывается?</summary>
         <p class="muted">Так бывает во встроенных браузерах мессенджеров и в боковых панелях. Покажите разбор текстом, сохраните его в заметках, а потом вставьте сюда и нажмите «Загрузить из текста».</p>
@@ -970,7 +989,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.83</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: <span id="verStamp">v4.84</span>, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -993,6 +1012,7 @@
   <script src="history.js"></script>
   <script src="goals.js"></script>
   <script src="filters.js"></script>
+  <script src="condrules.js"></script>
   <script src="feedback.js"></script>
   <script src="hints.js"></script>
   <script src="pwa.js"></script>
@@ -1077,6 +1097,7 @@
     let customCats = loadJSON("ba_cats_v1", []).filter(c => typeof c === "string" && c);   // добавленные пользователем категории
     let txNotes = loadJSON("ba_notes_v1", {});     // заметки к операциям: id операции -> текст до 200 знаков, «#тег» внутри работает как метка
     const noteOf = tx => txNotes[txId(tx)] || "";
+    let condRules = CondRules.cleanList(loadJSON("ba_condrules_v1", []));   // правила с условиями: текст + сумма -> категория
     let txRules = loadJSON("ba_txrules_v1", {});   // выбор для одной конкретной операции
     let customIcons = loadJSON("ba_icons_v1", {}); // значки своих категорий
     let acctNames = loadJSON("ba_acctnames_v1", {}); // подписи счетов получателей: «последние 4 цифры-хэш» -> название (только в браузере)
@@ -1175,10 +1196,10 @@
 
     function enterDemo() {
       const wasDemo = demoMode;
-      if (!demoMode) stash = { txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
+      if (!demoMode) stash = { condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
       demoMode = true;
       document.body.classList.add("demo"); $("demoBtn").textContent = "Показать другой пример";
-      userRules = {}; txRules = {}; txNotes = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
+      userRules = {}; txRules = {}; condRules = []; txNotes = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
       ownUndo.length = 0;
       const d = Demo.make(Math.floor(Math.random() * 4294967296), new Date());
       txs = d.txs; header = d.header;
@@ -1196,7 +1217,7 @@
       if (!demoMode) return;
       demoMode = false;
       document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо";
-      ({ txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
+      ({ condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
       stash = null;
       ownUndo.length = 0;
       openKeys.clear();
@@ -1229,7 +1250,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.83";
+    const FB_VERSION = "v4.84";
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
@@ -1498,11 +1519,12 @@
       if (txRules[txId(tx)]) return "выбрано вами";
       if (tx.pair) return "пришло и сразу ушло";
       if (userRules[Cat.merchantKey(tx)]) return "ваше правило";
+      if (CondRules.firstMatch(condRules, tx)) return "ваше правило с условием";
       const r = Cat.resolve(tx);
       if (r[0]) return r[1];
       return Cat.bucket(tx) ? "не определено" : "";
     }
-    const categoryOf = tx => txRules[txId(tx)] || (tx.pair ? Cat.OWN : null) || userRules[Cat.merchantKey(tx)] || Cat.categorize(tx);
+    const categoryOf = tx => txRules[txId(tx)] || (tx.pair ? Cat.OWN : null) || userRules[Cat.merchantKey(tx)] || ((CondRules.firstMatch(condRules, tx) || {}).c) || Cat.categorize(tx);
 
     // Регулярные платежи: одна и та же сумма в разные месяцы (аренда, связь, подписки, коммуналка).
     // Суммы меньше 10 BYN не учитываем: мелкие одинаковые суммы встречаются слишком часто.
@@ -1770,7 +1792,39 @@
       return h("div", { class: "labeled" }, h("div", { class: "muted" }, "Хотите запомнить, чей это счёт? Подпишите его (по желанию, видно только вам):"),
         h("div", { class: "labelrow" }, input, h("button", { type: "button", onclick: save }, "Сохранить название")));
     }
+    function saveCond() { if (!demoMode) saveJSON("ba_condrules_v1", condRules); }
+    function renderCond() {
+      const box = $("condList"), sel = $("condCat");
+      box.replaceChildren();
+      $("condSummary").textContent = "Правила с условиями" + (condRules.length ? `: ${condRules.length}` : "");
+      const keep = sel.value;
+      sel.replaceChildren(...allCategories().filter(c => c !== Cat.OWN && !isUnclear(c)).map(c => h("option", { value: c }, c)));
+      if (keep && allCategories().includes(keep)) sel.value = keep;
+      condRules.forEach((r, i) => {
+        const n = txs.filter(t => !txRules[txId(t)] && !t.pair && !userRules[Cat.merchantKey(t)] && CondRules.firstMatch(condRules, t) === r).length;
+        box.append(h("div", { class: "prow" },
+          h("span", { class: "pname" }, CondRules.describe(r)),
+          h("span", {}, "→ " + r.c),
+          h("span", { class: "muted" }, txs.length ? `${n} ${opsWord(n)}` : ""),
+          h("button", { type: "button", "aria-label": "Выше", disabled: i === 0, onclick: () => { condRules.splice(i - 1, 0, condRules.splice(i, 1)[0]); saveCond(); afterCond(); } }, "↑"),
+          h("button", { type: "button", onclick: () => { condRules.splice(i, 1); saveCond(); afterCond(); } }, "Удалить")));
+      });
+    }
+    function afterCond() { if (txs.length) render(); else renderCond(); }
+    function addCondRule() {
+      const r = CondRules.clean({ t: $("condText").value, min: $("condMin").value, max: $("condMax").value, kind: $("condKind").value, c: $("condCat").value });
+      const msg = $("condMsg");
+      if (!r) { msg.textContent = "Укажите текст или границы суммы (от не больше до) и категорию."; return; }
+      if (condRules.length >= CondRules.MAX_RULES) { msg.textContent = `Правил может быть не больше ${CondRules.MAX_RULES}.`; return; }
+      condRules.push(r); saveCond();
+      ["condText", "condMin", "condMax"].forEach(id => { $(id).value = ""; });
+      const hit = txs.filter(t => CondRules.firstMatch(condRules, t) === r).length;
+      msg.textContent = txs.length ? `Добавлено. Подходит операций: ${hit}.` : "Добавлено.";
+      afterCond();
+    }
+    $("condAdd").addEventListener("click", addCondRule);
     function renderRules() {
+      renderCond();
       const box = $("rulesList");
       box.replaceChildren();
       const keys = Object.keys(userRules);
@@ -3561,6 +3615,7 @@
       data = Backup.sanitize(data);                 // берём только ожидаемые поля ожидаемых типов
       Object.assign(userRules, data.rules || {});
       Object.assign(txRules, data.txRules || {});
+      if ((data.condRules || []).length) { condRules = CondRules.cleanList(condRules.concat(data.condRules.filter(n => !condRules.some(o => JSON.stringify(o) === JSON.stringify(n))))); saveCond(); }
       Object.assign(txNotes, data.notes || {}); saveJSON("ba_notes_v1", txNotes);
       Object.assign(customIcons, data.icons || {});
       Object.assign(acctNames, data.acctNames || {}); saveJSON("ba_acctnames_v1", acctNames);
@@ -3585,7 +3640,7 @@
       }
     }
     const backupData = () => ({ app: "bank-analyzer", version: 3, saved: new Date().toISOString(),
-      rules: userRules, txRules: txRules, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
+      rules: userRules, txRules: txRules, condRules: condRules, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
     $("exportBtn").addEventListener("click", () => {
       const data = backupData();
       const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
@@ -3713,7 +3768,7 @@
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeReset(); });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
     $("resetYes").addEventListener("click", () => {
-      userRules = {}; customCats = []; txRules = {}; txNotes = {}; saveJSON("ba_notes_v1", txNotes); customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
+      userRules = {}; customCats = []; txRules = {}; condRules = []; saveJSON("ba_condrules_v1", condRules); txNotes = {}; saveJSON("ba_notes_v1", txNotes); customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
       ownUndo.length = 0; saveJSON("ba_acctnames_v1", acctNames);
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
@@ -3856,7 +3911,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.83", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.84", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
