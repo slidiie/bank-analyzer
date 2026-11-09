@@ -16,6 +16,7 @@ const Planner = require("../planner.js");
 const Backup = require("../backup.js");
 const History = require("../history.js");
 const Filters = require("../filters.js");
+const CondRules = require("../condrules.js");
 const Feedback = require("../feedback.js");
 const Hints = require("../hints.js");
 const Merchants = require("../merchants.js");
@@ -65,7 +66,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, Feedback, Hints, Merchants,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Feedback, Hints, Merchants,
 });
 vm.runInContext(script, ctx);
 
@@ -654,5 +655,9 @@ check("значок «constructor» из файла разбора и катег
     vm.runInContext(`Array.isArray(customCats) && customCats.length === 0 && Object.keys(userRules).length === 0 && !Array.isArray(txRules)`, ctx2));
 }
 
+// Правила с условиями
+check("правило с условием: даёт категорию операции без других правил", vm.runInContext(`condRules = CondRules.cleanList([{ t: "зюзя маркет", max: 20, c: "Продукты" }]); categoryOf({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 }) === "Продукты" && categoryOf({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -50 }) !== "Продукты"`, ctx));
+check("правило с условием: выбор для получателя главнее", vm.runInContext(`userRules[Cat.merchantKey({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 })] = "Развлечения"; const r = categoryOf({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 }) === "Развлечения"; delete userRules[Cat.merchantKey({ details: "ЗЮЗЯ МАРКЕТ Минск", amount: -15 })]; r`, ctx));
+vm.runInContext(`condRules = [];`, ctx);
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

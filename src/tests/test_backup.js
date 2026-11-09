@@ -37,4 +37,6 @@ check("ФИО скрываются, магазины нет",
 check("заметки: берутся только строки, опасные ключи и не строки отбрасываются, длина ограничена", (() => { const n = B.sanitize({ app: "bank-analyzer", notes: JSON.parse('{"a":"ok","__proto__":"x","b":5,"c":"' + "я".repeat(201) + '"}') }).notes; return n.a === "ok" && Object.keys(n).length === 1; })());
 check("заметки: нет поля — пустой словарь", Object.keys(B.sanitize({ app: "bank-analyzer" }).notes).length === 0);
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
+check("правила с условиями: оставляются корректные, мусор отбрасывается", (() => { const o = B.sanitize({ app: "bank-analyzer", condRules: [{ t: "Евроопт", min: 1, c: "Продукты" }, { t: "", c: "x" }, 5, { t: "a", min: 9, max: 1, c: "К" }] }); return o.condRules.length === 1 && o.condRules[0].t === "евроопт"; })());
+check("без правил с условиями в файле получается пустой список", B.sanitize({ app: "bank-analyzer" }).condRules.length === 0);
 process.exit(failed ? 1 : 0);
