@@ -34,5 +34,7 @@ check("ФИО скрываются, магазины нет",
   check("pending сохраняется только как true", out && out.txs[0].pending === true && out.txs[1].pending === undefined);
 }
 
+check("заметки: берутся только строки, опасные ключи и не строки отбрасываются, длина ограничена", (() => { const n = B.sanitize({ app: "bank-analyzer", notes: JSON.parse('{"a":"ok","__proto__":"x","b":5,"c":"' + "я".repeat(201) + '"}') }).notes; return n.a === "ok" && Object.keys(n).length === 1; })());
+check("заметки: нет поля — пустой словарь", Object.keys(B.sanitize({ app: "bank-analyzer" }).notes).length === 0);
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

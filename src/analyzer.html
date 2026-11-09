@@ -202,6 +202,10 @@
     #plan .prow .pbar { flex: 2 1 10rem; }
     #plan .pnote { flex: 1 1 100%; font-size: var(--fs-s); }
     td .why { font-size: var(--fs-xs); margin-top: .15rem; }
+    .note { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .25rem; }
+    @media (min-width: 768px) { .note .qchip { min-height: 32px; padding: 0 .6rem; font-size: var(--fs-xs); } }
+    .note .tag { color: var(--accent); }
+    .notein { flex: 1 1 14rem; min-width: 0; }
     #plan .lvl-warn { color: var(--lvl-warn); } #plan .lvl-over { color: var(--lvl-over); }
     @media (max-width: 520px) {
       #plan details { padding: .5rem .8rem; }
@@ -1069,6 +1073,8 @@
     }
     let userRules = loadJSON("ba_rules_v1", {});   // ключ магазина -> категория
     let customCats = loadJSON("ba_cats_v1", []).filter(c => typeof c === "string" && c);   // добавленные пользователем категории
+    let txNotes = loadJSON("ba_notes_v1", {});     // заметки к операциям: id операции -> текст до 200 знаков, «#тег» внутри работает как метка
+    const noteOf = tx => txNotes[txId(tx)] || "";
     let txRules = loadJSON("ba_txrules_v1", {});   // выбор для одной конкретной операции
     let customIcons = loadJSON("ba_icons_v1", {}); // значки своих категорий
     let acctNames = loadJSON("ba_acctnames_v1", {}); // подписи счетов получателей: «последние 4 цифры-хэш» -> название (только в браузере)
@@ -1167,10 +1173,10 @@
 
     function enterDemo() {
       const wasDemo = demoMode;
-      if (!demoMode) stash = { userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
+      if (!demoMode) stash = { txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
       demoMode = true;
       document.body.classList.add("demo"); $("demoBtn").textContent = "Показать другой пример";
-      userRules = {}; txRules = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
+      userRules = {}; txRules = {}; txNotes = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
       ownUndo.length = 0;
       const d = Demo.make(Math.floor(Math.random() * 4294967296), new Date());
       txs = d.txs; header = d.header;
@@ -1188,7 +1194,7 @@
       if (!demoMode) return;
       demoMode = false;
       document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо";
-      ({ userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
+      ({ txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
       stash = null;
       ownUndo.length = 0;
       openKeys.clear();
@@ -1221,7 +1227,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.79";
+    const FB_VERSION = "v4.80";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -3341,12 +3347,45 @@
       const panel = h("div", { class: "ffilters" }, q, h("div", { class: "frow" }, ...kindBtns), h("div", { class: "frow" }, minIn, maxIn, resetBtn));
       const arrow = (a, d) => (allSort === d ? " ▼" : allSort === a ? " ▲" : "");
 
+      // Заметка к операции: «＋ Заметка» или текст с метками #тег (нажатие на метку ищет по ней); хранится в браузере, входит в файл разбора и CSV
+      function noteCtl(tx) {
+        const id = txId(tx);
+        const box = h("div", { class: "note" });
+        const label = `операции ${tx.date || ""}, ${fmt(tx.amount)} BYN`;
+        const show = () => {
+          box.replaceChildren();
+          const text = txNotes[id];
+          if (!text) { box.append(h("button", { type: "button", class: "qchip ghost", onclick: edit, "aria-label": "Добавить заметку к " + label }, "＋ Заметка")); return; }
+          box.append(h("span", { class: "notetext" }, ...text.split(/(#[\p{L}\d_-]+)/u).map(p => /^#/.test(p)
+            ? h("button", { type: "button", class: "qchip tag", title: "Найти все операции с этой меткой", onclick: () => { allFilt.query = p; q.value = p; renderTable(); } }, p) : p)),
+            h("button", { type: "button", class: "qchip ghost", onclick: edit, "aria-label": "Изменить заметку к " + label }, "✎"));
+        };
+        function edit() {
+          box.replaceChildren();
+          const inp = h("input", { type: "text", class: "notein", maxlength: "200", autocomplete: "off", placeholder: "заметка, метки через #: #подарок", "aria-label": "Заметка к " + label });
+          inp.value = txNotes[id] || "";
+          let done = false;
+          const save = () => {
+            if (done) return; done = true;
+            const v = inp.value.trim();
+            if (v) txNotes[id] = v; else delete txNotes[id];
+            if (!demoMode) saveJSON("ba_notes_v1", txNotes);
+            show();
+          };
+          inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } else if (e.key === "Escape") { done = true; show(); } });
+          inp.addEventListener("blur", save);
+          box.append(inp);
+          inp.focus({ preventScroll: true });
+        }
+        show();
+        return box;
+      }
       function renderTable() {
         // Поиск и фильтры (текст, расходы/поступления, сумма, категория) оставляют в списке только подходящие операции
         const sorted = [...byMonth].sort(SORTS[allSort]);
         const filt = { ...allFilt, cat: allCat };
         const filtered = Filters.isActive(filt);
-        const list = Filters.apply(sorted, filt, tx => displayCat(tx) || UNSORTED);
+        const list = Filters.apply(sorted, filt, tx => displayCat(tx) || UNSORTED, noteOf);
         resetBtn.hidden = !filtered;
         dateTh.textContent = "Дата" + arrow("date-asc", "date-desc");
         sumTh.textContent = "Сумма" + arrow("sum-asc", "sum-desc");
@@ -3374,7 +3413,7 @@
               ? "Пришло и сразу ушло ровно столько же. Не считается ни доходом, ни расходом. Если это не так, выберите другую категорию."
               : "Перевод между своими счетами: не считается ни доходом, ни расходом." }, "⇄ между своими") : "",
             tx.pending ? h("span", { class: "badge", title: "Банк деньги заблокировал, но ещё не провёл операцию. В следующей выписке она появится уже проведённой." }, "⏳ не проведена") : "",
-            tx.details))));
+            tx.details, noteCtl(tx)))));
         if (!list.length && filtered) tbody.append(h("tr", {}, h("td", { colspan: "4" }, "Ничего не найдено. ", h("button", { type: "button", onclick: resetFilters }, "Сбросить фильтры"))));
         if (more > 0) {
           tbody.append(h("tr", {}, h("td", { colspan: "4" },
@@ -3502,6 +3541,7 @@
       data = Backup.sanitize(data);                 // берём только ожидаемые поля ожидаемых типов
       Object.assign(userRules, data.rules || {});
       Object.assign(txRules, data.txRules || {});
+      Object.assign(txNotes, data.notes || {}); saveJSON("ba_notes_v1", txNotes);
       Object.assign(customIcons, data.icons || {});
       Object.assign(acctNames, data.acctNames || {}); saveJSON("ba_acctnames_v1", acctNames);
       Object.assign(budgets, data.budgets || {}); Object.assign(calc, data.calc || {}); savePlan();
@@ -3525,7 +3565,7 @@
       }
     }
     const backupData = () => ({ app: "bank-analyzer", version: 3, saved: new Date().toISOString(),
-      rules: userRules, txRules: txRules, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
+      rules: userRules, txRules: txRules, notes: txNotes, cats: customCats, icons: customIcons, acctNames: acctNames, budgets: budgets, calc: calc, txs: txs, header: header, statements: statements });
     $("exportBtn").addEventListener("click", () => {
       const data = backupData();
       const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
@@ -3619,7 +3659,7 @@
 
     // ---------- Выгрузка в таблицу ----------
     const exportOpts = () => ({
-      categoryOf: t => displayCat(t), ownCat: Cat.OWN, loanCat: Cat.LOAN, savingsCat: Cat.SAVINGS,
+      categoryOf: t => displayCat(t), noteOf, ownCat: Cat.OWN, loanCat: Cat.LOAN, savingsCat: Cat.SAVINGS,
       bankNames: Object.assign({ demo: "Демо" }, ...Banks.BANKS.map(b => ({ [b.id]: b.name }))),
     });
     function downloadCsv(name, text) {
@@ -3653,7 +3693,7 @@
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeReset(); });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
     $("resetYes").addEventListener("click", () => {
-      userRules = {}; customCats = []; txRules = {}; customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
+      userRules = {}; customCats = []; txRules = {}; txNotes = {}; saveJSON("ba_notes_v1", txNotes); customIcons = {}; acctNames = {}; budgets = {}; calc = {}; historyStore = {}; saveJSON("ba_history_v1", historyStore);
       ownUndo.length = 0; saveJSON("ba_acctnames_v1", acctNames);
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
@@ -3796,7 +3836,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.79", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.80", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }

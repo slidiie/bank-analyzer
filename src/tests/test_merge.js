@@ -88,6 +88,8 @@ check("в описании кавычки и точка с запятой экр
 check("описание-формула обезврежено", ops.some(l => l.endsWith("'=HYPERLINK(\"\"x\"\")\"") || l.includes("'=HYPERLINK")));
 check("типы: между своими, долг, расход, неразобранное", ops.some(l => l.includes("между своими (не в счёт)")) && ops.some(l => l.includes("дал в долг (не в счёт)")) && ops.some(l => l.includes("Не разобрано;расход")));
 
+const withNote = E.operationsCsv(data, { ...opts, noteOf: tx => (tx.amount === 1000 ? "премия #работа" : "") }).split("\r\n");
+check("CSV: колонка «Заметка» только если передан noteOf", withNote[0].endsWith(";Описание;Заметка") && withNote.some(l => l.endsWith(";премия #работа")) && !ops[0].includes("Заметка"));
 const sum = E.summaryCsv(data, opts).split("\r\n");
 check("итоги: месяцы колонками на русском", sum[0] === "Категория;Январь 2026;Февраль 2026;Итого");
 check("итоги: продукты 20 и 50,5", sum.includes("Продукты;20,00;50,50;70,50"));
