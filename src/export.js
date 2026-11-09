@@ -29,11 +29,11 @@
   // Все операции: по одной строке на операцию, от старых к новым
   function operationsCsv(txs, opts) {
     const names = opts.bankNames || {};
-    const lines = [row(["Дата", "Время", "Банк", "Сумма", "Валюта", "Категория", "Тип", "Описание"])];
+    const lines = [row(["Дата", "Время", "Банк", "Сумма", "Валюта", "Категория", "Тип", "Описание"].concat(opts.noteOf ? ["Заметка"] : []))];
     [...txs].sort((a, b) => ((a.date || "") + (a.time || "") < (b.date || "") + (b.time || "") ? -1 : 1)).forEach(tx => {
       const cat = opts.categoryOf(tx) || "Не разобрано";
-      lines.push(row([tx.date, tx.time || "", names[tx.bank] || tx.bank || "", num(tx.amount), tx.currency || "BYN", cat, kind(tx, cat, opts), tx.details || ""],
-        [false, false, true, false, false, true, false, true]));
+      lines.push(row([tx.date, tx.time || "", names[tx.bank] || tx.bank || "", num(tx.amount), tx.currency || "BYN", cat, kind(tx, cat, opts), tx.details || ""].concat(opts.noteOf ? [opts.noteOf(tx) || ""] : []),
+        [false, false, true, false, false, true, false, true, true]));
     });
     return lines.join("\r\n") + "\r\n";
   }

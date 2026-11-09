@@ -18,15 +18,15 @@
     return isFinite(n) ? Math.abs(n) : null;
   }
 
-  // Строка, в которой ищем: описание, категория, дата (ISO и привычная) и сумма (с точкой и с запятой)
-  function haystack(tx, catOf) {
+  // Строка, в которой ищем: описание, категория, заметка (noteOf, необязательно), дата (ISO и привычная) и сумма (с точкой и с запятой)
+  function haystack(tx, catOf, noteOf) {
     const abs = Math.abs(tx.amount || 0);
     const two = abs.toFixed(2);
     const forms = [two, two.replace(".", ","), String(abs), String(abs).replace(".", ",")];
     const d = tx.date || "";
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
     const ru = m ? `${m[3]}.${m[2]}.${m[1]}` : "";
-    return norm([tx.details, catOf ? catOf(tx) : "", d, ru, ...forms].join(" "));
+    return norm([tx.details, catOf ? catOf(tx) : "", noteOf ? noteOf(tx) : "", d, ru, ...forms].join(" "));
   }
 
   function isActive(f) {
@@ -34,7 +34,7 @@
   }
 
   // catOf(tx) -> название категории, как её видит человек (для поиска и для фильтра по категории)
-  function matches(tx, f, catOf) {
+  function matches(tx, f, catOf, noteOf) {
     if (!f) return true;
     if (f.kind === "expense" && !(tx.amount < 0)) return false;
     if (f.kind === "income" && !(tx.amount > 0)) return false;
@@ -44,15 +44,18 @@
     if (f.cat && f.cat !== "all" && (catOf ? catOf(tx) : "") !== f.cat) return false;
     const q = norm(f.query);
     if (q) {
-      const hay = haystack(tx, catOf);
+      const hay = haystack(tx, catOf, noteOf);
       for (const w of q.split(" ")) if (!hay.includes(w)) return false;
     }
     return true;
   }
 
-  const apply = (txs, f, catOf) => (isActive(f) ? txs.filter(t => matches(t, f, catOf)) : txs.slice());
+  // Теги из заметки: слова с «#» (буквы, цифры, «_», «-»), без повторов, в нижнем регистре
+  const tagsOf = note => [...new Set((String(note || "").match(/#[\p{L}\d_-]+/gu) || []).map(t => t.toLowerCase()))];
 
-  const api = { empty, norm, parseAmount, haystack, isActive, matches, apply };
+  const apply = (txs, f, catOf, noteOf) => (isActive(f) ? txs.filter(t => matches(t, f, catOf, noteOf)) : txs.slice());
+
+  const api = { tagsOf, empty, norm, parseAmount, haystack, isActive, matches, apply };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Filters = api;
 })(typeof self !== "undefined" ? self : this);

@@ -82,6 +82,7 @@
       app: "bank-analyzer",
       rules: cleanStrMap(data.rules, 80),
       txRules: cleanStrMap(data.txRules, 80),
+      notes: cleanStrMap(data.notes, 200),
       icons: cleanStrMap(data.icons, 30),
       acctNames: cleanStrMap(data.acctNames, 40),
       budgets: cleanBudgets(data.budgets),

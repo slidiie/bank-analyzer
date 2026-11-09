@@ -34,4 +34,9 @@ check("нет совпадений: пусто", ids({ query: "несущест�
 check("parseAmount: пробелы, запятая, знак", F.parseAmount("1 234,5") === 1234.5 && F.parseAmount("-12") === 12 && F.parseAmount("") === null && F.parseAmount("1,2,3") === null && F.parseAmount(null) === null);
 check("пробелы в запросе не мешают", ids({ query: "   евроопт   " }) === "0");
 check("операция без описания и даты не ломает поиск", F.apply([{ amount: -5 }], { ...F.empty(), query: "5" }, null).length === 1);
+// --- заметки и метки ---
+const nt = { date: "2026-10-01", amount: -10, details: "МАГАЗИН" };
+check("заметки: поиск находит текст заметки и метку", F.apply([nt], { ...F.empty(), query: "#подарок" }, () => "Прочее", () => "Маме #Подарок").length === 1 && F.apply([nt], { ...F.empty(), query: "#подарок" }, () => "Прочее").length === 0);
+check("заметки: метки без повторов, в нижнем регистре, русские и с цифрами", JSON.stringify(F.tagsOf("Маме #Подарок и #подарок, #отпуск-2026 #a_b")) === JSON.stringify(["#подарок", "#отпуск-2026", "#a_b"]));
+check("заметки: пусто — меток нет", F.tagsOf("").length === 0 && F.tagsOf(null).length === 0);
 process.exit(failed ? 1 : 0);
