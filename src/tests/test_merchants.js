@@ -90,6 +90,7 @@ eq(M.clean("SHOP N ZELENIY SVE MINSK BY ОПЛАТА ТОВАРОВ И УСЛУ�
 eq(M.clean("GOOGLE HUSTLE CASTLE MOUNTAIN VIEW US ОПЛАТА ТОВАРОВ И УСЛУГ"), "Google Hustle Castle", "очистка: хвост «Mountain View US»");
 eq(M.clean("I SHOP WWW SOMEWHERE MINSKIY R N BY"), "Somewhere", "очистка: www и «r n»");
 eq(M.clean("СПИСАНИЕ ПО ОПЕРАЦИИ ПЦ ПОКУПКА"), null, "кириллицу не трогаем");
+eq(M.clean("Покупка · Stradivarius Minsk"), "Stradivarius", "тип операции «Покупка» (Белинвестбанк) не входит в название");
 eq(M.clean("RETAIL BLR MINSK BY"), null, "одни служебные слова: нет названия");
 eq(M.clean(""), null, "пустое");
 eq(M.clean(null), null, "null");
