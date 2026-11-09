@@ -89,7 +89,7 @@
 
   const SBER = {
     id: "sber",
-    name: "БПС-Сбербанк (Сбер Банк)",
+    name: "Сбер Банк",
     detect: pages => SB.detect(pages),
     parse(pages) {
       const res = SB.parse(pages);

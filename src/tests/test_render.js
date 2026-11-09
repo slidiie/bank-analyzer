@@ -99,8 +99,8 @@ vm.runInContext(`
 // По умолчанию открыта вкладка «За весь период»: видны общие итоги и сравнение месяцев
 let s = summaryText();
 check("есть вкладки: весь период и три месяца",
-  ["За весь период", "Сентябрь 2026", "Октябрь 2026", "Ноябрь 2026"].every(t => s.includes(t)));
-check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноябрь 2026 *"));
+  ["За весь период", "Сен", "Окт", "Ноя"].every(t => s.includes(t)) && !s.includes("Октябрь 2026"));
+check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноя *"));
 check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170.00"));
 check("на вкладке «весь период» нет отдельного «Сравнения месяцев» (его заменяет «Динамика трат»)", !s.includes("Сравнение месяцев"));
 check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250.00"));
@@ -112,17 +112,17 @@ check("после «Дал в долг» итого за период 670", hasT
 check("строка «дал в долг: 500.00»", s.includes("дал в долг: 500.00"));
 
 // Переключаем вкладки
-check("нажатие на вкладку «Сентябрь»", clickButton(byId["summary"], "Сентябрь 2026"));
+check("нажатие на вкладку «Сентябрь»", clickButton(byId["summary"], "Сен"));
 s = summaryText();
 check("сентябрь: итого 250", hasTotal(s, "250.00"));
 check("сентябрь: нет сравнения месяцев", !s.includes("Сравнение месяцев"));
 check("выводы сменились на сентябрь", textOf(byId["insightsTitle"]).includes("Сентябрь 2026"));
 
-check("нажатие на вкладку «Октябрь»", clickButton(byId["summary"], "Октябрь 2026"));
+check("нажатие на вкладку «Октябрь»", clickButton(byId["summary"], "Окт"));
 s = summaryText();
 check("октябрь без долга: итого 400", hasTotal(s, "400.00"));
 
-check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноябрь 2026"));
+check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноя *"));
 s = summaryText();
 check("ноябрь: пометка о неполном месяце (с 1 по 2 число)", s.includes("неполный месяц: данные с 1 по 2 число"));
 check("ноябрь: итого 20", hasTotal(s, "20.00"));
@@ -143,7 +143,7 @@ vm.runInContext(`activeTab = "all"; renderAll();`, ctx);
 check("на вкладке «За весь период» заголовок показывает общее число операций", textOf(byId["allSummary"]).includes("(7)"));
 
 // Клик по вкладке месяца сразу меняет и таблицу внизу
-clickButton(byId["summary"], "Сентябрь");
+clickButton(byId["summary"], "Сен");
 check("клик по вкладке «Сентябрь»: внизу только сентябрь", textOf(byId["all"]).includes("CAFE B") && !textOf(byId["all"]).includes("Погашение комиссии"));
 clickButton(byId["summary"], "За весь период");
 check("клик по «За весь период»: внизу снова все месяцы", textOf(byId["all"]).includes("CAFE B") && textOf(byId["all"]).includes("Погашение комиссии"));
@@ -314,15 +314,15 @@ vm.runInContext(`
   activeTab = "all"; allCat = "all"; render();
 `, ctx);
 check("разбор: на вкладке «За весь период» видны оба месяца", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
-clickButton(byId["summary"], "Сентябрь");
+clickButton(byId["summary"], "Сен");
 check("разбор: на вкладке «Сентябрь» только сентябрьские", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && !textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("разбор: есть ссылка на неразобранные в октябре", textOf(byId["reviewOther"]).includes("Октябрь 2026: 1"));
 check("разбор: в заголовке указан месяц", textOf(byId["reviewCount"]).includes("Сентябрь"));
 check("разбор: в навигации счётчик по выбранному месяцу", textOf(byId["nav"]).includes("Нужно разобрать (1)"));
 clickButton(byId["reviewOther"], "Октябрь");
 check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
-check("плашка «Ждут разбора» первая в отчёте, вкладки внизу", html.indexOf('id="reviewBanner"') < html.indexOf('id="check"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
-check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Можно уточнить") && textOf(byId["reviewBanner"]).includes("Уточнить"));
+check("плашка разбора стоит под итогами, вкладки внизу", html.indexOf('id="summary"') < html.indexOf('id="reviewBanner"') && html.indexOf('id="reviewBanner"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
+check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Можно уточнить") && textOf(byId["reviewBanner"]).length < 200 && textOf(byId["reviewBanner"]).includes("Уточнить"));
 check("есть нижние вкладки «Все операции» и «Нужно разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
 vm.runInContext(`bottomTab = null; render();`, ctx);
 check("если есть неразобранное, открыта вкладка «Нужно разобрать»", byId["reviewSection"].hidden === false && byId["allPanel"].hidden === true);
