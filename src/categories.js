@@ -16,7 +16,10 @@
   // Это не настоящие категории: такие операции по-прежнему ждут разбора, но в итогах показываются понятной строкой.
   const BUCKET_IB = "Платежи через интернет-банк";
   const BUCKET_ERIP = "Платежи ЕРИП";
-  const BUCKETS = [BUCKET_IB, BUCKET_ERIP];
+  // Переводы на карту или счёт и P2P: не покупка, а перемещение денег (себе или другому человеку).
+  // Отдельная строка, чтобы в «Обзоре» не было одной большой непонятной доли «интернет-банк».
+  const BUCKET_TR = "Переводы на карты и счета";
+  const BUCKETS = [BUCKET_IB, BUCKET_ERIP, BUCKET_TR];
 
   const DEFAULT_CATEGORIES = [
     "Продукты",
@@ -67,6 +70,7 @@
     [INCOME]: "arrow-in",
     [BUCKET_IB]: "arrow-out",
     [BUCKET_ERIP]: "receipt",
+    [BUCKET_TR]: "swap",
   };
 
   // Названия-двойники: если пользователь завёл свою категорию, совпадающую по смыслу со стандартной,
@@ -206,14 +210,18 @@
     "снятие наличных": "Наличные",
   };
 
+  // МТБанк: «Пополнение карточки / банковской платежной карточки / счета» это перевод на карту или счёт (свой или чужой)
+  const TRANSFER_OP_RE = /^пополнение (карточки|банковской платежной карточки|счета|счёта)/i;
   // Корзина для операции, которую не удалось отнести к категории (иначе null)
   function bucket(tx) {
     if (!(tx.amount < 0)) return null;
     if (isErip(tx)) return BUCKET_ERIP;
-    if (recipient(tx)) return BUCKET_IB;
-    // Приорбанк: «MOBILE BANK» и P2P это платежи и переводы через интернет-банк, получателя в выписке нет
-    // Сбер: «SOU Sber Bank» и «P2P» это платежи и переводы из приложения, получателя в выписке нет
-    if (/mobile ?bank|\bp2p|\bsou sber bank/i.test(tx.details || "")) return BUCKET_IB;
+    const rc = recipient(tx);
+    if (rc) return TRANSFER_OP_RE.test(rc.op) ? BUCKET_TR : BUCKET_IB;
+    // P2P (Приорбанк, Сбер, Беларусбанк, ВТБ): перевод с карты на карту, получателя в выписке нет
+    if (/\bp2p|р2р/i.test(tx.details || "")) return BUCKET_TR;
+    // Приорбанк «MOBILE BANK», Сбер «SOU Sber Bank»: платежи из приложения, получателя в выписке нет
+    if (/mobile ?bank|\bsou sber bank/i.test(tx.details || "")) return BUCKET_IB;
     return null;
   }
 

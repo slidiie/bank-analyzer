@@ -121,7 +121,8 @@ check("не в счёт и доходы", sum.includes("Не в счёт: меж
   check("приход и обычная покупка получателя не имеют", Cat.recipient({ amount: 10, details: a1.details }) === null && Cat.recipient({ amount: -5, details: "Покупка товара" }) === null);
   // «Корзины»: категории нет, но видно способ оплаты
   const erip = { amount: -20, details: "Оплата коммунальных, почтовых или банковских услуг · 123456,Oplata uslugi ERIP,BY" };
-  check("платёж через интернет-банк попадает в корзину, а категории по-прежнему нет", Cat.categorize(a1) === null && Cat.bucket(a1) === "Платежи через интернет-банк");
+  check("платёж через интернет-банк попадает в корзину, а категории по-прежнему нет", Cat.categorize(a1) === null && Cat.bucket(a1) === "Переводы на карты и счета");
+  check("«Пополнение карточки/счета» это перевод, «Пополнение баланса» и «Оплата товаров» остаются платежами", ["Пополнение банковской платежной карточки", "Пополнение счета"].every(op => Cat.bucket({ ...a1, details: a1.details.replace("Пополнение карточки", op) }) === "Переводы на карты и счета") && ["Пополнение баланса", "Оплата товаров, услуг"].every(op => Cat.bucket({ ...a1, details: a1.details.replace("Пополнение карточки", op) }) === "Платежи через интернет-банк"));
   check("платёж ЕРИП попадает в корзину ЕРИП", Cat.categorize(erip) === null && Cat.bucket(erip) === "Платежи ЕРИП");
   check("обычная покупка и приход в корзины не попадают", Cat.bucket({ amount: -5, details: "SHOP X MINSK BY" }) === null && Cat.bucket({ amount: 10, details: a1.details }) === null);
   check("у корзин есть значки", Cat.BUCKETS.every(b => Cat.ICONS[b]));

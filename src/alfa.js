@@ -106,9 +106,11 @@
     const txs = [];
     let broken = 0, skipped = 0;
     clean(pages).forEach(items => cardOps(items).forEach(g => {
-      const date = g.items.find(i => /^\d{4}-\d\d-\d\d$/.test(i.text));
-      const time = g.items.find(i => /^\d\d:\d\d:\d\d$/.test(i.text));
-      const amt = g.items.find(i => inCol(i.x, CARD.amt) && AMT_RE.test(i.text));
+      // Из подходящих фрагментов ближайший к строке операции (номер операции слева): чужая строка рядом не перебивает
+      const near = ok => g.items.filter(ok).sort((a, b) => Math.abs(a.y - g.a.y) - Math.abs(b.y - g.a.y) || a.y - b.y)[0];
+      const date = near(i => /^\d{4}-\d\d-\d\d$/.test(i.text));
+      const time = near(i => /^\d\d:\d\d:\d\d$/.test(i.text));
+      const amt = near(i => inCol(i.x, CARD.amt) && AMT_RE.test(i.text));
       const type = squash(colText(g.items, CARD.type));
       const status = squash(colText(g.items, CARD.status));
       if (!date || !amt) { broken++; return; }
