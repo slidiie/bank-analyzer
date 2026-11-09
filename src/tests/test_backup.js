@@ -19,6 +19,12 @@ check("категории: только строки", c.cats.join() === "Моя
 check("операции: валидная осталась, лишние поля убраны, плохие отброшены", c.txs.length === 1 && c.txs[0].mcc === "5411" && c.txs[0].extra === undefined && Object.keys(c.txs[0]).sort().join() === "amount,date,details,mcc");
 check("выписки: проверка очищена, мусор отброшен", c.statements.length === 1 && c.statements[0].check.ok === true && c.statements[0].check.bad === undefined);
 check("слишком много операций отклоняется", throws(() => B.sanitize({ app: "bank-analyzer", txs: new Array(100001).fill({}) })));
+const fmtc = B.sanitize({ app: "bank-analyzer", txs: [
+  { date: "2026-01-01", amount: -1, details: "a", currency: "=HYPERLINK(\"x\")", time: "=1+1" },
+  { date: "2026-01-02", amount: -2, details: "b", currency: "USD", time: "10:05" },
+  { date: "2026-01-03", amount: -3, details: "c", currency: "usd", time: "10:05:07" }] });
+check("валюта и время: формула отброшена, операция осталась", fmtc.txs.length === 3 && fmtc.txs[0].currency === undefined && fmtc.txs[0].time === undefined);
+check("валюта и время: верный формат сохранён", fmtc.txs[1].currency === "USD" && fmtc.txs[1].time === "10:05" && fmtc.txs[2].time === "10:05:07" && fmtc.txs[2].currency === undefined);
 const old = B.sanitize({ app: "bank-analyzer", rules: {}, txs: [{ date: "2026-01-01", amount: -1, details: "a" }], header: { bank: "mtb", from: "2026-01-01", to: "2026-01-31" } });
 check("старый файл без списка выписок: шапка сохранена", old.statements.length === 0 && old.header.bank === "mtb" && old.header.from === "2026-01-01");
 

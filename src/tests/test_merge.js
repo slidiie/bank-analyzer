@@ -88,6 +88,8 @@ check("в описании кавычки и точка с запятой экр
 check("описание-формула обезврежено", ops.some(l => l.endsWith("'=HYPERLINK(\"\"x\"\")\"") || l.includes("'=HYPERLINK")));
 check("типы: между своими, долг, расход, неразобранное", ops.some(l => l.includes("между своими (не в счёт)")) && ops.some(l => l.includes("дал в долг (не в счёт)")) && ops.some(l => l.includes("Не разобрано;расход")));
 
+{ const evil = E.operationsCsv([{ date: "2026-03-01", time: "=1+1", amount: -5, currency: "@SUM(A1)", details: "x", bank: "-cmd" }], opts).split("\r\n")[1];
+  check("CSV: время, валюта и банк тоже экранируются", evil.includes(";'=1+1;") && evil.includes(";'@SUM(A1);") && evil.includes(";'-cmd;")); }
 const withNote = E.operationsCsv(data, { ...opts, noteOf: tx => (tx.amount === 1000 ? "премия #работа" : "") }).split("\r\n");
 check("CSV: колонка «Заметка» только если передан noteOf", withNote[0].endsWith(";Описание;Заметка") && withNote.some(l => l.endsWith(";премия #работа")) && !ops[0].includes("Заметка"));
 const sum = E.summaryCsv(data, opts).split("\r\n");

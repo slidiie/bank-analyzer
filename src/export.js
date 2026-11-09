@@ -33,7 +33,7 @@
     [...txs].sort((a, b) => ((a.date || "") + (a.time || "") < (b.date || "") + (b.time || "") ? -1 : 1)).forEach(tx => {
       const cat = opts.categoryOf(tx) || "Не разобрано";
       lines.push(row([tx.date, tx.time || "", names[tx.bank] || tx.bank || "", num(tx.amount), tx.currency || "BYN", cat, kind(tx, cat, opts), (tx.details || "") + (tx.part ? " (часть разделённой операции)" : "")].concat(opts.noteOf ? [opts.noteOf(tx) || ""] : []),
-        [false, false, true, false, false, true, false, true, true]));
+        [true, true, true, false, true, true, true, true, true]));   // все текстовые колонки экранируются; без флага только сумма
     });
     return lines.join("\r\n") + "\r\n";
   }
