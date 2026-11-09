@@ -10,7 +10,9 @@
   const DAY = 24 * 3600 * 1000;
   const stamp = t => (t.date || "") + " " + (t.time || "00:00:00");
   // Тот же идентификатор операции, что и в analyzer.html (дата, время, сумма, остаток)
-  const txId = tx => [tx.date, tx.time || "", tx.amount, tx.balance].join("|");
+  // Для валютных операций (cur, orig) берётся исходная сумма: смена курса не ломает идентификатор
+  const baseAmt = tx => (typeof tx.orig === "number" ? tx.orig : tx.amount);
+  const txId = tx => [tx.date, tx.time || "", baseAmt(tx), tx.balance].join("|");
 
   // Слова, по которым операция похожа на перевод между счетами. Покупки и наличные сюда не входят.
   const TRANSFERISH = /перевод|p2p|пополнен|интернет-банк|internetbank|ерип|erip|между своими|своего счёта|своего счета/i;
@@ -42,7 +44,7 @@
     let added = 0, skipped = 0;
     // Непроведённая операция (авторизация) потом приходит в новой выписке уже проведённой, с другим остатком и датой.
     // Ключ «банк, дата и время регистрации, сумма»: проведённая заменяет непроведённую, а непроведённая не дублирует проведённую.
-    const pkey = (bank, t) => [bank, t.regDate || t.date || "", t.time || "", t.amount].join("|");
+    const pkey = (bank, t) => [bank, t.regDate || t.date || "", t.time || "", baseAmt(t)].join("|");
     const posted = new Set(), pending = new Map();
     state.txs.forEach(t => { if (t.pending) pending.set(pkey(t.bank || "?", t), t); else posted.add(pkey(t.bank || "?", t)); });
     for (const t of list) {
@@ -67,13 +69,17 @@
   // Возвращает { added, skipped, index }.
   function addStatement(state, res) {
     const index = state.statements.length;
-    const { added, skipped } = addTxs(state, res.txs, () => res.bank.id, () => index);
+    // Счёт в валюте: операции получают cur и orig, чтобы потом пересчитать по курсу, заданному вручную
+    const cur = foreignCode(res.header);
+    const list = cur ? res.txs.map(t => Object.assign({}, t, { cur, orig: t.amount })) : res.txs;
+    const { added, skipped } = addTxs(state, list, () => res.bank.id, () => index);
     state.statements.push({
       bank: res.bank.id, bankName: res.bank.name,
       from: res.header.from || null, to: res.header.to || null,
       count: res.txs.length, added, skipped,
       check: res.check || null,
     });
+    if (cur) state.statements[index].currency = cur;
     dropOrphanPairs(state.txs);
     return { added, skipped, index };
   }
@@ -144,11 +150,16 @@
     return n;
   }
 
-  // Счёт не в белорусских рублях: суммы показываются как есть, без пересчёта по курсу. Возвращает текст предупреждения или null.
-  function currencyNote(header) {
-    const c = header && typeof header.currency === "string" ? header.currency.toUpperCase() : "";
-    if (!/^[A-Z]{3}$/.test(c) || c === "BYN" || c === "BYR") return null;
-    return `Счёт в валюте ${c}: суммы показаны в ${c} без пересчёта по курсу, а подписаны как BYN. Если вместе загружены выписки в рублях, общие итоги будут неточными.`;
+  const foreignCode = header => {
+    const c = header && typeof header.currency === "string" ? header.currency.trim().toUpperCase() : "";
+    return /^[A-Z]{3}$/.test(c) && c !== "BYN" && c !== "BYR" ? c : null;
+  };
+  // Счёт не в белорусских рублях и курс не задан: суммы остаются в валюте счёта. Возвращает текст подсказки или null.
+  function currencyNote(header, rates) {
+    const c = foreignCode(header);
+    const e = rates && rates[c];
+    if (!c || (e && (e.r > 0 || (e.at && e.at.length)))) return null;
+    return `Счёт в валюте ${c}: суммы пока в ${c}, а подписаны как BYN. Укажите курс в разделе «Ещё», «Курсы валют»: тогда всё пересчитается в BYN. Если вместе загружены выписки в рублях, без курса общие итоги будут неточными.`;
   }
 
   const pairCount = txs => new Set(txs.filter(t => t.pair).map(t => t.pair)).size;

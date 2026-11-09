@@ -50,11 +50,11 @@
     if (amount === null || details === null) return null;
     if (t.date != null && !(typeof t.date === "string" && DATE.test(t.date))) return null;
     const o = { date: t.date || null, amount, details };
-    for (const k of ["regDate", "time", "type", "currency", "mcc", "card", "bank", "purpose", "place", "bankCat"]) {
+    for (const k of ["regDate", "time", "type", "currency", "cur", "mcc", "card", "bank", "purpose", "place", "bankCat"]) {
       const v = str(t[k], 300); if (v !== null) o[k] = v;
     }
     if (t.pending === true) o.pending = true;
-    for (const k of ["balance", "origAmount", "src", "pair"]) {
+    for (const k of ["balance", "origAmount", "orig", "src", "pair"]) {
       const v = num(t[k]); if (v !== null) o[k] = v;
     }
     return o;
@@ -64,6 +64,7 @@
     const o = { bank: str(s.bank, 40) || "", bankName: str(s.bankName, 80) || "" };
     for (const k of ["from", "to"]) o[k] = typeof s[k] === "string" && DATE.test(s[k]) ? s[k] : null;
     for (const k of ["count", "added", "skipped"]) o[k] = num(s[k]) || 0;
+    if (typeof s.currency === "string" && /^[A-Z]{3}$/.test(s.currency)) o.currency = s.currency;
     if (isObj(s.check)) {
       const c = {};
       for (const k of Object.keys(s.check)) {
@@ -89,6 +90,7 @@
       acctNames: cleanStrMap(data.acctNames, 40),
       budgets: cleanBudgets(data.budgets),
       calc: cleanCalc(data.calc),
+      rates: (typeof require !== "undefined" ? require("./rates.js") : root.Rates).clean(data.rates),
       cats: Array.isArray(data.cats) ? data.cats.slice(0, LIMITS.cats).map(c => str(c, 40)).filter(Boolean) : [],
       txs: [], statements: [], header: {},
     };
