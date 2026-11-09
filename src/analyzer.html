@@ -38,7 +38,7 @@
       --pos:#177A4D; --neg:#B8423A;
       --r-s:8px; --r-m:12px; --r-l:16px;
       --sp-1:.25rem; --sp-2:.5rem; --sp-3:.75rem; --sp-4:1rem; --sp-5:1.5rem;
-      --fs-xs:.75rem; --fs-s:.85rem; --fs-m:1rem; --fs-l:1.15rem; --fs-xl:1.6rem;
+      --fs-xs:.8125rem; --fs-s:.85rem; --fs-m:1rem; --fs-l:1.15rem; --fs-xl:1.6rem;
       --shadow:0 1px 2px rgba(26,31,43,.06), 0 2px 8px rgba(26,31,43,.05);
       --t:.18s ease;
       --cat-food:#8DBF9E;   --cat-cafe:#EDBE74;   --cat-transport:#5FA8C4;
@@ -128,6 +128,18 @@
     .hsum li { margin: .25rem 0; padding-left: 1rem; position: relative; font-size: .95rem; }
     .hsum li::before { content: ""; position: absolute; left: 0; top: .55em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
     .dyn { margin: 0 0 1.5rem; }
+    /* Обзор v3 (9.11.2026): блоки в карточках, как пример на главной */
+    .ocard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
+    .ocard > h3.ohead, .ocard > h3:first-child { margin-top: 0; }
+    .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 100%), 1fr)); gap: .6rem; margin: .4rem 0 .2rem; }
+    .ftile { background: var(--surface-2); border-radius: var(--r-m); padding: .6rem .8rem; min-width: 0; }
+    .ftile .flabel { font-size: var(--fs-s); color: var(--muted); }
+    .ftile .fval { font-size: 1.45rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .ftile .fval small { font-size: var(--fs-s); font-weight: 500; color: var(--muted); margin-left: .25rem; }
+    .ftile .fhint { font-size: var(--fs-xs); color: var(--muted); }
+    .ftile.pos .fval { color: var(--pos, inherit); }
+    .ftile.neg .fval { color: var(--neg, inherit); }
+    .shortnote { margin: -.4rem 0 1.2rem; }
     .trend { width: 100%; height: auto; display: block; }
     .trend .col { fill: var(--accent); opacity: .5; transform-box: fill-box; transform-origin: bottom; }
     .trend.anim .col { animation: grow .5s ease both; }
@@ -301,7 +313,7 @@
     .datablock { max-width: none; margin: .6rem 0; border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem .8rem; }
     .datablock > summary { cursor: pointer; font-weight: 600; }
     .tabs { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0 1rem; }
-    .tab { padding: .45rem 1rem; border-radius: var(--r-m); cursor: pointer; }
+    .tab { padding: .4rem .9rem; border-radius: 999px; cursor: pointer; }
     .tab.active { background: var(--tab-bg); color: var(--tab-fg); border-color: var(--tab-border); font-weight: 600; }
     .tab.yeartab.shown { border-color: var(--bar); box-shadow: inset 0 -3px 0 var(--bar); }
     .monthtabs { margin-top: -.5rem; }
@@ -337,7 +349,7 @@
     .revsum { flex: 0 0 auto; }
     .revmore > summary { font-weight: 400; color: var(--muted); font-size: .9rem; }
     .revmore > div, .revmore > p { margin-top: .35rem; }
-    .viewswitch { display: inline-flex; border: 1px solid var(--ctl-border); border-radius: var(--r-m); overflow: hidden; margin: .3rem 0 .8rem; }
+    .viewswitch { display: inline-flex; border: 1px solid var(--ctl-border); border-radius: 999px; overflow: hidden; margin: .3rem 0 .8rem; }
     .viewswitch button { border: 0; border-radius: 0; background: transparent; }
     .viewswitch button.active { background: var(--tab-bg); color: var(--tab-fg); font-weight: 600; }
     .pie { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; }
@@ -724,7 +736,7 @@
       </span>
     </div>
     <h1>Где <span class="hl">утекают</span> ваши деньги</h1>
-    <p class="lede">Загрузите выписку из банка и увидите, на что уходят деньги: траты по категориям, подписки и всё, что списывается регулярно. Можно сразу несколько выписок из разных банков. Основное бесплатно, без регистрации.</p>
+    <p class="lede">Загрузите выписку из банка и увидите, сколько пришло, сколько ушло и на что: траты по категориям, подписки и всё, что списывается регулярно. Можно сразу несколько выписок из разных банков. Основное бесплатно, без регистрации.</p>
     <div id="dropzone" class="upcard">
       <svg class="gi upicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
       <p class="muted upcap" id="banks"></p>
@@ -737,24 +749,24 @@
       <p class="muted restore">Сохраняли отчёт в файл? <button id="importLand" class="linklike" type="button">Открыть его</button></p>
     </div>
     <aside class="mini" aria-label="Пример отчёта на выдуманных данных">
-      <div class="muted minitag">Пример отчёта (выдуманные данные)</div>
+      <div class="muted minitag">Пример отчёта за месяц (выдуманные данные)</div>
       <div class="chart">
-        <div class="donut" role="img" aria-label="Диаграмма трат: аренда и жильё 50%, продукты 25%, кафе 14%, транспорт 7%, прочее 4%">
+        <div class="donut" role="img" aria-label="Диаграмма трат за месяц: аренда и жильё 52%, продукты 19%, кафе 7%, наличные 7%, остальное 14%">
           <svg viewBox="0 0 42 42" aria-hidden="true">
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-home)" stroke-dasharray="50 50" stroke-dashoffset="0"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-food)" stroke-dasharray="25 75" stroke-dashoffset="-50"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-cafe)" stroke-dasharray="13.9 86.1" stroke-dashoffset="-75"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-transport)" stroke-dasharray="7.4 92.6" stroke-dashoffset="-88.9"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-other)" stroke-dasharray="3.7 96.3" stroke-dashoffset="-96.3"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-home)" stroke-dasharray="51.7 48.3" stroke-dashoffset="0"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-food)" stroke-dasharray="19.1 80.9" stroke-dashoffset="-51.7"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-cafe)" stroke-dasharray="7.5 92.5" stroke-dashoffset="-70.8"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-transfer)" stroke-dasharray="7.4 92.6" stroke-dashoffset="-78.3"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-other)" stroke-dasharray="14.3 85.7" stroke-dashoffset="-85.7"/>
           </svg>
-          <div class="hole"><b>2 439</b><small>BYN за месяц</small></div>
+          <div class="hole"><b>1 354</b><small>BYN за месяц</small></div>
         </div>
         <ul class="legend">
-          <li><i style="background:var(--cat-home)"></i>Аренда и жильё<span class="num">1 220</span></li>
-          <li><i style="background:var(--cat-food)"></i>Продукты<span class="num">610</span></li>
-          <li><i style="background:var(--cat-cafe)"></i>Кафе и рестораны<span class="num">340</span></li>
-          <li><i style="background:var(--cat-transport)"></i>Транспорт<span class="num">180</span></li>
-          <li><i style="background:var(--cat-other)"></i>Прочее<span class="num">89</span></li>
+          <li><i style="background:var(--cat-home)"></i>Аренда и жильё<span class="num">700</span></li>
+          <li><i style="background:var(--cat-food)"></i>Продукты<span class="num">258</span></li>
+          <li><i style="background:var(--cat-cafe)"></i>Кафе и рестораны<span class="num">101</span></li>
+          <li><i style="background:var(--cat-transfer)"></i>Наличные<span class="num">100</span></li>
+          <li><i style="background:var(--cat-other)"></i>Остальное<span class="num">195</span></li>
         </ul>
       </div>
       <button id="miniDemoBtn" type="button">Посмотреть такой отчёт на демо</button>
@@ -940,7 +952,7 @@
     <div id="reviewBanner" class="warn" data-sec="overview" hidden style="margin-bottom:.8rem"></div>
     <div id="check" data-sec="overview"></div>
     <div class="nav" id="nav" hidden></div>
-    <h2 id="secSummary" data-sec="overview" style="margin-top:1rem">Траты по категориям</h2>
+    <h2 id="secSummary" data-sec="overview" style="margin-top:1rem">Сколько пришло и куда ушло</h2>
     <div id="summary" data-sec="overview"></div>
     <div id="keepNote" class="note" data-sec="overview" hidden style="margin:.6rem 0"></div>
     <div id="bottom" data-sec="review">
@@ -1295,22 +1307,25 @@
     $("banks").textContent = `Читаем выписки ${Banks.BANKS.length} банков: ${bankNames}`;
     $("faqBanks").textContent = "Сейчас разбираются выписки: " + bankNames + ". Для каждого банка формат PDF свой, поэтому новые банки добавляются по мере того, как появляются образцы выписок. Выписку неподдерживаемого банка сайт честно откажется читать, а не покажет неверные суммы.";
 
-    function enterDemo() {
+    // Пример на главной = последний месяц постоянного демо (Demo.make без зерна). test_render.js сверяет эти числа с демо.
+    const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 258.37], ["Кафе и рестораны", 101.24], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
+    function enterDemo(lastMonth) {
       const wasDemo = demoMode;
       if (!demoMode) stash = { splits, condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
       demoMode = true;
-      document.body.classList.add("demo"); $("demoBtn").textContent = "Показать другой пример";
+      document.body.classList.add("demo");
       try { document.querySelectorAll("#app > .morecard").forEach(c => { c.inert = true; c.setAttribute("aria-disabled", "true"); }); } catch (e) { /* без inert */ }   // в демо карточки «Ещё» видны, но неактивны
       userRules = {}; txRules = {}; splits = {}; condRules = []; txNotes = {}; customCats = []; customIcons = {}; acctNames = {}; budgets = {}; calc = {};
       ownUndo.length = 0;
-      const d = Demo.make(Math.floor(Math.random() * 4294967296), new Date());
+      const d = Demo.make(undefined, new Date());
       txs = d.txs; header = d.header;
       // В демо перевод на накопительный счёт отмечен как «Накопления», а план накоплений выставлен в 10% (чтобы блок был наполнен)
       d.txs.forEach(t => { if (/накопительн/i.test(t.details || "")) userRules[Cat.merchantKey(t)] = Cat.SAVINGS; });
       calc = { saveVal: 10 };
       statements = [{ bank: "demo", bankName: "Демо", from: d.header.from, to: d.header.to, count: d.txs.length, added: d.txs.length, skipped: 0, check: null }];
       allCat = "all"; allFilt = Filters.empty(); allSort = "date-desc"; bottomTab = null;
-      if (!wasDemo) { activeTab = "all"; curSection = "overview"; }   // при повторном нажатии выбранный месяц остаётся (если такого месяца нет, render сам вернёт «весь период»)
+      if (!wasDemo) { activeTab = "all"; curSection = "overview"; }
+      if (lastMonth) { activeTab = d.header.to.slice(0, 7); curSection = "overview"; }   // «Посмотреть такой отчёт»: открыть тот же месяц, что в примере   // при повторном нажатии выбранный месяц остаётся (если такого месяца нет, render сам вернёт «весь период»)
       openKeys.clear();
       render();
     }
@@ -1318,7 +1333,7 @@
     function leaveDemo() {
       if (!demoMode) return;
       demoMode = false;
-      document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть демо";
+      document.body.classList.remove("demo"); $("demoBtn").textContent = "Посмотреть на примере";
       try { document.querySelectorAll("#app > .morecard").forEach(c => { c.inert = false; c.removeAttribute("aria-disabled"); }); } catch (e) { /* без inert */ }
       ({ splits, condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab } = stash);
       stash = null;
@@ -1330,7 +1345,7 @@
     function hideReport() { $("report").hidden = true; $("exportBox").hidden = true; document.body.setAttribute("data-view", "none"); curSection = "overview"; }
     const scrollTo = id => { try { $(id).scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { /* без прокрутки */ } };
     // Демо: сразу показываем результат (плашка демо, вкладки, таблица трат), а не начало страницы анализа
-    $("miniDemoBtn").addEventListener("click", () => $("demoBtn").click());
+    $("miniDemoBtn").addEventListener("click", () => { enterDemo(true); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
     $("demoBtn").addEventListener("click", () => { enterDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
     $("startBtn").addEventListener("click", () => { $("file").click(); });
     // Перетаскивание файла на карточку загрузки (ПК); на телефоне работает кнопка «Выбрать файл»
@@ -2296,6 +2311,8 @@
     // Кольцо: у каждой доли значок и процент прямо на диаграмме (если доля достаточно большая).
     // Совсем мелкие категории (меньше 3%) сливаются в одну серую долю, чтобы кольцо не рябило.
     // Подсказка не всплывает над диаграммой, а показывается в отдельной строке над ней и мгновенно.
+    // Доля в процентах для подписи: ненулевая сумма меньше 0.5% показывается как «<1%», а не «0%»
+    const pctText = (part, total) => { if (!total || !part) return "0%"; const p = Math.round(part / total * 100); return p < 1 ? "<1%" : p + "%"; };
     function pieChart(st, opts = {}) {
       const MIN = 0.03;
       const slices = [];
@@ -2383,7 +2400,7 @@
         const sw = h("span", { class: slices[si].review ? "sw review" : "sw" });
         if (!slices[si].review) sw.style.background = slices[si].color;
         const row = h("div", { class: "lrow" }, sw, h("span", { class: "lname" }, iconEl(iconKey(cat)), cat),
-          h("span", { class: "num" }, fmt(sum) + " · " + Math.round(sum / st.total * 100) + "%"));
+          h("span", { class: "num" }, fmt(sum) + " · " + pctText(sum, st.total)));
         row.addEventListener("mouseenter", () => { show(si); markSlice(si); });
         row.addEventListener("mouseleave", () => { hideTip(); markSlice(-1); });
         legend.append(row);
@@ -2480,7 +2497,7 @@
           st.rows.map(([cat, sum]) => h("tr", {},
             h("td", {}, h("span", { class: REVIEW_CATS.has(cat) ? "sw review" : "sw", style: REVIEW_CATS.has(cat) ? "" : `background:${catColor(cat)}` }), iconEl(iconKey(cat)), cat),
             h("td", { class: "num" }, fmt(sum)),
-            h("td", { class: "num" }, st.total ? Math.round(sum / st.total * 100) + "%" : ""),
+            h("td", { class: "num" }, st.total ? pctText(sum, st.total) : ""),
             h("td", {}, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${sum / max * 100}%;background:${catColor(cat)}` }))))),
           h("tr", {}, h("th", {}, "Итого"), h("th", { class: "num" }, fmt(st.total)), h("th", {}, ""), h("th", {}, "")));
     }
@@ -2500,26 +2517,14 @@
         parts.push(viewSwitch());
         parts.push(catTable(st));
       }
+      { const cash = st.rows.find(r => /^Наличные/.test(r[0])); if (cash && st.total && cash[1] / st.total >= 0.05) parts.push(h("div", { class: "muted" }, `Наличные (${fmt(cash[1])} BYN): по выписке не видно, на что они потрачены.`)); }
       if (st.rows.some(r => Cat.BUCKETS.includes(r[0]))) parts.push(h("div", { class: "muted" }, "«Платежи ЕРИП» и «Платежи через интернет-банк»: по выписке видно только способ оплаты, но не то, на что потрачено. Разберите получателей на вкладке «Нужно разобрать»."));
       const extra = [];
       if (st.own) extra.push(`переводы между своими: ${fmt(st.own)}`);
       if (st.loan) extra.push(`дал в долг: ${fmt(st.loan)}`);
       if (st.saved) extra.push(`отложено в накопления: ${fmt(st.saved)}`);
       if (extra.length) parts.push(h("div", { class: "muted" }, `В траты не входит: ${extra.join("; ")} BYN.`));
-      return h("div", { style: "margin-bottom:1.5rem" }, parts);
-    }
-
-    // Сравнение общих трат по месяцам
-    function monthCompare(months, perMonth) {
-      const max = Math.max(...perMonth.map(s => s.total), 1);
-      const anyPartial = months.some(ym => coverageNote(ym));
-      return h("div", { style: "margin-bottom:1.5rem" },
-        h("h3", { style: "margin-bottom:.2rem" }, "Сравнение месяцев"),
-        h("table", {}, months.map((ym, i) => h("tr", {},
-          h("td", {}, monthTitle(ym) + (coverageNote(ym) ? " *" : "")),
-          h("td", { class: "num" }, fmt(perMonth[i].total)),
-          h("td", { style: "width:50%" }, h("div", { class: "barwrap" }, h("div", { class: "bar", style: `width:${perMonth[i].total / max * 100}%` })))))),
-        anyPartial ? h("div", { class: "muted" }, "* месяц неполный: выписка начинается или заканчивается внутри него (или одна из выписок его не покрывает целиком), поэтому сумма может быть меньше обычной.") : "");
+      return h("div", { class: "ocard" }, h("h3", { class: "ohead" }, "Траты по категориям"), parts);
     }
 
     // ---- Обзор: главная мысль сверху, динамика и топ получателей снизу ----
@@ -2576,7 +2581,7 @@
       const spentBy = {};
       st.rows.forEach(([c, v]) => { spentBy[c] = v; });
       const list = Goals.rows({ budgets, spentBy, day, dim, closed });
-      const box = h("div", { class: "goals" });
+      const box = h("div", { class: "goals ocard" });
       const partial = coverageNote(ym), startsLate = partial && !/ с 1 по /.test(partial);   // «с 1 по N» это просто конец выписки: он и так виден в подписи
       if (!list.length) {
         // Лимитов нет: подсказываем по истории, где обычно уходит больше всего
@@ -2662,13 +2667,21 @@
       if (unsorted >= 0.1) facts.push(`Ещё не разобрано: ${Math.round(unsorted * 100)}% трат`);
       const biggest = spendList(all).reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
       if (biggest) facts.push(`Самая крупная трата: ${fmt(-biggest.amount)} BYN${biggest.date ? ", " + shortDate(biggest.date) : ""}`);
+      // Пришло: поступления без переводов между своими счетами и без возвратов (возврат уменьшает траты, а не доход)
+      const income = Math.round(all.filter(t => t.amount > 0 && displayCat(t) !== Cat.OWN && !isRefund(t)).reduce((a, t) => a + t.amount, 0) * 100) / 100;
+      const diff = Math.round((income - st.total) * 100) / 100;
+      if (st.saved) facts.push(`Отложено в накопления: ${fmt(st.saved)} BYN (это не траты, оно входит в разницу)`);
       const big = h("span", {}, fmt(st.total));
       const key = `${ctx.label}|${st.total.toFixed(2)}`;
       const fresh = key !== lastHeadline;
       if (fresh) { lastHeadline = key; countUp(big, st.total); }
+      const tile = (label, val, cls, hint) => h("div", { class: "ftile" + (cls ? " " + cls : "") }, h("div", { class: "flabel" }, label), h("div", { class: "fval" }, val, h("small", {}, "BYN")), hint ? h("div", { class: "fhint" }, hint) : "");
+      const tiles = income > 0
+        ? [tile("Пришло", fmt(income)), tile("Потрачено", big, "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), diff >= 0 ? "pos" : "neg", diff >= 0 ? "осталось" : "ушло больше, чем пришло")]
+        : [tile("Потрачено", big, "spent")];
       return h("div", { class: "hsum" + (fresh ? " anim" : "") },
-        h("div", { class: "hlabel muted" }, ctx.label ? `Траты · ${ctx.label}` : "Траты за период"),
-        h("div", { class: "hbig" }, big, h("small", {}, "BYN")),
+        h("div", { class: "hlabel muted" }, ctx.label ? ctx.label.charAt(0).toUpperCase() + ctx.label.slice(1) : "За период"),
+        h("div", { class: "flow" }, tiles),
         facts.length ? h("ul", {}, facts.slice(0, 5).map(f => h("li", {}, f))) : "");
     }
     // Месяц, к которому относится столбец «Динамики»: день и месяц понятны сразу, неделя относится к месяцу своего четверга (как в ISO).
@@ -2700,7 +2713,7 @@
       barList.forEach(t => { const k = keyOf(t.date); sums.set(k, (sums.get(k) || 0) - t.amount); });
       const keys = [...sums.keys()].sort(), seq = [];
       for (let k = keys[0], guard = 0; k <= keys[keys.length - 1] && guard < 400; k = next(k), guard++) seq.push([k, Math.max(0, sums.get(k) || 0)]);
-      const box = h("div", { class: "dyn" });
+      const box = h("div", { class: "dyn ocard" });
       const dmonths = monthsInStatement(), canOpen = dmonths.length > 1;   // месяц можно выбрать (и снять выбор) из любого периода
       if (seq.length >= 2) {
         const labelOf = k => mode === "month" ? monthTitle(k) : mode === "week" ? `неделя с ${shortDate(k)}` : shortDate(k);
@@ -2819,8 +2832,8 @@
       } catch (e) { /* без украшений, основной обзор уже построен */ }
       try {
         const nb = noticedBlock(ctx), vs = box.querySelector(".viewswitch");
-        const after = vs && vs.nextElementSibling;
-        if (nb && after) after.after(nb);
+        const card = vs && vs.closest ? vs.closest(".ocard") : null;   // «Что заметили» идёт отдельной карточкой сразу под диаграммой
+        if (nb && card) card.after(nb);
       } catch (e) { /* блок «Что заметили» необязателен */ }
       // Кнопки периода на телефоне листаются вбок: выбранную показываем, сдвигая только ряд (страница не прокручивается)
       try { box.querySelectorAll(".tabs").forEach(row => { const a = row.querySelector(".tab.active"); if (a && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, a.offsetLeft - row.offsetLeft - 16); }); } catch (e) { /* не важно */ }
@@ -2838,6 +2851,7 @@
 
       if (months.length <= 1) {
         box.append(summarySection("", period, overall));
+        if (txs.length) box.append(h("p", { class: "muted shortnote" }, "Загрузите выписку за 3 месяца, и здесь появится сравнение по месяцам и средние траты."));
         return { stats: overall, label: "", list: txs };
       }
 
@@ -2863,7 +2877,6 @@
 
       if (activeTab === "all") {
         box.append(summarySection("", period, overall));
-        box.append(monthCompare(months, per));
         return { stats: overall, label: "за весь период", list: txs, months, per };
       }
       const i = months.indexOf(activeTab);
@@ -4371,18 +4384,18 @@
     $("subsPeriod").addEventListener("click", () => showSection("overview"));
     renderRules();
     renderMergeNote();
-    // Пример отчёта на стартовом экране: те же кольцо и таблица, что в настоящем отчёте (на выдуманных числах); сменяются каждые 5 секунд.
-    // Автосмена останавливается при наведении, фокусе и после выбора вручную; при «уменьшить анимацию» её нет.
+    // Пример отчёта на стартовом экране: те же кольцо и таблица, что в настоящем отчёте (на выдуманных числах).
+    // Вид меняется только по нажатию: автосмена выглядела как самопроизвольный клик (убрана 9.11.2026).
     try {
       const mini = document.querySelector(".mini"), oldChart = mini && mini.querySelector(".chart");
       if (mini && oldChart) {
-        const rows = [["Аренда и жильё", 1220], ["Продукты", 610], ["Кафе и рестораны", 340], ["Транспорт", 180], ["Связь и подписки", 95], ["Прочее", 89]];
-        const st = { rows, total: rows.reduce((a, r) => a + r[1], 0), own: 0, loan: 0, saved: 0 };
+        const rows = LANDING_SAMPLE;
+        const st = { rows, total: Math.round(rows.reduce((a, r) => a + r[1], 0) * 100) / 100, own: 0, loan: 0, saved: 0 };
         const slot = h("div", { class: "minibody" });
-        let cur = "pie", manual = false, hover = false;
+        let cur = "pie";
         const views = {};
         const build = () => {
-          views.pie = h("div", { class: "miniview" }, pieChart(st, { pull: "Связь и подписки" }));
+          views.pie = h("div", { class: "miniview" }, pieChart(st, { pull: "Кафе и рестораны" }));
           views.table = h("div", { class: "miniview" }, catTable(st));
           slot.replaceChildren(views.pie, views.table);
           show(cur);
@@ -4393,16 +4406,11 @@
           Object.keys(views).forEach(k => { views[k].classList.toggle("on", k === v); views[k].inert = k !== v; });
           Object.keys(btns).forEach(k => { btns[k].classList.toggle("active", k === v); btns[k].setAttribute("aria-pressed", k === v ? "true" : "false"); });
         };
-        const mk = (id, label) => { const b = h("button", { type: "button", "aria-pressed": "false" }, label); b.addEventListener("click", () => { manual = true; show(id); }); btns[id] = b; return b; };
+        const mk = (id, label) => { const b = h("button", { type: "button", "aria-pressed": "false" }, label); b.addEventListener("click", () => show(id)); btns[id] = b; return b; };
         const sw = h("div", { class: "viewswitch" }, mk("pie", "Диаграмма"), mk("table", "Таблица"));
         oldChart.style.display = "none";
         oldChart.before(sw, slot);
         build();
-        mini.addEventListener("mouseenter", () => { hover = true; });
-        mini.addEventListener("mouseleave", () => { hover = false; });
-        mini.addEventListener("focusin", () => { manual = true; });
-        const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (!reduce) setInterval(() => { if (manual || hover || document.hidden || !mini.offsetParent || !mini.getBoundingClientRect().height) return; show(cur === "pie" ? "table" : "pie"); }, 5000);
         // Смена темы: цвета подписей на кольце считаются при построении, поэтому пересобираем
         new MutationObserver(() => build()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
       }

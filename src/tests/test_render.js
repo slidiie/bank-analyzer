@@ -102,7 +102,7 @@ check("есть вкладки: весь период и три месяца",
   ["За весь период", "Сентябрь 2026", "Октябрь 2026", "Ноябрь 2026"].every(t => s.includes(t)));
 check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноябрь 2026 *"));
 check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170.00"));
-check("на вкладке «весь период» есть «Сравнение месяцев»", s.includes("Сравнение месяцев"));
+check("на вкладке «весь период» нет отдельного «Сравнения месяцев» (его заменяет «Динамика трат»)", !s.includes("Сравнение месяцев"));
 check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250.00"));
 
 // Отмечаем 500 как «Дал в долг»: уходит из трат и показывается отдельной строкой
@@ -694,5 +694,11 @@ vm.runInContext(`txs = [{ date: "2026-03-05", amount: -10, balance: 1, details: 
 check("передача: без операций файл пустой по операциям, заметки остаются", vm.runInContext(`(() => { const d = backupData(false); return d.txs.length === 0 && d.statements.length === 0 && Object.keys(d.header).length === 0 && d.notes.a === "заметка"; })()`, ctx));
 check("передача: с операциями в файле операции есть", vm.runInContext(`backupData(true).txs.length === 1`, ctx));
 vm.runInContext(`txs = []; txNotes = {}; statements = []; header = {};`, ctx);
+// Пример на главной совпадает с последним месяцем постоянного демо, а кнопка «Посмотреть такой отчёт» открывает этот месяц
+vm.runInContext(`enterDemo(true);`, ctx);
+check("демо постоянное: два входа дают одни и те же операции", vm.runInContext(`JSON.stringify(Demo.make(undefined, new Date()).txs) === JSON.stringify(Demo.make(undefined, new Date()).txs)`, ctx));
+check("«Посмотреть такой отчёт» открывает последний месяц демо", vm.runInContext(`activeTab === header.to.slice(0, 7)`, ctx));
+check("пример на главной = последний месяц демо", vm.runInContext(`(() => { const st = statsFor(txs.filter(t => t.date.startsWith(activeTab))); const got = st.rows.map(r => [r[0], Math.round(r[1] * 100) / 100]); return JSON.stringify(got) === JSON.stringify(LANDING_SAMPLE); })()`, ctx));
+vm.runInContext(`leaveDemo();`, ctx);
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

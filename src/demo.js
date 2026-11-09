@@ -1,5 +1,6 @@
 // demo.js: выдуманная выписка для демонстрации сайта (никаких настоящих данных).
-// Даты и суммы задаёт генератор с зерном: без аргумента зерно фиксировано (для тестов), на сайте при каждом нажатии берётся новое.
+// Даты и суммы задаёт генератор с зерном. Без зерна (так открывается демо на сайте) набор постоянный и правдоподобный для Минска:
+// зарплата 1 800, аренда 700. Пример на главной взят из этого же набора (LANDING_SAMPLE в analyzer.html, сверяет test_render.js).
 // Работает и в браузере (глобальный объект Demo), и в Node (для тестов).
 
 (function (root) {
@@ -7,7 +8,8 @@
 
   function make(startSeed, now) {
     now = now || new Date(2026, 10, 7);   // без аргумента дата фиксирована (для тестов)
-    let seed = (startSeed === undefined ? 20260811 : startSeed) >>> 0;
+    const fixed = startSeed === undefined;
+    let seed = (fixed ? 20260811 : startSeed) >>> 0;
     const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
     const between = (a, b) => Math.round((a + rnd() * (b - a)) * 100) / 100;
     const count = (a, b) => a + Math.floor(rnd() * (b - a + 1));
@@ -16,10 +18,12 @@
     // Постоянные платежи: размер выбирается один раз за запуск и одинаков во всех месяцах (так находятся повторы)
     // Зарплата (на карту, после налогов): от 900 до 7000, чаще небольшая (равномерно по логарифму).
     // Остальные траты растут вместе с ней, но медленнее, как в жизни.
-    const salary = Math.round(Math.exp(between(Math.log(900), Math.log(7000))) / 10) * 10;
+    const rndSalary = Math.round(Math.exp(between(Math.log(900), Math.log(7000))) / 10) * 10;
+    const salary = fixed ? 1800 : rndSalary;
     const k = Math.pow(salary / 1800, 0.8);
     const sc = (a, b) => between(a * k, b * k);
-    const rent = Math.min(2200, Math.max(350, Math.round(salary * between(0.2, 0.4) / 10) * 10));
+    const rndRent = Math.min(2200, Math.max(350, Math.round(salary * between(0.2, 0.4) / 10) * 10));
+    const rent = fixed ? 700 : rndRent;
     const mobile = sc(12, 30);
     const sub = sc(7, 25);
     const cash = Math.max(20, Math.round(100 * k / 10) * 10);
@@ -37,7 +41,7 @@
 
     months.forEach(([ym, days]) => {
       add(ym, 5, salary, null, "Зачисление зарплаты организации");
-      add(ym, 7, -rent, null, "Оплата: аренда квартиры (ЕРИП)");
+      add(ym, 7, -rent, null, "Аренда квартиры (ЕРИП)");
       add(ym, 8, -mobile, "4814", "A1 BELARUS пополнение счёта");
       add(ym, 9, -sub, "4899", "VIDEO SERVICE подписка");
       add(ym, 14, -cash, "6011", "Снятие наличных в банкомате");
@@ -48,10 +52,10 @@
       add(ym, 12, own, null, "Пополнение со своего счёта", pairNo);
       add(ym, 12, -own, null, "Перевод на свой счёт (ЕРИП)", pairNo);
       add(ym, 20, -sc(25, 70), null, "Перевод с карты на карту, Иванов И.И.");   // для подсказки «Похоже на перевод человеку»
-      for (let i = 0, n = count(4, 12); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(6, 58), "5411", pick(['SHOP "EVROOPT"', 'SHOP "GREEN"', 'SHOP "SOSEDI"', "GIPERMARKET GIPPO"]));
-      for (let i = 0, n = count(2, 7); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(7, 26), "5812", pick(['RBO "BURGER KING"', "COFFEE HOUSE", "PIZZA CAFE"]));
+      for (let i = 0, n = count(10, 16); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(8, 45), "5411", pick(['SHOP "EVROOPT"', 'SHOP "GREEN"', 'SHOP "SOSEDI"', "GIPERMARKET GIPPO"]));
+      for (let i = 0, n = count(4, 8); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(7, 26), "5812", pick(['RBO "BURGER KING"', "COFFEE HOUSE", "PIZZA CAFE"]));
       for (let i = 0, n = count(2, 9); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(1.5, 14), pick(["4111", "4121"]), pick(["METRO MINSK", "TAXI MINSK"]));
-      for (let i = 0, n = count(1, 6); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(10, 60), null, pick(["Оплата услуг ЕРИП", "Оплата в интернет-банке, перевод", "Платёж по реквизитам"]));
+      for (let i = 0, n = count(1, 3); i < n; i++) add(ym, 1 + Math.floor(rnd() * (days - 1)), -sc(10, 40), null, pick(["Оплата услуг ЕРИП", "Оплата в интернет-банке, перевод", "Платёж по реквизитам"]));
     });
     add(months[0][0], 19, -Math.round(9.3 * k * 10) / 10, "5912", "APTEKA N 16");
     add(months[1][0], 21, -Math.round(140 * k), "5651", "SHOP CLOTHES");
