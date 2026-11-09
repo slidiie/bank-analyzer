@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 const args = process.argv.slice(2);
 const url = args.find((a, i) => /^https?:/.test(a) && args[i - 1] !== '--shots') || 'http://localhost:8765/';
-const WIDTHS = args.includes('--quick') ? [390, 1280] : [320, 390, 768, 1280];
+const WIDTHS = process.env.AUDIT_WIDTHS ? process.env.AUDIT_WIDTHS.split(',').map(Number) : args.includes('--quick') ? [390, 1280] : [320, 390, 768, 1280];
 const THEMES = ['light', 'dark'];
 const shotsDir = args.includes('--shots') ? args[args.indexOf('--shots') + 1] : null;   // снимки экранов сценариев (мастер, ошибки, печать…)
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
