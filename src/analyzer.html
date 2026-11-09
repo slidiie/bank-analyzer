@@ -570,6 +570,14 @@
     @media (pointer: coarse), (max-width: 768px) {
       details > summary, #plan .chip, select { min-height: 44px; }   /* А1, А2, А3 */
     }
+    /* Находки аудита v4.78 (Н1–Н5 в HANDOFF.md) */
+    footer a, footer .linklike, .qfaqall a { display: inline-flex; align-items: center; min-height: 32px; }   /* Н1: ссылки подвала были 18–20 px */
+    input[type=text] { min-height: 36px; }   /* Н2: поля фильтра, новой категории, банка в мастере были 25 px */
+    .printval { display: none; }
+    @media (pointer: coarse), (max-width: 768px) {
+      footer a, footer .linklike, .qfaqall a, input[type=text] { min-height: 44px; }   /* Н1, Н2 */
+      th.sortable { height: 44px; }   /* Н3: заголовки сортировки были 35 px */
+    }
     /* Печать / сохранение в PDF средствами браузера: печатается открытый раздел, всегда светлая тема, без кнопок и навигации */
     @media print {
       html:root:not([data-p1]):not([data-p2]) {
@@ -592,6 +600,7 @@
       details > *:not(summary) { display: block; }
       * { box-shadow: none !important; animation: none !important; transition: none !important; }
       .hsum, .icard, #plan details, #subs .scard, .morecard, .card, .rowcard { border: 1px solid #999 !important; }
+      .printval { display: inline; }
       #app::before { content: "Анализ банковской выписки"; display: block; font-size: 9pt; color: #4A5263; margin-bottom: .4rem; }
     }
     button, select, input, textarea, .tab, .rowcard, .bankchip, summary, a { transition: background-color var(--t), border-color var(--t), box-shadow var(--t), color var(--t), transform var(--t); }
@@ -955,7 +964,7 @@
 
   </main>
 
-  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.77, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк (2026-11-07 UTC)</p></footer>
+  <footer><p class="muted"><a href="#faq">Приватность и частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать нам</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build">Версия страницы: v4.78, БПС-Сбербанк, Альфа-Банк (кредитная карта и карта), ВТБ, Беларусбанк, Приорбанк, МТБанк, Белинвестбанк (2026-11-09 UTC)</p></footer>
 
   <!--PDFJS-->
   <script src="parser.js"></script>
@@ -964,6 +973,7 @@
   <script src="alfa.js"></script>
   <script src="sber.js"></script>
   <script src="belarusbank.js"></script>
+  <script src="belinvest.js"></script>
   <script src="prior.js"></script>
   <script src="priorcsv.js"></script>
   <script src="transfers.js"></script>
@@ -1211,7 +1221,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.77";
+    const FB_VERSION = "v4.78";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -1235,12 +1245,16 @@
     function nextFocus(list, current, back) {
       if (!list.length) return null;
       const i = list.indexOf(current);
-      if (i === -1) return back ? list[list.length - 1] : list[0];
+      if (i === -1) {   // фокус на самом окне или на прокручиваемой области (Chrome даёт ей фокус): ближайший элемент дальше / раньше по документу
+        const pos = el => current && current.compareDocumentPosition ? current.compareDocumentPosition(el) : 0;
+        const to = back ? list.filter(el => pos(el) & 2).pop() : list.find(el => pos(el) & 4);
+        return to || (back ? list[list.length - 1] : list[0]);
+      }
       if (back && i === 0) return list[list.length - 1];
       if (!back && i === list.length - 1) return list[0];
       return null;
     }
-    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const FOCUSABLE = 'summary, a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const openModal = () => [...SHEETS, "resetBox"].map(id => $(id)).find(el => el && !el.hidden) || null;
     if (document.addEventListener) document.addEventListener("keydown", e => {
       if (e.key !== "Tab") return;
@@ -1252,8 +1266,12 @@
     });
     // Печать: перед печатью раскрываем свёрнутые блоки открытого раздела, после возвращаем как было
     let printOpened = [];
-    function printPrepare() { printOpened = [...document.querySelectorAll("#report details:not([open])")]; printOpened.forEach(d => d.setAttribute("open", "")); }
-    function printRestore() { printOpened.forEach(d => d.removeAttribute("open")); printOpened = []; }
+    // Выпадающие списки при печати скрыты: рядом ставим выбранное значение текстом (Н5, иначе в колонке «Категория» пусто)
+    function printPrepare() {
+      printOpened = [...document.querySelectorAll("#report details:not([open])")]; printOpened.forEach(d => d.setAttribute("open", ""));
+      document.querySelectorAll("#report td select").forEach(sel => { const o = sel.options[sel.selectedIndex]; if (o && o.value) sel.after(h("span", { class: "printval" }, o.textContent)); });
+    }
+    function printRestore() { printOpened.forEach(d => d.removeAttribute("open")); printOpened = []; document.querySelectorAll(".printval").forEach(e => e.remove()); }
     if (typeof window !== "undefined" && window.addEventListener) { window.addEventListener("beforeprint", printPrepare); window.addEventListener("afterprint", printRestore); }
     $("printBtn").addEventListener("click", () => { try { window.print(); } catch (e) { alert("Не удалось открыть печать. Нажмите Ctrl+P (на телефоне: меню браузера → «Печать»)."); } });
     $("clearBtn").addEventListener("click", () => {
@@ -1352,7 +1370,7 @@
         how: ["Выписку по карточкам, счетам и вкладам можно смотреть в интернет-банке и мобильном приложении.", "Ежемесячная выписка на e-mail (зависит от карты). На бумаге в подразделении при предъявлении документа."],
         wait: "В интернет-банке и приложении сразу. В подразделении по обращению: срок уточните в банке.",
         link: ["https://wap.tb.by/upload/downloads/terms-of-service-new.pdf", "Технобанк: общие условия обслуживания физических лиц"] },
-      { id: "belinvest", name: "Белинвестбанк", reads: false,
+      { id: "belinvest", name: "Белинвестбанк", reads: true,
         how: ["Интернет-банкинг: выписка по операциям по картам, можно подключить выписку на e-mail. В мобильном банкинге регистрация идёт через интернет-банкинг.", "SMS-банкинг: мини-выписка по карточке (до 14 операций).", "Материалы банка, на которые я опирался, старые: названия пунктов могли измениться."],
         wait: "В интернет-банкинге сразу.",
         link: ["https://www.belinvestbank.by/be/individual/page/internet-banking", "Белинвестбанк: интернет-банкинг"] },
@@ -3756,7 +3774,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.77", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.78", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }

@@ -86,7 +86,7 @@
   ].map(([name, alt]) => ({ name, re: wb(alt) }));
 
   // Служебные слова, которые банк дописывает вокруг названия. Убираем с краёв.
-  const PHRASES = /(?:^| )(?:ОПЛАТА ТОВАРОВ И УСЛУГ|MOUNTAIN VIEW|MINSKIY R ?N|MINSKIY RAYON|MINSKAYA OBL|GOROD|HONG KONG|TALLINN|AMSTERDAM|SHERMAN OAKS)(?= |$)/g;
+  const PHRASES = /(?:^| )(?:ОПЛАТА ТОВАРОВ И УСЛУГ|ПОКУПКА|MOUNTAIN VIEW|MINSKIY R ?N|MINSKIY RAYON|MINSKAYA OBL|GOROD|HONG KONG|TALLINN|AMSTERDAM|SHERMAN OAKS)(?= |$)/g;
   const NOISE = new Set(["RETAIL", "BLR", "BY", "US", "USD", "EE", "NL", "SE", "SG", "UZ", "IE", "RU", "WWW", "COM", "SHOP", "MAGAZIN", "MINSK",
     "MOGILEV", "VITEBSK", "G", "I", "RES", "MOBIL", "PRIL", "PT", "TORG", "AVT", "TO", "R", "N", "D", "OOO", "OAO", "ZAO"]);
   const KEEP_UPPER = new Set(["KFC", "WB", "MTS", "ATM", "AZS", "VPN", "MFK"]);
