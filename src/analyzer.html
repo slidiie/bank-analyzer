@@ -129,6 +129,7 @@
     .hsum li::before { content: ""; position: absolute; left: 0; top: .55em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
     .dyn { margin: 0 0 1.5rem; }
     .skipall { margin: .3rem 0 .5rem; }
+    .upcard .inapp { margin: .8rem 0 0; font-size: var(--fs-s); text-align: left; }
     h4.skind { margin: .8rem 0 .2rem; font-size: var(--fs-m); }
     /* Обзор v3 (9.11.2026): блоки в карточках, как пример на главной */
     .ocard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
@@ -748,6 +749,7 @@
       </p>
       <p id="landStatus" class="landstatus" role="status"></p>
       <p class="safe"><b>Файл не покидает ваше устройство.</b> Проверьте сами: включите авиарежим и загрузите выписку, всё сработает. <button id="privRow" class="linklike" type="button" aria-haspopup="dialog">Как это устроено</button></p>
+      <p id="inAppNote" class="note inapp" hidden>Сайт открыт внутри приложения. Откройте его в обычном браузере (меню «⋯» → «Открыть в браузере»): там проще выбрать файл, и сайт запомнит ваши категории.</p>
       <p class="muted restore">Сохраняли отчёт в файл? <button id="importLand" class="linklike" type="button">Открыть его</button></p>
     </div>
     <aside class="mini" aria-label="Пример отчёта на выдуманных данных">
@@ -1109,7 +1111,6 @@
 
   <footer><p class="muted"><a href="#faq">Частые вопросы</a> · <button id="fbOpen2" class="linklike" type="button" aria-haspopup="dialog">Написать автору</button></p><p class="muted">Независимый сайт: он не связан с банками и не является их сервисом. Названия банков указаны только для обозначения формата выписки.</p><p class="muted" id="build"><a href="https://github.com/slidiie/bank-analyzer">Исходный код</a> · <a href="https://github.com/slidiie/bank-analyzer/releases">Что нового</a><span id="verStamp" hidden>v4.88</span></p></footer>
 
-  <!--PDFJS-->
   <script src="parser.js"></script>
   <script src="categories.js"></script>
   <script src="vtb.js"></script>
@@ -1163,10 +1164,11 @@
     }
     installPolyfills();
 
-    async function openPdf(bytes) {
+    async function openPdf(bytes, password) {
       const lib = window.pdfjsLib;
       if (!lib) throw new Error("не удалось запустить чтение PDF: обновите браузер");
       const opts = { isEvalSupported: false };
+      if (password) opts.password = password;
       let port = null, task = null, timer = null;
       try {
         const src = "(" + installPolyfills.toString() + ")();\n" + document.getElementById("pdfWorkerModule").textContent;
@@ -1592,6 +1594,7 @@
       if (b.link) kids.push(h("p", {}, h("a", { href: b.link[0], target: "_blank", rel: "noopener noreferrer" }, "Инструкция на сайте банка ↗")));
       $("howPane").replaceChildren(...kids);
     }
+    try { if (/Instagram|FBAN|FBAV|FB_IAB|Telegram|VKClient|\bLine\/|; wv\)/i.test(navigator.userAgent || "")) $("inAppNote").hidden = false; } catch (e) { /* без подсказки */ }
     let savedBank = null;
     try { savedBank = localStorage.getItem("ba_bank_v1"); } catch (e) { /* без запоминания */ }
     showHowInline(savedBank);
@@ -2147,7 +2150,7 @@
       if (!bottomOpen) $("catCreator").hidden = true;   // панель создания категории раскрывается кнопкой «＋ Своя категория»
       const rough = $("roughNote");
       rough.hidden = !(reviewOps > 0);
-      if (reviewOps > 0) rough.textContent = `Выводы и планирование приблизительные: не разобрано ${reviewOps} ${opsWord(reviewOps)}.`;
+      if (reviewOps > 0) rough.textContent = `Цифры ниже приблизительные: ещё не уточнено ${reviewOps} ${opsWord(reviewOps)}.`;
       $("reviewSection").hidden = !bottomOpen || bottomTab !== "review";
       $("incomeSection").hidden = !bottomOpen || bottomTab !== "income";
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";
@@ -2819,6 +2822,31 @@
       return h("div", { class: "noticed" }, h("h3", {}, "Что заметили"), h("ul", {}, lines.slice(0, 3).map(l => h("li", {}, ...l))));
     }
 
+    // Напоминание через месяц: файл .ics открывается календарём телефона или компьютера (Google, Apple, Outlook)
+    function remindIcs(days) {
+      const d = new Date(Date.now() + days * 864e5), pad = n => String(n).padStart(2, "0");
+      const day = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+      const next = new Date(d.getTime() + 864e5), day2 = `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`;
+      const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+      return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//bank-analyzer//RU", "BEGIN:VEVENT", `UID:${now}-${Math.random().toString(36).slice(2)}@bank-analyzer`, `DTSTAMP:${now}`,
+        `DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${day2}`, "SUMMARY:Проверить, куда ушли деньги за месяц",
+        "DESCRIPTION:Скачайте выписку из банка за прошлый месяц и загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории уже запомнены в браузере.",
+        "BEGIN:VALARM", "TRIGGER:PT10H", "ACTION:DISPLAY", "DESCRIPTION:Проверить траты за месяц", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    }
+    function remindCard() {
+      const btn = h("button", { type: "button" }, "Напомнить через месяц");
+      btn.addEventListener("click", () => {
+        try {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([remindIcs(30)], { type: "text/calendar" }));
+          a.download = "напоминание-выписка.ics";
+          document.body.append(a); a.click(); a.remove();
+          btn.textContent = "Файл напоминания скачан: откройте его, чтобы добавить в календарь";
+        } catch (e) { btn.textContent = "Не получилось создать напоминание"; }
+      });
+      return h("div", { class: "ocard remind" }, h("h3", {}, "Сравнить со следующим месяцем"),
+        h("p", { class: "muted" }, "Через месяц загрузите новую выписку: сайт покажет, стало ли больше или меньше, а уточнять придётся меньше. Напоминание добавится в календарь вашего телефона или компьютера, сайт ничего никуда не отправляет."), btn);
+    }
     function renderSummary() {
       const ctx = renderSummaryCore(), box = $("summary");
       try {
@@ -2833,6 +2861,7 @@
         } else if (goals) box.append(goals);
         const dyn = dynamicsBlock(ctx);
         if (dyn) box.append(dyn);
+        if (!demoMode && txs.length) box.append(remindCard());
       } catch (e) { /* без украшений, основной обзор уже построен */ }
       try {
         const nb = noticedBlock(ctx), vs = box.querySelector(".viewswitch");
@@ -2893,7 +2922,7 @@
       h("div", { class: "ibig" }, big), h("div", { class: "ilabel muted" }, label),
       ...(more ? [h("details", {}, h("summary", {}, "Подробнее"), h("p", { class: "muted" }, more))] : [])));
     function renderInsights({ rows, total }, label, ctx) {
-      $("insightsTitle").textContent = label ? `Выводы · ${label}` : "Выводы";
+      $("insightsTitle").textContent = label ? `Подробнее о тратах · ${label}` : "Подробнее о тратах";
       const ul = $("insights");
       ul.replaceChildren();
       if (!rows.length) { ul.append(h("li", {}, "Расходов в выписке не найдено.")); return; }
@@ -3545,7 +3574,7 @@
         const confirmTail = () => {
           tbox.replaceChildren(
             h("b", {}, "Отправить все эти группы в «Прочее»? "),
-            `${tail.length} групп, ${tOps} ${opsWord(tOps)}, ${fmt(tSum)} BYN. Выводы и планирование будут считать их как «Прочее». Это можно отменить.`,
+            `${tail.length} групп, ${tOps} ${opsWord(tOps)}, ${fmt(tSum)} BYN. Отчёт и бюджет будут считать их как «Прочее». Это можно отменить.`,
             h("div", { class: "chips" },
               qchip("Да, в «Прочее»", () => {
                 const prev = tail.map(g => [g.key, userRules[g.key]]);
@@ -3914,11 +3943,25 @@
       if (!isPdf) throw new Error("формат не поддерживается. Скачайте выписку из интернет-банка в формате PDF (CSV сейчас читается только у Приорбанка, Excel и Word не поддерживаются)");
       let pdf;
       setStatus(`${label}Открываю PDF…`);
-      try {
-        pdf = await openPdf(new Uint8Array(await file.arrayBuffer()));
-      } catch (err) {
-        if (err && err.name === "PasswordException") throw new Error("PDF защищён паролем. Скачайте выписку без пароля или снимите защиту");
-        throw new Error("файл не открывается: он повреждён или это не настоящий PDF. Попробуйте скачать выписку заново");
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let password = null;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          pdf = await openPdf(bytes, password);
+          break;
+        } catch (err) {
+          if (err && err.name === "PasswordException") {
+            if (attempt >= 3) throw new Error("PDF защищён паролем, а пароль не подошёл. Пароль обычно приходит в письме или SMS вместе с выпиской");
+            const ask = attempt === 0
+              ? `Файл «${file.name}» защищён паролем. Введите пароль от выписки (обычно он в письме или SMS от банка). Пароль используется только здесь, в вашем браузере, и нигде не сохраняется.`
+              : "Пароль не подошёл. Попробуйте ещё раз:";
+            password = typeof window.prompt === "function" ? window.prompt(ask, "") : null;
+            if (!password) throw new Error("PDF защищён паролем. Загрузите файл ещё раз и введите пароль, или скачайте выписку без пароля");
+            setStatus(`${label}Открываю PDF с паролем…`);
+            continue;
+          }
+          throw new Error("файл не открывается: он повреждён или это не настоящий PDF. Попробуйте скачать выписку заново");
+        }
       }
       const pages = [];
       for (let p = 1; p <= pdf.numPages; p++) {
@@ -4464,5 +4507,6 @@
       }
     } catch (e) { /* без живого примера остаётся статичный */ }
   </script>
+  <!--PDFJS-->
 </body>
 </html>
