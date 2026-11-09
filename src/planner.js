@@ -131,7 +131,47 @@
     return { base, scenario, delta: hasScenario ? scenario - base : null };
   }
 
-  const api = { addMonths, findRegular, schedule, daysBetween, forecast, budgetStatus, savingsPlan, savingsCheck, leftover };
+  // Сравнение двух месяцев: rows = [[категория, сумма], ...] (расходы). Возвращает разницу итога и самые заметные изменения по категориям.
+  function compareMonths(cur, prev, skip) {
+    const sk = new Set(skip || []);
+    const m = new Map();
+    for (const [c, v] of prev) if (!sk.has(c)) m.set(c, { c, a: v, b: 0 });
+    for (const [c, v] of cur) if (!sk.has(c)) { if (!m.has(c)) m.set(c, { c, a: 0, b: 0 }); m.get(c).b = v; }
+    const rows = [...m.values()].map(x => ({ cat: x.c, prev: x.a, cur: x.b, diff: x.b - x.a }));
+    const prevTotal = rows.reduce((a, x) => a + x.prev, 0), curTotal = rows.reduce((a, x) => a + x.cur, 0);
+    rows.sort((x, y) => Math.abs(y.diff) - Math.abs(x.diff));
+    return { prevTotal, curTotal, diff: curTotal - prevTotal, pct: prevTotal > 0 ? (curTotal - prevTotal) / prevTotal * 100 : null, top: rows.filter(x => Math.abs(x.diff) >= 20).slice(0, 3) };
+  }
+
+  // Аномалии в расходах: items = [{date, amount, cat, name}]. Только подозрения, не утверждения.
+  //  double: два и более списания с тем же названием и суммой (от 10) в один день;
+  //  big: расход от 100, не меньше чем в 4 раза больше обычного (медианы) в своей категории, если в ней есть минимум 5 расходов.
+  function findAnomalies(items, skipCats) {
+    const sk = new Set(skipCats || []);
+    const exp = items.filter(t => t.date && t.amount < 0 && !sk.has(t.cat));
+    const groups = new Map();
+    for (const t of exp) {
+      if (-t.amount < 10) continue;
+      const k = t.date + "|" + t.name + "|" + t.amount.toFixed(2);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(t);
+    }
+    const double = [...groups.values()].filter(g => g.length >= 2).map(g => ({ date: g[0].date, name: g[0].name, cat: g[0].cat, amount: -g[0].amount, count: g.length }))
+      .sort((a, b) => b.amount * (b.count - 1) - a.amount * (a.count - 1));
+    const byCat = new Map();
+    for (const t of exp) { if (!byCat.has(t.cat)) byCat.set(t.cat, []); byCat.get(t.cat).push(-t.amount); }
+    const big = [];
+    for (const t of exp) {
+      const a = byCat.get(t.cat);
+      if (-t.amount < 100 || a.length < 5) continue;
+      const med = median(a);
+      if (med > 0 && -t.amount >= 4 * med) big.push({ date: t.date, name: t.name, cat: t.cat, amount: -t.amount, usual: med });
+    }
+    big.sort((a, b) => b.amount - a.amount);
+    return { double, big };
+  }
+
+  const api = { compareMonths, findAnomalies, addMonths, findRegular, schedule, daysBetween, forecast, budgetStatus, savingsPlan, savingsCheck, leftover };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Planner = api;
 })(typeof self !== "undefined" ? self : this);

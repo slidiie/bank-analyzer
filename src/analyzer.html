@@ -1221,7 +1221,7 @@
     $("privFaq").addEventListener("click", () => { SHEETS.forEach(id => { $(id).hidden = true; }); sheetOpener = null; });
     SHEETS.forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) closeSheets(); }));
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
-    const FB_VERSION = "v4.78";
+    const FB_VERSION = "v4.79";
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
@@ -2572,6 +2572,19 @@
           const hi = full.reduce((a, m) => (m.st.total > a.st.total ? m : a)), lo = full.reduce((a, m) => (m.st.total < a.st.total ? m : a));
           ul.append(icard(monthTitle(hi.ym), `Самый затратный полный месяц · ${fmt(hi.st.total)} BYN`, `Самый скромный: ${monthTitle(lo.ym)} (${fmt(lo.st.total)} BYN).`));
         }
+        // К прошлому месяцу: только если оба месяца полные и идут подряд
+        if (ctx.current != null && ctx.current > 0) {
+          const cur = ctx.months[ctx.current], prev = ctx.months[ctx.current - 1];
+          const okM = ym => !coverageNote(ym) && txs.filter(t => t.date && t.date.startsWith(ym)).length >= 5;
+          if (Planner.addMonths(prev, 1) === cur && okM(cur) && okM(prev)) {
+            const c = Planner.compareMonths(ctx.per[ctx.current].rows, ctx.per[ctx.current - 1].rows, []);
+            if (c.pct != null) {
+              const sign = v => (v > 0 ? "+" : "−") + fmt(Math.abs(v)) + " BYN";
+              ul.append(icard(Math.abs(c.pct) < 3 ? "Как в прошлом месяце" : `${c.pct > 0 ? "+" : "−"}${Math.round(Math.abs(c.pct))}%`, `К прошлому месяцу (${monthTitle(prev)}): ${fmt(c.prevTotal)} → ${fmt(c.curTotal)} BYN`,
+                c.top.length ? "Больше всего изменилось: " + c.top.map(x => `«${x.cat}» ${sign(x.diff)}`).join("; ") + "." : "Заметных изменений по категориям нет."));
+            }
+          }
+        }
         // Самые крупные траты (без переводов между своими и долгов). Одинаковые платежи (та же сумма и категория) объединяем в одну строку.
         const groups = new Map();
         (ctx.list || []).filter(t => t.amount < 0 && ![Cat.OWN, Cat.LOAN, Cat.SAVINGS].includes(categoryOf(t))).forEach(t => {
@@ -2588,6 +2601,15 @@
               ? `${fmt(g.amount)} BYN × ${g.dates.length} (${g.cat}; ${g.dates.sort().map(shortDate).join(", ")})`
               : `${fmt(g.amount)} BYN (${fullDate(g.dates[0])}, ${g.cat})`).join("; ") + "."));
         }
+      }
+      // Аномалии: только подозрения, проверьте сами
+      if (ctx && ctx.list) {
+        const an = Planner.findAnomalies(ctx.list.map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP);
+        const fd = d => d.slice(8, 10) + "." + d.slice(5, 7) + "." + d.slice(0, 4);
+        if (an.double.length) ul.append(icard(`${an.double.length} ${an.double.length === 1 ? "случай" : "случая"}`, "Возможное двойное списание",
+          "Одна и та же сумма под одним названием в один день (от 10 BYN): " + an.double.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} BYN × ${d.count} (${fd(d.date)})`).join("; ") + ". Это может быть и две настоящие покупки: проверьте по чекам."));
+        if (an.big.length) ul.append(icard(`${fmt(an.big[0].amount)} BYN`, `Необычно крупная трата · ${an.big[0].cat}`,
+          "Минимум в 4 раза больше обычного в своей категории: " + an.big.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} BYN (${fd(d.date)}, обычно около ${fmt(d.usual)} BYN)`).join("; ") + "."));
       }
       // Азартные игры: внесено (расходы) и выведено (поступления с этой категорией): итог за период
       if (ctx && ctx.list) {
@@ -3774,7 +3796,7 @@
         $("anonStatus").textContent = "Не получилось: " + (err && err.message ? err.message : err);
       }
     }
-    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.78", consent: ANON_CONSENT })); }
+    function anonSampleJson() { return JSON.stringify(Anon.toSample(anon.model, anon.kind, { app: "v4.79", consent: ANON_CONSENT })); }
     // Копирование в буфер: современный способ, при отказе запасной
     async function copyText(text) {
       try { await Promise.race([navigator.clipboard.writeText(text), new Promise((_, no) => setTimeout(no, 1500))]); return true; } catch (e) { /* пробуем запасной путь */ }
