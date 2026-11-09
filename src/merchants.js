@@ -83,6 +83,15 @@
     ["Lotus Bubble Tea", "LOTUS BUBBLE TEA"],
     ["Papa Doner", "PAPA DONER"],
     ["Boosty", "BOOSTY"],
+    // Этап B: ещё общеизвестные сети (названия для показа; категории задаёт categories.js)
+    ["Gold Apple", "GOLD ?APPLE"],
+    ["Твоё", "TVOE"],
+    ["Cofix", "COFIX"],
+    ["Taro Babl", "TARO BABL"],
+    ["Crispy", "CRISPY"],
+    ["Papa Doner", "PAPA DONER"],
+    ["Whoosh", "WHOOSH"],
+    ["Белпочта", "BELPOST|BELPOCHTA"],
   ].map(([name, alt]) => ({ name, re: wb(alt) }));
 
   // Служебные слова, которые банк дописывает вокруг названия. Убираем с краёв.
