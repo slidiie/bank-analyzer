@@ -736,6 +736,18 @@
     .bar { background: var(--text); opacity: .75; }
     #reviewBanner .barwrap .bar { opacity: 1; }
     #plan .lslider { accent-color: var(--text); }
+    /* «Итог месяца» (этап A): первым блоком «Обзора» */
+    .recap { border-left: 4px solid var(--accent); }
+    .recap h3 { margin: 0 0 .1rem; font-size: 1.15rem; }
+    .recap .rsave { margin: .5rem 0 .2rem; font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--pos); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .recap .rsave small { display: block; font-size: var(--fs-s); font-weight: 400; color: var(--muted); }
+    .recap ul { list-style: none; margin: .5rem 0 0; padding: 0; }
+    .recap li { margin: .35rem 0; padding-left: 1rem; position: relative; line-height: 1.5; overflow-wrap: anywhere; }
+    .recap li::before { content: ""; position: absolute; left: 0; top: .6em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
+    .recap li.k-grew::before { background: var(--neg); }
+    .recap li.k-save::before { background: var(--pos); }
+    .recap .rnote { margin: .5rem 0 0; }
+    .recap .rnote .linklike { display: inline-block; padding: .75rem .2rem; margin: -.75rem 0; }
     .noticed { margin: .8rem 0 1rem; padding: .7rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); }
     .noticed h3 { margin: 0 0 .3rem; font-size: 1rem; }
     .noticed ul { list-style: none; margin: 0; padding: 0; }
@@ -986,6 +998,7 @@
   <div id="report" hidden>
     <div id="demoMore" class="note" data-sec="more" hidden><p style="margin:0 0 .5rem">В демо ничего не сохраняется и не загружается. Выйдите из демо, чтобы добавить свою выписку.</p><button type="button" class="primary" id="demoMoreExit">Выйти из демо</button></div>
     <nav id="tabbar" aria-label="Разделы"></nav>
+    <div id="recap" data-sec="overview"></div>
     <div id="check" data-sec="overview"></div>
     <div class="nav" id="nav" hidden></div>
     <h2 id="secSummary" data-sec="overview" style="margin-top:1rem">Сколько пришло и куда ушло</h2>
@@ -1175,6 +1188,7 @@
   <script src="merge.js"></script>
   <script src="export.js"></script>
   <script src="planner.js"></script>
+  <script src="recap.js"></script>
   <script src="backup.js"></script>
   <script src="history.js"></script>
   <script src="goals.js"></script>
@@ -2944,6 +2958,30 @@
       return h("div", { class: "ocard remind" }, h("h3", {}, "Сравнить со следующим месяцем"),
         h("p", { class: "muted" }, "Через месяц загрузите новую выписку: сайт покажет, стало ли больше или меньше, а уточнять придётся меньше. Напоминание добавится в календарь вашего телефона или компьютера, сайт ничего никуда не отправляет."), btn);
     }
+    // «Итог месяца»: 3–5 выводов о последнем полном месяце (или о выбранном полном). Логика в recap.js, здесь только данные и вид
+    function recapCard() {
+      if (typeof Recap === "undefined" || !txs.length) return null;
+      const months = monthsInStatement();
+      const full = months.filter(ym => !coverageNote(ym));
+      const items = spendList(txs).filter(t => t.date).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) }));
+      const dates = txs.map(t => t.date).filter(Boolean).sort();
+      let regular = [];
+      try { regular = regularCtx().regular; } catch (e) { /* без подписок */ }
+      const r = Recap.monthRecap({
+        items, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
+        period: { from: [header.from, dates[0]].filter(Boolean).sort().pop(), to: [header.to, dates[dates.length - 1]].filter(Boolean).sort()[0] },
+        unsorted: [...REVIEW_CATS], fixed: ["Аренда и жильё", "Комиссии банка", "Здоровье", "Образование", "Наличные", Cat.GAMBLING],
+        regular, subsCats: ["Связь и подписки"], nice: softCase,
+      });
+      if (!r || !r.lines.length) return null;
+      const sub = r.month ? (r.compared ? `Сравнение со средним за ${r.compared === 1 ? "прошлый месяц" : r.compared + " прошлых месяца"}` : "Для сравнения загрузите выписку и за прошлые месяцы")
+        : "В выписке нет ни одного целого месяца, поэтому без сравнения с обычным уровнем";
+      return h("section", { class: "ocard recap", "aria-label": r.title },
+        h("h3", {}, r.title), h("div", { class: "muted" }, sub),
+        r.save ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")) : "",
+        h("ul", {}, r.lines.filter(l => l.kind !== "save" || !r.save).map(l => h("li", { class: "k-" + l.kind }, l.text))),
+        r.note ? h("p", { class: "muted rnote" }, r.note, " ", h("button", { type: "button", class: "linklike", onclick: () => showSection("review") }, "Уточнить")) : "");
+    }
     function renderSummary() {
       const ctx = renderSummaryCore(), box = $("summary");
       try {
@@ -2965,6 +3003,7 @@
         const card = vs && vs.closest ? vs.closest(".ocard") : null;   // «Что заметили» идёт отдельной карточкой сразу под диаграммой
         if (nb && card) card.after(nb);
       } catch (e) { /* блок «Что заметили» необязателен */ }
+      try { const rb = $("recap"), rc = recapCard(); if (rb) { rb.replaceChildren(); if (rc) rb.append(rc); } } catch (e) { /* «Итог месяца» необязателен */ }
       // Кнопки периода на телефоне листаются вбок: выбранную показываем, сдвигая только ряд (страница не прокручивается)
       try { box.querySelectorAll(".tabs").forEach(row => { const a = row.querySelector(".tab.active"); if (a && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, a.offsetLeft - row.offsetLeft - 16); }); } catch (e) { /* не важно */ }
       return ctx;
