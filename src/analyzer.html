@@ -406,6 +406,20 @@
     .trust b { display: block; font-size: .9rem; line-height: 1.25; }
     .trust span { display: block; font-size: .78rem; color: var(--muted); line-height: 1.3; }
     .upcard .safe { margin: .8rem 0 0; font-size: .85rem; }
+    .chips { list-style: none; margin: 0 0 1.1rem; padding: 0; display: flex; flex-wrap: wrap; gap: .45rem; }
+    .chips li { display: inline-flex; align-items: center; gap: .4rem; margin: 0; padding: .35rem .75rem .35rem .6rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .88rem; line-height: 1.2; }
+    .chips .gi { width: 1.05rem; height: 1.05rem; color: var(--pos); stroke-width: 2; }
+    .minirecap { padding: .2rem 0 .2rem .9rem; }
+    .minirecap .rsave { font-size: 1.9rem; }
+    .minibar { margin: 1.1rem 0 .2rem; font-size: .85rem; }
+    .mbar { display: flex; gap: 2px; height: .9rem; margin: .35rem 0 .5rem; border-radius: 999px; overflow: hidden; }
+    .mbar i { display: block; min-width: 3px; }
+    .mlegend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .2rem .9rem; }
+    .minirecap .mlegend li { margin: 0; padding: 0; display: inline-flex; align-items: center; gap: .35rem; }
+    .minirecap .mlegend li::before { display: none; }
+    .mlegend i { width: .65rem; height: .65rem; border-radius: 2px; flex: none; }
+    .chips { gap: .4rem; }
+    .chips li { padding: .3rem .65rem .3rem .55rem; font-size: .85rem; }
     .steps { margin-top: 1rem; }
     .mini { margin-top: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 1rem 1.1rem; }
     .minitag { font-size: .78rem; }
@@ -623,6 +637,11 @@
     #demoBar { padding: .25rem .8rem; font-size: var(--fs-s, .9rem); gap: .3rem .8rem; border-radius: 8px; }
     #demoBar #demoExit { padding: .2rem .7rem; font-size: inherit; min-height: 0; white-space: nowrap; flex: none; }
     @media (max-width: 520px) { #demoBar { flex-wrap: nowrap; } #demoBar .dx { display: none; } }
+    #demoBar .demoact { display: inline-flex; gap: .4rem; flex: none; }
+    #demoBar #demoOwn { padding: .2rem .8rem; font-size: inherit; min-height: 0; white-space: nowrap; }
+    @media (max-width: 400px) { #demoBar .dm2 { display: none; } }
+    #demoBar #demoOwn, #demoBar #demoExit { min-height: 32px; }
+    @media (max-width: 767px) { #demoBar #demoOwn, #demoBar #demoExit { min-height: 44px; } }
     h2, .sect > h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
     h3, #summary h3, .dyn h3, .morecard h3 { font-size: 1rem; font-weight: 650; letter-spacing: 0; }
     .hsum .hbig, .ibig, #subs .sbig, #plan .pbig { font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -705,12 +724,13 @@
     :root[data-theme="dark"] .hl { background: none; color: var(--sig); }
     .howinline { margin: 1.6rem 0 1rem; }
     @media (min-width: 1000px) {
-      body:not(.demo) .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 2.4rem; align-items: start; grid-template-rows: auto auto auto 1fr; }
+      body:not(.demo) .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 2.4rem; align-items: start; grid-template-rows: auto auto auto auto 1fr; }
       body:not(.demo) .hero > * { grid-column: 1 / -1; }
       body:not(.demo) .hero > h1 { grid-column: 1; grid-row: 2; }
       body:not(.demo) .hero > .lede { grid-column: 1; grid-row: 3; }
-      body:not(.demo) .hero > .upcard { grid-column: 1; grid-row: 4; }
-      body:not(.demo) .hero > .mini { grid-column: 2; grid-row: 2 / 5; margin-top: .4rem; }
+      body:not(.demo) .hero > .chips { grid-column: 1; grid-row: 4; }
+      body:not(.demo) .hero > .upcard { grid-column: 1; grid-row: 5; }
+      body:not(.demo) .hero > .mini { grid-column: 2; grid-row: 2 / 6; margin-top: .4rem; }
     }
     .steps b { background: var(--text); color: var(--bg); }
     .themesw .knob { background: var(--text); }
@@ -801,41 +821,46 @@
       </span>
     </div>
     <h1>Куда <span class="hl">утекают</span> ваши деньги</h1>
-    <p class="lede">Загрузите выписку из банка и увидите, сколько пришло, сколько ушло и на что: траты по категориям, подписки и всё, что списывается регулярно. Можно сразу несколько выписок из разных банков. Основное бесплатно, без регистрации.</p>
+    <p class="lede">Загрузите выписку из банка и за минуту увидите, куда ушли деньги, какие траты выросли и сколько могло остаться. Без ручного подсчёта, можно сразу несколько банков.</p>
+    <ul class="chips" aria-label="Коротко о сайте">
+      <li><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Файл остаётся у вас</li>
+      <li><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Без регистрации</li>
+      <li><svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18M12 3l9 5H3z"/></svg><span id="chipBanks">Банки Беларуси</span></li>
+    </ul>
     <div id="dropzone" class="upcard">
       <svg class="gi upicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
-      <p class="muted upcap" id="banks"></p>
       <p class="cta">
         <button id="startBtn" class="primary" type="button">Выбрать выписку</button>
         <button id="demoBtn" type="button">Посмотреть на примере</button>
       </p>
       <p class="muted howlink">Нет выписки? <a href="#howInline">Как скачать её в своём банке</a></p>
+      <p class="muted upcap" id="banks"></p>
       <div id="deviceCard" class="devcard" hidden>
         <p><b>С прошлого визита на этом устройстве:</b> <span id="deviceInfo"></span></p>
         <p class="cta"><button id="deviceOpen" class="primary" type="button">Открыть сохранённую выписку</button> <button id="deviceForget" type="button">Забыть</button></p>
       </div>
       <p id="landStatus" class="landstatus" role="status"></p>
-      <p class="safe"><b>Файл не покидает ваше устройство.</b> Проверьте сами: включите авиарежим и загрузите выписку, всё сработает. <button id="privRow" class="linklike" type="button" aria-haspopup="dialog">Как это устроено</button></p>
+      <p class="safe"><b>Файл не покидает ваше устройство.</b> Проверьте сами: в авиарежиме всё тоже работает. <button id="privRow" class="linklike" type="button" aria-haspopup="dialog">Как это устроено</button></p>
       <p id="inAppNote" class="note inapp" hidden>Сайт открыт внутри приложения. Откройте его в обычном браузере (меню «⋯» → «Открыть в браузере»): там проще выбрать файл, и сайт запомнит ваши категории.</p>
       <p class="muted restore">Сохраняли отчёт в файл? <button id="importLand" class="linklike" type="button">Открыть его</button></p>
     </div>
     <aside class="mini" aria-label="Пример отчёта на выдуманных данных">
-      <div class="muted minitag">Пример отчёта за месяц (выдуманные данные)</div>
+      <div class="muted minitag">Так выглядит результат (пример на выдуманных данных)</div>
       <div class="chart">
-        <div class="donut" role="img" aria-label="Диаграмма трат за месяц: аренда и жильё 52%, продукты 19%, кафе 7%, наличные 7%, остальное 14%">
+        <div class="donut" role="img" aria-label="Диаграмма трат за месяц: аренда и жильё 42%, продукты 22%, кафе 17%, наличные 6%, остальное 12%">
           <svg viewBox="0 0 42 42" aria-hidden="true">
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-home)" stroke-dasharray="51.7 48.3" stroke-dashoffset="0"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-food)" stroke-dasharray="19.1 80.9" stroke-dashoffset="-51.7"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-cafe)" stroke-dasharray="7.5 92.5" stroke-dashoffset="-70.8"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-transfer)" stroke-dasharray="7.4 92.6" stroke-dashoffset="-78.3"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-other)" stroke-dasharray="14.3 85.7" stroke-dashoffset="-85.7"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-home)" stroke-dasharray="42.5 57.5" stroke-dashoffset="0"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-food)" stroke-dasharray="22.3 77.7" stroke-dashoffset="-42.5"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-cafe)" stroke-dasharray="17.3 82.7" stroke-dashoffset="-64.8"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-transfer)" stroke-dasharray="6.1 93.9" stroke-dashoffset="-82.1"/>
+            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-other)" stroke-dasharray="11.8 88.2" stroke-dashoffset="-88.2"/>
           </svg>
-          <div class="hole"><b>1 354</b><small>BYN за месяц</small></div>
+          <div class="hole"><b>1 647</b><small>BYN за месяц</small></div>
         </div>
         <ul class="legend">
           <li><i style="background:var(--cat-home)"></i>Аренда и жильё<span class="num">700</span></li>
-          <li><i style="background:var(--cat-food)"></i>Продукты<span class="num">258</span></li>
-          <li><i style="background:var(--cat-cafe)"></i>Кафе и рестораны<span class="num">101</span></li>
+          <li><i style="background:var(--cat-food)"></i>Продукты<span class="num">367</span></li>
+          <li><i style="background:var(--cat-cafe)"></i>Кафе и рестораны<span class="num">286</span></li>
           <li><i style="background:var(--cat-transfer)"></i>Наличные<span class="num">100</span></li>
           <li><i style="background:var(--cat-other)"></i>Остальное<span class="num">195</span></li>
         </ul>
@@ -1022,8 +1047,8 @@
     <div id="bankChips" class="bankchips" data-sec="overview more" aria-label="Загруженные банки"></div>
     <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
     <div id="demoBar" class="note" hidden>
-      <span><b>Демо на выдуманных данных.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
-      <button id="demoExit" type="button">✕ Выйти<span class="dx"> из демо</span></button>
+      <span><b>Демо<span class="dm2"> на выдуманных данных</span>.</b> <span class="demohint">Категории можно менять, ничего не сохраняется.</span></span>
+      <span class="demoact"><button id="demoOwn" class="primary" type="button">Загрузить свою<span class="dx"> выписку</span></button> <button id="demoExit" type="button">✕ Выйти<span class="dx"> из демо</span></button></span>
     </div>
 
 
@@ -1412,10 +1437,13 @@
     const bankRank = b => { const i = BANK_ORDER.indexOf(b.id); return i < 0 ? BANK_ORDER.length : i; };
     const bankNames = Banks.BANKS.slice().sort((a, b) => bankRank(a) - bankRank(b)).map(b => b.name).join(", ");
     $("banks").textContent = `Читаем выписки ${Banks.BANKS.length} банков: ${bankNames}`;
+    $("chipBanks").textContent = `${Banks.BANKS.length} банков Беларуси`;
     $("faqBanks").textContent = "Сейчас разбираются выписки: " + bankNames + ". Для каждого банка формат PDF свой, поэтому новые банки добавляются по мере того, как появляются образцы выписок. Выписку неподдерживаемого банка сайт честно откажется читать, а не покажет неверные суммы.";
 
     // Пример на главной = последний месяц постоянного демо (Demo.make без зерна). test_render.js сверяет эти числа с демо.
-    const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 258.37], ["Кафе и рестораны", 101.24], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
+    const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 367.17], ["Кафе и рестораны", 285.64], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
+    // «Итог месяца» в примере на главной: те же выводы, что в демо за этот месяц (сверяет test_render.js)
+    const LANDING_RECAP = { save: "+207 BYN", lines: [["grew", "Кафе и рестораны: 286 BYN, в 3,5 раза больше обычного"], ["total", "Всего потрачено 1 647 BYN: на 11% больше обычного"], ["subs", "Связь и подписки: 40.49 BYN в месяц, это 486 BYN в год (2 платежа)"], ["small", "Мелкие покупки до 10 BYN: 24 штуки на 144 BYN"]] };
     function enterDemo(lastMonth) {
       const wasDemo = demoMode;
       if (!demoMode) stash = { splits, condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
@@ -1455,6 +1483,7 @@
     $("miniDemoBtn").addEventListener("click", () => { enterDemo(true); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
     $("demoBtn").addEventListener("click", () => { enterDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
     $("startBtn").addEventListener("click", () => { $("file").click(); });
+    $("demoOwn").addEventListener("click", () => { $("file").click(); });   // из демо сразу к своей выписке (демо закроется, когда файл выбран)
     // Перетаскивание файла на карточку загрузки (ПК); на телефоне работает кнопка «Выбрать файл»
     const dz = $("dropzone");
     dz.addEventListener("dragover", e => { e.preventDefault(); dz.className = "upcard drag"; });
@@ -4834,12 +4863,26 @@
         const rows = LANDING_SAMPLE;
         const st = { rows, total: Math.round(rows.reduce((a, r) => a + r[1], 0) * 100) / 100, own: 0, loan: 0, saved: 0 };
         const slot = h("div", { class: "minibody" });
-        let cur = "pie";
+        let cur = "recap";
         const views = {};
         const build = () => {
+          views.recap = h("div", { class: "miniview" }, h("div", { class: "recap minirecap" },
+            h("h3", {}, "Итог месяца"), h("div", { class: "muted" }, "Сравнение со средним за прошлые месяцы"),
+            h("div", { class: "rsave" }, LANDING_RECAP.save, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")),
+            h("ul", {}, LANDING_RECAP.lines.map(([k, t]) => h("li", { class: "k-" + k }, t))),
+            (() => {
+              // Полоса «куда ушли деньги»: 4 крупнейшие категории и «остальное»
+              const top = rows.slice(0, 4), rest = rows.slice(4).reduce((a, r) => a + r[1], 0);
+              const parts = top.map(r => [r[0], r[1], catColor(r[0])]).concat(rest > 0 ? [["Остальное", rest, "var(--cat-other)"]] : []);
+              return h("div", { class: "minibar" },
+                h("div", { class: "muted" }, `Куда ушли ${Recap.money(st.total)} BYN`),
+                h("div", { class: "mbar", role: "img", "aria-label": parts.map(p => `${p[0]} ${Math.round(p[1] / st.total * 100)}%`).join(", ") },
+                  ...parts.map(p => h("i", { style: `flex:${p[1]};background:${p[2]}` }))),
+                h("ul", { class: "mlegend" }, parts.map(p => h("li", {}, h("i", { style: `background:${p[2]}` }), `${p[0]} ${Math.round(p[1] / st.total * 100)}%`))));
+            })()));
           views.pie = h("div", { class: "miniview" }, pieChart(st, { pull: "Кафе и рестораны" }));
           views.table = h("div", { class: "miniview" }, catTable(st));
-          slot.replaceChildren(views.pie, views.table);
+          slot.replaceChildren(views.recap, views.pie, views.table);
           show(cur);
         };
         const btns = {};
@@ -4849,7 +4892,7 @@
           Object.keys(btns).forEach(k => { btns[k].classList.toggle("active", k === v); btns[k].setAttribute("aria-pressed", k === v ? "true" : "false"); });
         };
         const mk = (id, label) => { const b = h("button", { type: "button", "aria-pressed": "false" }, label); b.addEventListener("click", () => show(id)); btns[id] = b; return b; };
-        const sw = h("div", { class: "viewswitch" }, mk("pie", "Диаграмма"), mk("table", "Таблица"));
+        const sw = h("div", { class: "viewswitch" }, mk("recap", "Итог"), mk("pie", "Диаграмма"), mk("table", "Таблица"));
         oldChart.style.display = "none";
         oldChart.before(sw, slot);
         build();
