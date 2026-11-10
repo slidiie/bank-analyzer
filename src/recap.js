@@ -148,7 +148,7 @@
     const subs = (o.regular || []).filter(r => r && subsCats.has(r.cat) && r.perMonth > 0);
     if (subs.length) {
       const s = subs.reduce((a, r) => a + r.perMonth, 0);
-      lines.push({ kind: "subs", value: s, text: `Подписки и связь: ${money(s)} BYN в месяц, это ${money(s * 12)} BYN в год (${subs.length} ${plural(subs.length, "платёж", "платежа", "платежей")})` });
+      lines.push({ kind: "subs", value: s, text: `Связь и подписки: ${money(s)} BYN в месяц, это ${money(s * 12)} BYN в год (${subs.length} ${plural(subs.length, "платёж", "платежа", "платежей")})` });
     }
 
     // 4. Мелкие покупки: много мелочи незаметно складывается в заметную сумму
