@@ -709,6 +709,11 @@
     .steps b { background: var(--text); color: var(--bg); }
     .themesw .knob { background: var(--text); }
     .themesw[data-dark="false"] .ic-sun, .themesw[data-dark="true"] .ic-moon { color: var(--bg); }
+    .wanted { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--accent); border-radius: 0; }
+    .wanted h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
+    .wantedlist { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: .4rem 0 .8rem; }
+    .wantedlist li { padding: .25rem .7rem; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+    .wanted:target { outline: 2px solid var(--accent); outline-offset: 4px; }
     .about { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--sig); border-radius: 0; }
     .about h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
     .about ul { margin: .4rem 0; padding-left: 1.2rem; }
@@ -842,6 +847,15 @@
         <p>Выписка пришла на почту: откройте письмо и сохраните вложение, дальше так же. Если сайт открыт внутри Telegram или другого приложения и файл не выбирается, откройте сайт в обычном браузере: меню «⋯» → «Открыть в браузере».</p>
       </details>
       <p class="muted">Нужен именно файл из банка, не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Другие банки и подробности</button></p>
+    </section>
+    <section id="wanted" class="wanted" aria-labelledby="wantedH">
+      <h2 id="wantedH">Вашего банка нет в списке? Помогите его добавить</h2>
+      <p>Сайт читает выписки не всех банков: у каждого свой формат, и научить его можно только по настоящему образцу. Это не нужно для вашего отчёта, но поможет и вам, и другим.</p>
+      <p><b>Нужны выписки этих банков:</b></p>
+      <ul id="wantedList" class="wantedlist"></ul>
+      <p class="muted">Нужен именно файл из интернет-банка (PDF), не фото и не скан. Мастер сам закроет ФИО, номера карт и счетов, адреса и телефоны, а вы проверите результат до отправки. Сайт ничего не отправляет сам: образец уходит только вашим письмом.</p>
+      <p class="cta"><button id="wantedOpen" type="button" class="primary">Подготовить образец выписки</button></p>
+      <p class="muted">Ссылкой на эту просьбу можно поделиться: <button id="wantedCopy" class="linklike" type="button">скопировать ссылку</button> <span id="wantedMsg" role="status"></span></p>
     </section>
     <section id="about" class="about" aria-labelledby="aboutH">
       <h2 id="aboutH">Зачем этот сайт</h2>
@@ -4610,6 +4624,19 @@
     }
     $("anonOpen").addEventListener("click", () => showAnon(false));
     $("anonOpenMore").addEventListener("click", () => showAnon(false));
+    // ---------- Блок «Каких банков не хватает»: список нужных банков, ссылка-просьба #sample ----------
+    const WANTED_BANKS = [
+      { name: "Белагропромбанк" }, { name: "Белгазпромбанк" }, { name: "БНБ-Банк" }, { name: "БелВЭБ Банк" },
+      { name: "Паритетбанк" }, { name: "Технобанк" }, { name: "Банк Дабрабыт" }, { name: "Банк «Решение»" },
+      { name: "Банк Москва-Минск" }, { name: "Идея Банк" }, { name: "Другой банк" }];
+    $("wantedList").replaceChildren(...WANTED_BANKS.map(b => h("li", {}, b.name)));
+    $("wantedOpen").addEventListener("click", () => showAnon(false));
+    $("wantedCopy").addEventListener("click", async () => {
+      const url = location.origin + location.pathname.replace(/[^/]*$/, "") + "#sample";
+      $("wantedMsg").textContent = (await copyText(url)) ? "Ссылка скопирована." : "Не удалось скопировать: " + url;
+    });
+    // Ссылка «…/#sample» сразу открывает мастер образца (для знакомых, которым владелец прислал просьбу)
+    if (typeof location !== "undefined" && location.hash === "#sample") { const w = $("wanted"); if (w && w.scrollIntoView) w.scrollIntoView(); setTimeout(() => showAnon(false), 300); }
     // ---------- Расширенная версия (монетизация) ----------
     // Пока автор не выбрал способ оплаты, enabled = false и карточку видят только те, у кого уже есть код.
     // Включить: enabled: true, price (текст цены), payUrl (страница оплаты: Boosty, бот в Telegram и т. п.), how (как придёт код).
