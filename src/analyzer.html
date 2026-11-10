@@ -368,6 +368,8 @@
     .qtr { margin-bottom: .7rem; padding: .6rem .8rem; }
     .qtrrem { display: flex; align-items: center; gap: .4rem; margin: .5rem 0; min-height: 44px; }
     .qtrrem input { width: 1.3rem; height: 1.3rem; flex: 0 0 auto; }
+    .qtrdetail { margin-top: .6rem; padding-top: .3rem; border-top: 1px solid var(--line); }
+    #review .qtrdetail .qchip { background: transparent; border-color: transparent; color: var(--accent); font-weight: 600; padding: 0 .1rem; }
     .qtrrow { padding: .55rem 0; border-top: 1px solid var(--line); }
     .revmore > summary { font-weight: 400; color: var(--muted); font-size: .9rem; }
     .revmore > div, .revmore > p { margin-top: .35rem; }
@@ -3686,8 +3688,9 @@
           h("div", { class: "chips" },
             qchip("Свой счёт", () => { if (rec && trRemember) markOwnAccount(g.tx, title); else applyTrGroup(g, Cat.OWN, title); }, "Не считать тратой"),
             qchip("Человеку", () => applyTrGroup(g, Cat.P2P, title), "Перевод другому человеку: считается расходом «" + Cat.P2P + "»"),
-            qchip("Подробно", () => { trExpanded.add(g.key); renderReview(); }, "Другая категория или разбор по одной операции", "ghost"),
-            qchip("Пропустить", () => deferKey(g.key), "Пока пропустить", "ghost")));
+            qchip("Пропустить", () => deferKey(g.key), "Пока пропустить", "ghost")),
+          // «Подробно» отдельной строкой ниже кнопок: чтобы не терялось среди них
+          h("div", { class: "qtrdetail" }, qchip("Подробно: другая категория или по одной операции", () => { trExpanded.add(g.key); renderReview(); }, "Другая категория или разбор по одной операции")));
         wrap.append(row);
       }
       if (trList.length > trLimit) wrap.append(h("p", {}, h("button", { type: "button", onclick: () => { trLimit += 6; renderReview(); } }, `Показать ещё ${Math.min(6, trList.length - trLimit)}`)));
