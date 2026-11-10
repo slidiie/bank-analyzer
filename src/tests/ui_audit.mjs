@@ -169,7 +169,7 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   await dialog('окно «Как скачать»', tag, `document.getElementById("howRow").click()`);
   await dialog('карточка банка', tag, `document.getElementById("howRow").click(); setTimeout(() => document.querySelector("#howBanks .rowcard").click(), 100)`);
   await dialog('окно «Написать нам»', tag, `document.getElementById("fbOpen").click()`);
-  await dialog('мастер образца, шаг 1', tag, `document.getElementById("anonOpen").click()`);
+  await dialog('мастер образца, шаг 1', tag, `document.getElementById("wantedOpen").click()`);
   await ev('document.getElementById("demoBtn").click()'); await wait(1200);
   const tabs = await ev('[...document.querySelectorAll("#tabbar button")].map(b => b.innerText.replace(/\\s*\\d+$/, "").trim())');
   for (let i = 0; i < tabs.length; i++) {
@@ -195,7 +195,7 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   await send('Emulation.setEmulatedMedia', { media: '', features: [{ name: 'prefers-color-scheme', value: theme }] });
 
   // Мастер образца, шаги 2–4 на выдуманном файле
-  await ev(`document.getElementById("anonOpen").click()`); await wait(300);
+  await ev(`document.getElementById("wantedOpen").click()`); await wait(300);
   await ev(`document.getElementById("anonNext").click()`); await wait(300);
   await check('мастер образца, шаг 2', tag); await tabCycle('мастер образца, шаг 2', tag);
   await setFile('#anonFile', FAKE_CSV); await wait(1200);
