@@ -10,6 +10,7 @@
   const FEES = "Комиссии банка";
   const GAMBLING = "Азартные игры";  // ставки, казино: считаем и вносимое, и выводимое (итог «внесено − выведено»)
   const LOAN = "Дал в долг";        // деньги, которые одолжил другому человеку: не считаются тратой
+  const P2P = "Переводы людям";     // переводы другим людям (не себе и не в долг): расход, но не покупка в магазине
   const SAVINGS = "Накопления";     // переводы на вклад или накопительный счёт: не трата, а «отложено». Определяет только сам пользователь
 
   // «Корзины»: операции, у которых по выписке видно только способ оплаты, но не цель.
@@ -38,6 +39,7 @@
     GAMBLING,
     "Наличные",
     "Прочее",
+    P2P,
     LOAN,
     SAVINGS,
     FEES,
@@ -63,6 +65,7 @@
     [GAMBLING]: "gamepad",
     "Наличные": "cash",
     "Прочее": "box",
+    [P2P]: "swap",
     [LOAN]: "arrow-out",
     [SAVINGS]: "coins",
     [FEES]: "bank",
@@ -90,6 +93,7 @@
     "Одежда и покупки": ["одежда", "покупки", "шопинг", "одежда и покупки"],
     "Развлечения": ["развлечения", "развлечение", "досуг"],
     "Наличные": ["наличные", "нал", "снятие наличных"],
+    [P2P]: ["переводы людям", "перевод человеку", "переводы другим людям", "переводы родным"],
     [SAVINGS]: ["накопления", "сбережения", "копилка", "вклад", "депозит", "отложено"],
   };
   const norm = n => String(n || "").toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
@@ -174,17 +178,17 @@
   // Намеренно НЕ включены посредники (bePaid, переводы MTBANK, Account Funding): по ним не видно, за что заплачено.
   const PLACE_RULES = [
     [GAMBLING, GAMBLING_RE],
-    ["Подарки", /flowwow|rozi\.?bel|rozibel|florist|цвет[ыов]|букет|flowers/i],
+    ["Подарки", /flowwow|rozi\.?bel|rozibel|florist|цвет[ыов]|букет|flowers|\bc?tsvety\b|\bcvety\b|buket|podarki|сувенир|souvenir/i],
     ["Путешествия", /belavia|белавиа|airline|airways|ryanair|wizz ?air|turkish air|aeroflot|аэрофлот|booking\.com|airbnb|agoda|hostel|hotel|отель|гостиниц|ostrovok|tutu\.ru|aviasales|ржд|rzd|белорусская железная дорога|\bbzd\b|бжд|bus ?for|ecolines|lux ?express/i],
-    ["Продукты", /kopeechk|копеечк|universam|универсам|evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b|korona|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты/i],
-    ["Кафе и рестораны", /kofejn|кофейн|burger king|mcdonald|\bkfc\b|pizza|пицц|coffee|кофе|cafe|\bkafe\b|кафе|\bkofe\b|restoran|ресторан|sushi|суши|shaurm|шаурм|bistro|mak\.by|вкусно|vkusno|ksb ?v|dodo|додо|papa ?john|папа джонс|vasilki|васильки|темпо|sushivesla|сушивесла|yandex[. ]?eda|яндекс[. ]?еда|rostic|ростикс|starbucks|кофейн|бургер|burger|столов[аa]я|canteen/i],
-    ["Транспорт", /\bmetro\b|метро|minsktrans|минсктранс|taxi|такси|yandex[. ]?go|яндекс[. ]?go|\buber\b|\bmaxim\b|\bbolt\b|belorusneft|белоруснефть|\ba-?100\b|lukoil|лукойл|gazpromneft|газпромнефть|rosneft|роснефть|\btriple\b|трайпл|\bazs\b|\bазс\b|парковк|parking|carsharing|каршеринг/i],
-    ["Здоровье", /apteka|аптек|pharm|фармаци|planeta zdorov|планета здоровья|lyubimaya apt|любимая аптека|ostrov zdorov|остров здоровья|zabotliv|заботлив|belfarm|белфарм|optika|оптик|klinik|клиник|clinic|stomatolog|стоматолог|dental|медицин|medcentr|медцентр|laborator|лаборатор|анализ/i],
-    ["Красота и уход", /salon|салон красот|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж/i],
-    ["Образование", /udemy|coursera|skillbox|skyeng|duolingo|школа|school|универс|universit|лицей|гимназ|детский сад|kindergarten/i],
-    ["Товары для дома", /fix ?price|фикс ?прайс|три цены|tri ?ceny|tri ?tseny|ikea|икеа|leroy|леруа|castorama|касторама|\bobi\b|domovoy|домовой|hoff|хофф/i],
-    ["Одежда и покупки", /wildberries|\bwb\b|\bozon\b|озон|lamoda|aliexpress|алиэкспресс|21vek|21 век|onliner|\bemall\b|kufar|куфар|deal\.by|shop\.by|delivio|5element|5 элемент|5 element|electrosila|электросила|\bmila\b|\bмила\b|megatop|мегатоп|\bmarko\b|belwest|белвест|formelle|\bconte\b|милавица|milavitsa|zara|bershka|oodji|o'?stin|остин|lc ?waikiki|sinsay|reserved|deichmann|белпочта|belpost/i],
-    ["Связь и подписки", /\ba1\b|a1\.by|\bmts\b|мтс|\blife[:)]|beltelecom|белтелеком|byfly|байфлай|\bzala\b|атлант телеком|velcom|google ?\*? ?(youtube|one|play)|yandex ?(plus|music)|яндекс ?(плюс|музыка)|spotify|netflix|itunes|apple\.com\/bill|icloud|okko|kinopoisk|кинопоиск|megogo|boosty|patreon|openai|chatgpt|telegram premium|подписка|subscription/i],
+    ["Продукты", /kopeechk|копеечк|universam|универсам|evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b|korona|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты|\bprodukty\b|e-?dostavka|е-?доставка|svetofor|светофор|hit ?ekspress|хит ?экспресс|groshyk|minimarket|минимаркет|gastronom|гастроном|supermarket|супермаркет|pekarn|пекарн|bakery|konditer|кондитер|myasn|мясн|ovoshi|овощ|bellakt|vinoteka|винотек|alkomarket|алкомаркет|\bmayak\b|маяк/i],
+    ["Кафе и рестораны", /kofejn|кофейн|burger king|mcdonald|\bkfc\b|pizza|пицц|coffee|кофе|cafe|\bkafe\b|кафе|\bkofe\b|restoran|ресторан|sushi|суши|shaurm|шаурм|bistro|mak\.by|вкусно|vkusno|ksb ?v|dodo|додо|papa ?john|папа джонс|vasilki|васильки|темпо|sushivesla|сушивесла|yandex[. ]?eda|яндекс[. ]?еда|rostic|ростикс|starbucks|кофейн|бургер|burger|столов[аa]я|canteen|stolovaya|\bpzz\b|crispy|taro ?babl|bubble ?tea|cofix|cinnabon|kafeteri|\bvarka\b|smakata|papa ?doner|doner|kebab|shawarma|\bgrill\b|\bpub\b|пивн|ramen|рамен|chajnaya|чайная|donuts|пончик|morozhenoe|мороженое|ice ?cream|pitstsa|pizzeriya|pizzeria|steak|стейк/i],
+    ["Транспорт", /\bmetro\b|метро|minsktrans|минсктранс|taxi|такси|yandex[. ]?go|яндекс[. ]?go|\buber\b|\bmaxim\b|\bbolt\b|belorusneft|белоруснефть|\ba-?100\b|lukoil|лукойл|gazpromneft|газпромнефть|rosneft|роснефть|\btriple\b|трайпл|\bazs\b|\bазс\b|парковк|parking|carsharing|каршеринг|paybycard|trolleybus|троллейбус|avtobus|автобус|tramvay|трамвай|whoosh|avtomoyka|автомойка|moyka|шиномонтаж|shinomontazh/i],
+    ["Здоровье", /apteka|аптек|pharm|фармаци|planeta zdorov|планета здоровья|lyubimaya apt|любимая аптека|ostrov zdorov|остров здоровья|zabotliv|заботлив|belfarm|белфарм|optika|оптик|klinik|клиник|clinic|stomatolog|стоматолог|dental|медицин|medcentr|медцентр|laborator|лаборатор|анализ|veterin|ветеринар|zoomag|зоомагазин|ortoped|ортопед|dermat|логопед|medsi|медси|synlab|синлаб/i],
+    ["Красота и уход", /salon|салон красот|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж|gold ?apple|zolotoe ?yabloko|золотое яблоко|parfum|parfyum|парфюм|nogti|ногтев|\bnails?\b|brow ?bar|podruzhka|подружка|letual|летуаль|sephora|cosmetic|kosmetika|epilyaci|эпиляц|tattoo|ресниц/i],
+    ["Образование", /udemy|coursera|skillbox|skyeng|duolingo|школа|school|универс|universit|лицей|гимназ|детский сад|kindergarten|repetitor|репетитор|kursy|курсы|academy|академия|логопед|razvivayush|развивающ/i],
+    ["Товары для дома", /fix ?price|фикс ?прайс|три цены|tri ?ceny|tri ?tseny|ikea|икеа|leroy|леруа|castorama|касторама|\bobi\b|domovoy|домовой|hoff|хофф|domovenok|santehnika|сантехник|stroitel|строитель|\bstroy|mebel|мебел|elektrotovar|электротовар|hozyajstvenn|хозяйственн|bauhaus|baucenter|posuda|посуда|tekstil|текстиль/i],
+    ["Одежда и покупки", /wildberries|\bwb\b|\bozon\b|озон|lamoda|aliexpress|алиэкспресс|21vek|21 век|onliner|\bemall\b|kufar|куфар|deal\.by|shop\.by|delivio|5element|5 элемент|5 element|electrosila|электросила|\bmila\b|\bмила\b|megatop|мегатоп|\bmarko\b|belwest|белвест|formelle|\bconte\b|милавица|milavitsa|zara|bershka|oodji|o'?stin|остин|lc ?waikiki|sinsay|reserved|deichmann|белпочта|belpost|evropochta|европочта|moda ?maks|\bmodi\b|mooon|moooon|\btvoe\b|\bтвое\b|gloria ?jeans|obuv|обув|odezhd|одежд|trikotazh|трикотаж|detskiy ?mir|детский мир|knigi|книги|knizhn|книжн|kanctovar|канцтовар|kancelyar|канцеляр|igrushk|игрушк|zapchast|запчаст|avtotovar|автотовар|avtomagazin|автомагазин/i],
+    ["Связь и подписки", /\ba1\b|a1\.by|\bmts\b|мтс|\blife[:)]|beltelecom|белтелеком|byfly|байфлай|\bzala\b|атлант телеком|velcom|google ?\*? ?(youtube|one|play)|yandex ?(plus|music)|яндекс ?(плюс|музыка)|spotify|netflix|itunes|apple\.com\/bill|icloud|okko|kinopoisk|кинопоиск|megogo|boosty|patreon|openai|chatgpt|telegram premium|подписка|subscription|telegram|\bmts ?money|\blife ?:\)|a1 ?\.?by|beltelecom|интернет-провайдер|provider/i],
     ["Развлечения", /fitnes|fitness|фитнес|world ?class|kino|кино|cinema|театр|\bsport|(?:^|[^а-яё])спорт|бассейн|aquapark|аквапарк|bowling|боулинг|квест|музей|museum|zoo|зоопарк/i],
   ];
 
@@ -212,6 +216,7 @@
 
   // МТБанк: «Пополнение карточки / банковской платежной карточки / счета» это перевод на карту или счёт (свой или чужой)
   const TRANSFER_OP_RE = /^пополнение (карточки|банковской платежной карточки|счета|счёта)/i;
+  const TRANSFER_MCC = new Set(["6012", "6538", "4829", "6540"]);
   // Корзина для операции, которую не удалось отнести к категории (иначе null)
   function bucket(tx) {
     if (!(tx.amount < 0)) return null;
@@ -222,6 +227,8 @@
     if (/\bp2p|р2р/i.test(tx.details || "")) return BUCKET_TR;
     // Приорбанк «MOBILE BANK», Сбер «SOU Sber Bank»: платежи из приложения, получателя в выписке нет
     if (/mobile ?bank|\bsou sber bank/i.test(tx.details || "")) return BUCKET_IB;
+    // Денежные переводы по коду MCC и «Account Funding» / Visa Direct: перемещение денег, а не покупка
+    if (TRANSFER_MCC.has(String(tx.mcc || "")) || /account funding|visa direct|\bch debit\b/i.test(tx.details || "")) return BUCKET_TR;
     return null;
   }
 
@@ -274,7 +281,7 @@
   const INITIALS_RE = /(?:[А-ЯЁ][а-яё]+|[A-ZА-ЯЁ]{3,})\s+[A-ZА-ЯЁ]\.\s?[A-ZА-ЯЁ]\./;
   const looksLikePerson = text => { const t = String(text || ""); return PATRONYMIC_RE.test(t) || INITIALS_RE.test(t); };
 
-  const api = { looksLikePerson, maybeGamblingPayout, resolve, SUBS_RE, OWN, INCOME, FEES, LOAN, SAVINGS, GAMBLING, DEFAULT_CATEGORIES, ICONS, MCC, BUCKETS, canonical, merchantKey, categorize, bucket, isErip, recipient };
+  const api = { P2P, looksLikePerson, maybeGamblingPayout, resolve, SUBS_RE, OWN, INCOME, FEES, LOAN, SAVINGS, GAMBLING, DEFAULT_CATEGORIES, ICONS, MCC, BUCKETS, canonical, merchantKey, categorize, bucket, isErip, recipient };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Categories = api;
 })(typeof self !== "undefined" ? self : this);

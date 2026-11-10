@@ -353,6 +353,10 @@
     .revhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .1rem .8rem; }
     .revhead b { flex: 1 1 10rem; }
     .revsum { flex: 0 0 auto; }
+    .qtr { margin-bottom: .7rem; padding: .6rem .8rem; }
+    .qtrrem { display: flex; align-items: center; gap: .4rem; margin: .5rem 0; min-height: 44px; }
+    .qtrrem input { width: 1.3rem; height: 1.3rem; flex: 0 0 auto; }
+    .qtrrow { padding: .55rem 0; border-top: 1px solid var(--line); }
     .revmore > summary { font-weight: 400; color: var(--muted); font-size: .9rem; }
     .revmore > div, .revmore > p { margin-top: .35rem; }
     .viewswitch { display: inline-flex; border: 1px solid var(--ctl-border); border-radius: 999px; overflow: hidden; margin: .3rem 0 .8rem; }
@@ -1992,10 +1996,11 @@
       box.replaceChildren();
       for (const e of tailUndo) {
         box.append(h("div", { class: "ok", style: "margin:.4rem 0" },
-          `✓ ${e.groups} групп (${e.ops} ${opsWord(e.ops)}, ${fmt(e.sum)} BYN) отправлены в «Прочее». `,
+          e.label ? `✓ ${e.label} ` : `✓ ${e.groups} групп (${e.ops} ${opsWord(e.ops)}, ${fmt(e.sum)} BYN) отправлены в «Прочее». `,
           h("button", { type: "button", onclick: () => {
             e.prev.forEach(([k, v]) => { if (v === undefined) delete userRules[k]; else userRules[k] = v; });
-            saveJSON("ba_rules_v1", userRules);
+            (e.prevTx || []).forEach(([k, v]) => { if (v === undefined) delete txRules[k]; else txRules[k] = v; });
+            saveJSON("ba_rules_v1", userRules); saveJSON("ba_txrules_v1", txRules);
             tailUndo.splice(tailUndo.indexOf(e), 1);
             render();
           } }, "Отменить"), " ",
@@ -2970,7 +2975,7 @@
       const r = Recap.monthRecap({
         items, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
         period: { from: [header.from, dates[0]].filter(Boolean).sort().pop(), to: [header.to, dates[dates.length - 1]].filter(Boolean).sort()[0] },
-        unsorted: [...REVIEW_CATS], fixed: ["Аренда и жильё", "Комиссии банка", "Здоровье", "Образование", "Наличные", Cat.GAMBLING],
+        unsorted: [...REVIEW_CATS], fixed: ["Аренда и жильё", "Комиссии банка", "Здоровье", "Образование", "Наличные", Cat.GAMBLING, Cat.P2P],
         regular, subsCats: ["Связь и подписки"], nice: softCase,
       });
       if (!r || !r.lines.length) return null;
@@ -3497,6 +3502,51 @@
       hint.cat ? h("button", { type: "button", class: "linklike", onclick: () => setRule(tx, hint.cat, Cat.ICONS[hint.cat]) }, "Отметить как «" + hint.cat + "»") : "") : "";
     const qchip = (label, onclick, title, cls) => h("button", { type: "button", class: "qchip" + (cls ? " " + cls : ""), onclick, title: title || "" }, label);
 
+    // ---------- «Переводы в пару нажатий»: компактный список групп по получателю, одна кнопка на группу ----------
+    const trExpanded = new Set();             // группы, открытые «Подробно»: показываются обычной карточкой
+    let trRemember = true, trLimit = 6;
+    // Группа «переводов на карты и счета» (МТБ с получателем, P2P без получателя и т. п.)
+    const isTrGroup = g => Cat.bucket(g.tx) === TR_BUCKET && g.tx.amount < 0 && !trExpanded.has(g.key);
+    function applyTrGroup(g, cat, title) {
+      const items = g.items;
+      const sum = items.reduce((a, t) => a + Math.abs(t.amount), 0);
+      const entry = { groups: 1, ops: items.length, sum, prev: [], prevTx: [], label: `«${title}» (${items.length} ${opsWord(items.length)}, ${fmt(sum)} BYN): «${cat}».${trRemember ? " Запомнено для будущих выписок." : ""}` };
+      if (trRemember) { entry.prev.push([g.key, userRules[g.key]]); userRules[g.key] = cat; }
+      else items.forEach(t => { entry.prevTx.push([txId(t), txRules[txId(t)]]); txRules[txId(t)] = cat; });
+      ensureCategory(cat);
+      saveJSON("ba_rules_v1", userRules); saveJSON("ba_txrules_v1", txRules);
+      tailUndo.push(entry); if (tailUndo.length > 5) tailUndo.shift();
+      render();
+    }
+    function renderTransferQuick(trList) {
+      if (!trList.length) return "";
+      const ops = trList.reduce((n, g) => n + g.items.length, 0), sum = trList.reduce((a, g) => a + Math.abs(g.sum), 0);
+      const word = n => [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "группы" : n % 10 === 1 && n % 100 !== 11 ? "группа" : "групп";
+      const wrap = h("div", { class: "note qtr" },
+        h("b", {}, "Переводы: " + trList.length + " " + word(trList.length)),
+        h("div", { class: "muted" }, `${ops} ${opsWord(ops)}, ${fmt(sum)} BYN. Одно нажатие на группу: «Свой счёт» — не считать тратой, «Человеку» — перевод другому человеку.`));
+      const rem = h("input", { type: "checkbox", id: "trRemember" });
+      rem.checked = trRemember;
+      rem.addEventListener("change", () => { trRemember = rem.checked; });
+      wrap.append(h("label", { class: "qtrrem", for: "trRemember" }, rem, " Запомнить для всех будущих выписок"));
+      for (const g of trList.slice(0, trLimit)) {
+        const title = softCase(friendlyTitle(g.tx));
+        const rec = Cat.recipient(g.tx);
+        const n = g.items.length;
+        const row = h("div", { class: "qtrrow" },
+          h("div", { class: "revhead" }, h("b", {}, title), h("span", { class: "revsum" }, fmt(g.sum) + " BYN")),
+          h("div", { class: "muted" }, `${n} ${opsWord(n)}` + (rec ? ` · счёт …${rec.last4}` : " · получатель в выписке не указан")),
+          h("div", { class: "chips" },
+            qchip("Свой счёт", () => { if (rec && trRemember) markOwnAccount(g.tx, title); else applyTrGroup(g, Cat.OWN, title); }, "Не считать тратой"),
+            qchip("Человеку", () => applyTrGroup(g, Cat.P2P, title), "Перевод другому человеку: считается расходом «" + Cat.P2P + "»"),
+            qchip("Подробно", () => { trExpanded.add(g.key); renderReview(); }, "Другая категория или разбор по одной операции", "ghost"),
+            qchip("Пропустить", () => deferKey(g.key), "Пока пропустить", "ghost")));
+        wrap.append(row);
+      }
+      if (trList.length > trLimit) wrap.append(h("p", {}, h("button", { type: "button", onclick: () => { trLimit += 6; renderReview(); } }, `Показать ещё ${Math.min(6, trList.length - trLimit)}`)));
+      return wrap;
+    }
+
     const deferred = new Set();                // отложено кнопкой «Пропустить»: только в памяти страницы, категория не назначается
     const deferKey = k => { deferred.add(k); render(); };
     function renderReview() {
@@ -3580,16 +3630,19 @@
       }
       const box = $("review");
       box.replaceChildren();
+      const trList = list.filter(isTrGroup);
+      const cards = list.filter(g => !trList.includes(g));
+      box.append(renderTransferQuick(trList));
       if (reviewLimitKey !== period) { reviewLimitKey = period; reviewLimit = REVIEW_GROUPS; tailShown = false; }
       // Хвост: первые группы покрывают почти всю сумму, остальное свёрнуто в одну строку (его можно одним нажатием отправить в «Прочее»)
-      let headCount = list.length;
-      if (!tailShown && list.length > 8 && reviewSum > 0) {
+      let headCount = cards.length;
+      if (!tailShown && cards.length > 8 && reviewSum > 0) {
         let acc = 0, k = 0;
-        while (k < list.length && acc < reviewSum * 0.8) { acc += Math.abs(list[k].sum); k++; }
+        while (k < cards.length && acc < reviewSum * 0.8) { acc += Math.abs(cards[k].sum); k++; }
         headCount = Math.min(Math.max(k, 5), REVIEW_GROUPS);
-        if (list.length - headCount < 4) headCount = list.length;
+        if (cards.length - headCount < 4) headCount = cards.length;
       }
-      const visible = list.slice(0, headCount);
+      const visible = cards.slice(0, headCount);
       const recN = visible.filter(g => Cat.recipient(g.tx)).length;
       if (recN >= 3) box.append(h("p", { class: "muted", style: "margin:.2rem 0 .5rem" }, "Ниже много переводов на разные счета и карты. Для каждого выберите: свой счёт, чужой или оплата услуги."));
       for (const g of visible.slice(0, reviewLimit)) {
@@ -3705,8 +3758,8 @@
         card.append(hintLine(hintByKey.get(g.key), g.tx));
         box.append(card);
       }
-      if (headCount < list.length) {
-        const tail = list.slice(headCount);
+      if (headCount < cards.length) {
+        const tail = cards.slice(headCount);
         const tOps = tail.reduce((a, g) => a + g.items.length, 0);
         const tSum = tail.reduce((a, g) => a + Math.abs(g.sum), 0);
         const pct = reviewSum > 0 ? Math.max(1, Math.round(tSum / reviewSum * 100)) : 0;
@@ -3737,9 +3790,9 @@
         intro();
         box.append(tbox);
       }
-      if (headCount === list.length && list.length > reviewLimit) {
-        box.append(h("p", {}, `Показаны первые ${reviewLimit} групп из ${list.length}: самые крупные сверху. `,
-          h("button", { type: "button", onclick: () => { reviewLimit += REVIEW_GROUPS; renderReview(); } }, `Показать ещё ${Math.min(REVIEW_GROUPS, list.length - reviewLimit)}`)));
+      if (headCount === cards.length && cards.length > reviewLimit) {
+        box.append(h("p", {}, `Показаны первые ${reviewLimit} групп из ${cards.length}: самые крупные сверху. `,
+          h("button", { type: "button", onclick: () => { reviewLimit += REVIEW_GROUPS; renderReview(); } }, `Показать ещё ${Math.min(REVIEW_GROUPS, cards.length - reviewLimit)}`)));
       }
       if (parked.length) {
         const pv = [...parked].sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));

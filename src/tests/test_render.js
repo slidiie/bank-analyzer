@@ -518,6 +518,9 @@ vm.runInContext(`
   header = { from: "2026-09-01", to: "2026-10-31" };
   userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
 `, ctx);
+const rvQuick = textOf(byId["review"]);
+check("переводы: компактная панель «в пару нажатий», кнопки «Свой счёт» и «Человеку»", rvQuick.includes("Переводы: 1 группа") && rvQuick.includes("Свой счёт") && rvQuick.includes("Человеку") && rvQuick.includes("Запомнить для всех будущих"));
+clickButton(byId["review"], "Подробно");
 const rv = textOf(byId["review"]);
 check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
 check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50.00") && html.includes("в приложении банка"));
@@ -539,12 +542,36 @@ vm.runInContext(`
   header = { from: "2026-11-01", to: "2026-11-30" };
   userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
 `, ctx);
+clickButton(byId["review"], "Подробно");
 const rv2 = textOf(byId["review"]);
 check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Мой счёт") && rv2.includes("Другого человека") && rv2.includes("Оплата услуги или магазина") && !rv2.includes("Продукты"));
 clickButton(byId["review"], "Другого человека");
 check("счёт: «Другого человека» показывает варианты перевода", textOf(byId["review"]).includes("Дал в долг") && textOf(byId["review"]).includes("Подарки"));
 clickButton(byId["review"], "Подарки");
 check("счёт: выбор применяется ко всей группе", vm.runInContext(`Object.values(userRules).includes("Подарки")`, ctx));
+
+
+// ---- Переводы в пару нажатий: одна кнопка на группу, запоминание для будущих, отмена ----
+vm.runInContext(`
+  const D2 = (acct, n) => "MTB MOBILE BANK MINSK BY MP2B 140103 Оплата в Интернет-банке, Наименование операции: Пополнение карточки, номер счета BY00TEST00" + acct + ", номер устройства 5M100016, 0" + n + ".11.2026";
+  txs = [
+    { date: "2026-11-02", time: "10:00:00", amount: -10, mcc: "5399", details: D2("1111", 2), balance: 1 },
+    { date: "2026-11-03", time: "10:00:00", amount: -20, mcc: "5399", details: D2("1111", 3), balance: 2 },
+    { date: "2026-11-04", time: "10:00:00", amount: -30, mcc: "5399", details: D2("2222", 4), balance: 3 },
+  ];
+  header = { from: "2026-11-01", to: "2026-11-30" };
+  userRules = {}; txRules = {}; tailUndo.length = 0; trExpanded.clear(); activeTab = "all"; allCat = "all"; render();
+`, ctx);
+check("переводы: две группы по получателю в одной панели", textOf(byId["review"]).includes("Переводы: 2 группы"));
+clickButton(byId["review"], "Человеку");
+check("переводы: «Человеку» относит группу к «Переводы людям» и запоминает правило", vm.runInContext(`Object.values(userRules).filter(c => c === Cat.P2P).length === 1 && Object.keys(txRules).length === 0`, ctx));
+check("переводы: после нажатия осталась одна группа и есть «Отменить»", textOf(byId["review"]).includes("Переводы: 1 группа") && textOf(byId["undoBar"]).includes("Переводы людям") && textOf(byId["undoBar"]).includes("Запомнено для будущих"));
+clickButton(byId["undoBar"], "Отменить");
+check("переводы: отмена возвращает группу", vm.runInContext(`Object.keys(userRules).length === 0`, ctx) && textOf(byId["review"]).includes("Переводы: 2 группы"));
+vm.runInContext(`trRemember = false;`, ctx);
+clickButton(byId["review"], "Человеку");
+check("переводы: без «запомнить» правило ставится только на операции этой группы", vm.runInContext(`Object.keys(userRules).length === 0 && Object.keys(txRules).length >= 1 && Object.values(txRules).every(c => c === Cat.P2P)`, ctx));
+vm.runInContext(`trRemember = true;`, ctx);
 
 
 // ---- Остальные группы тоже начинаются с понятного вопроса ----
