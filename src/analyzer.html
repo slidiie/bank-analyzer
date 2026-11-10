@@ -809,6 +809,18 @@
     .sw-update button { min-height: 40px; padding: .3rem .9rem; background: var(--sig); color: var(--sig-ink); border: 0; font-weight: 600; }
     .sw-update .sw-x { background: transparent; color: var(--bg); min-width: 40px; padding: 0; font-size: 1.2rem; }
     @media (max-width: 768px) { .sw-update { bottom: calc(5rem + env(safe-area-inset-bottom)); } }
+    /* Единый вид полей (10 ноября): выбор файла в мастере образца, галочки и поля текста больше не «браузерные» */
+    .filepick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; width: 100%; box-sizing: border-box; min-height: 96px; padding: 1rem; border: 1.5px dashed var(--ctl-border); border-radius: var(--r-m); background: var(--surface-2); color: var(--text); text-align: center; cursor: pointer; }
+    .filepick:hover, .filepick.over { border-color: var(--text); background: var(--surface); }
+    .vh:focus-visible + .filepick { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .filepick .fpbtn { display: inline-flex; align-items: center; min-height: 40px; padding: 0 1.1rem; border-radius: var(--r-m); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .filepick .fpname { color: var(--muted); font-size: var(--fs-s, .9rem); overflow-wrap: anywhere; }
+    .filepick.has .fpname { color: var(--text); font-weight: 600; }
+    #anonStep2 label input[type=text] { width: 100%; max-width: 22rem; box-sizing: border-box; margin-top: .3rem; padding: .45rem .7rem; }
+    input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 18px; height: 18px; flex: 0 0 auto; cursor: pointer; vertical-align: -3px; }
+    input[type=checkbox]:disabled { cursor: not-allowed; }
+    textarea { width: 100%; box-sizing: border-box; background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .55rem .7rem; font: inherit; resize: vertical; }
+    textarea:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
   </style>
 </head>
 <body>
@@ -893,15 +905,15 @@
       <p>Его делает один человек (ник slidiie) в свободное время. Хотелось понять, куда уходят деньги, но готовые сервисы не читают выписки белорусских банков, а отправлять свою выписку чужому серверу не хотелось. Поэтому всё считается прямо в вашем браузере.</p>
       <ul>
         <li>Основное бесплатно, без регистрации.</li>
-        <li>Без рекламы и счётчиков посещений.</li>
-        <li>Ваши данные никуда не отправляются.</li>
+        <li>Без рекламы и без cookies. Считается только число посещений, без данных выписки.</li>
+        <li>Ваша выписка никуда не отправляется.</li>
       </ul>
       <p class="muted"><a href="https://github.com/slidiie/bank-analyzer">Исходный код открыт</a>: любой может проверить, что делает страница. Нашли ошибку или ваш банк не читается? <button id="fbOpen3" class="linklike" type="button" aria-haspopup="dialog">Напишите автору</button>.</p>
     </section>
     <h2 id="faq">Частые вопросы</h2>
     <details><summary>Куда уходит файл?</summary>
-      <p>Никуда. Выписка читается прямо в вашем браузере, на сервер ничего не загружается, а сама страница запрещает себе любые запросы в интернет. Проверить просто: включите авиарежим или отключите интернет и загрузите выписку. Всё сработает.</p>
-      <p class="muted">Подробнее для тех, кто разбирается: библиотека чтения PDF (pdf.js от Mozilla, лицензия Apache 2.0) встроена в страницу, сетевые запросы запрещены политикой CSP, <a href="https://github.com/slidiie/bank-analyzer">исходный код открыт</a>.</p></details>
+      <p>Никуда. Выписка читается прямо в вашем браузере, на сервер ничего не загружается, а сама страница запрещает себе запросы в интернет. Единственное исключение: счётчик посещений (GoatCounter) получает «страницу открыли» и размер экрана, без cookies и без чего-либо из выписки. Проверить просто: включите авиарежим или отключите интернет и загрузите выписку. Всё сработает.</p>
+      <p class="muted">Подробнее для тех, кто разбирается: библиотека чтения PDF (pdf.js от Mozilla, лицензия Apache 2.0) встроена в страницу, сетевые запросы запрещены политикой CSP (разрешена только картинка-счётчик bankanalyzer.goatcounter.com), <a href="https://github.com/slidiie/bank-analyzer">исходный код открыт</a>.</p></details>
     <details><summary>Какие банки читает, а если моего нет?</summary>
       <p id="faqBanks"></p>
       <p><b>Как помочь добавить банк.</b> Нужен образец выписки: по нему пишется чтение именно этого банка. Это необязательно и делается только по вашему желанию. Мастер из пяти шагов сам закроет личное, вы проверите образец и отправите его письмом. Сайт файлы никуда не отправляет.</p>
@@ -924,9 +936,9 @@
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="privTitle" tabindex="-1">
       <h2 id="privTitle" style="margin-top:0">Файл не покидает ваш браузер</h2>
       <h3>Что происходит с файлом?</h3>
-      <p>Ничего не отправляется. Выписка читается прямо на вашем устройстве, на сервер ничего не загружается. Библиотека для чтения PDF встроена в саму страницу, поэтому ничего с чужих серверов не подгружается.</p>
+      <p>Файл не отправляется. Выписка читается прямо на вашем устройстве, на сервер ничего не загружается. Библиотека для чтения PDF встроена в саму страницу, поэтому ничего с чужих серверов не подгружается.</p>
       <h3>Как это проверить?</h3>
-      <p>Отключите интернет перед загрузкой выписки: всё продолжит работать. Страница также запрещает себе любые сетевые запросы (политика CSP), так что отправить данные ей некуда.</p>
+      <p>Отключите интернет перед загрузкой выписки: всё продолжит работать. Страница также запрещает себе сетевые запросы (политика CSP), так что отправить данные выписки ей некуда. Разрешён только счётчик посещений: он узнаёт, что страницу открыли, без cookies и без чего-либо из выписки.</p>
       <h3>Что хранится на устройстве?</h3>
       <p>Только ваши настройки: правила и свои категории, лимиты и числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций. Сами выписки автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или открыть сохранённый файл отчёта. Стереть всё можно кнопкой «Забыть мои данные» в разделе «Ещё» или в настройках браузера: «Данные сайтов».</p>
       <div class="modalbtns"><button id="privClose" type="button">Понятно</button> <a href="#faq" id="privFaq">Все вопросы</a></div>
@@ -962,7 +974,7 @@
       <h2 id="fbTitle" style="margin-top:0">Написать автору</h2>
       <p class="muted">Выберите тему и напишите своими словами, что случилось. <b>Суммы, номера карт и описания операций писать не нужно.</b> Сайт сам ничего не отправляет: откроется ваше почтовое приложение с готовым письмом, вы просмотрите его и отправите сами.</p>
       <p><label for="fbTopic">Тема</label><br><select id="fbTopic"></select></p>
-      <p><label for="fbText">Что случилось</label><br><textarea id="fbText" rows="4" maxlength="1500" style="width:100%;box-sizing:border-box;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:var(--r-s);padding:.5rem;font:inherit" placeholder="Например: после загрузки выписки ВТБ показаны не все месяцы"></textarea></p>
+      <p><label for="fbText">Что случилось</label><br><textarea id="fbText" rows="4" maxlength="1500" placeholder="Например: после загрузки выписки ВТБ показаны не все месяцы"></textarea></p>
       <details class="datablock"><summary>Что уйдёт в письме кроме вашего текста</summary>
         <pre id="fbPreview" class="muted" style="white-space:pre-wrap;margin:.4rem 0 0;font:inherit"></pre>
       </details>
@@ -990,7 +1002,7 @@
         <div id="anonStep2" hidden>
           <p>Выберите свою выписку (PDF или CSV) того банка, которого нет в списке.</p>
           <p><label>Название банка (необязательно)<br><input type="text" id="anonBank" maxlength="60" autocomplete="off" placeholder="Например, Паритетбанк"></label></p>
-          <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
+          <p><input type="file" id="anonFile" class="vh" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"><label for="anonFile" id="anonPick" class="filepick"><span id="anonPickBtn" class="fpbtn">Выбрать файл выписки</span><span id="anonFileName" class="fpname">PDF или CSV, можно перетащить сюда. Файл никуда не отправляется.</span></label></p>
           <p id="anonStatus" class="muted"></p>
         </div>
         <div id="anonStep3" hidden>
@@ -1208,7 +1220,7 @@
       <details id="proCodeBox">
         <summary>У меня есть код</summary>
         <p class="muted">Код проверяется прямо здесь, в браузере: сайт никуда его не отправляет. В коде нет вашего имени и почты.</p>
-        <p><textarea id="proCode" rows="3" style="width:100%;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:5px" aria-label="Код расширенной версии" placeholder="BA1-…"></textarea></p>
+        <p><textarea id="proCode" rows="3" aria-label="Код расширенной версии" placeholder="BA1-…"></textarea></p>
         <p><button id="proCheck" type="button" class="primary">Проверить код</button></p>
       </details>
       <p id="proMsg" role="status" aria-live="polite"></p>
@@ -1444,6 +1456,22 @@
     const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 367.17], ["Кафе и рестораны", 285.64], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
     // «Итог месяца» в примере на главной: те же выводы, что в демо за этот месяц (сверяет test_render.js)
     const LANDING_RECAP = { save: "+207 BYN", lines: [["grew", "Кафе и рестораны: 286 BYN, в 3,5 раза больше обычного"], ["total", "Всего потрачено 1 647 BYN: на 11% больше обычного"], ["subs", "Связь и подписки: 40.49 BYN в месяц, это 486 BYN в год (2 платежа)"], ["small", "Мелкие покупки до 10 BYN: 24 штуки на 144 BYN"]] };
+    // Счётчик посещений (GoatCounter): только «страницу открыли» и 3 события без данных выписки.
+    // Работает лишь на настоящем сайте, без cookies; уважает «Не отслеживать». Сумм, имён, файлов здесь нет и быть не может.
+    const STATS_URL = "https://bankanalyzer.goatcounter.com/count";
+    function statsPing(name) {
+      try {
+        if (typeof location === "undefined" || location.hostname !== "slidiie.github.io") return;
+        if (typeof navigator !== "undefined" && (navigator.doNotTrack === "1" || navigator.webdriver)) return;
+        const once = "ba-stat-" + (name || "visit");
+        try { if (sessionStorage.getItem(once)) return; sessionStorage.setItem(once, "1"); } catch (e) { /* без памяти вкладки: считаем как есть */ }
+        const q = name
+          ? "p=" + encodeURIComponent(name) + "&e=true"
+          : "p=" + encodeURIComponent(location.pathname) + "&r=" + encodeURIComponent((document.referrer || "").replace(/^(https?:\/\/[^/]+).*$/, "$1")) + "&s=" + (screen.width | 0);
+        new Image().src = STATS_URL + "?" + q + "&rnd=" + Math.random().toString(36).slice(2, 8);
+      } catch (e) { /* счётчик никогда не мешает сайту */ }
+    }
+    if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("load", () => statsPing(""));
     function enterDemo(lastMonth) {
       const wasDemo = demoMode;
       if (!demoMode) stash = { splits, condRules, txNotes, userRules, txRules, customCats, customIcons, acctNames, budgets, calc, txs, header, statements, allCat, allFilt, allSort, activeTab, bottomTab };
@@ -1481,7 +1509,7 @@
     const scrollTo = id => { try { $(id).scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { /* без прокрутки */ } };
     // Демо: сразу показываем результат (плашка демо, вкладки, таблица трат), а не начало страницы анализа
     $("miniDemoBtn").addEventListener("click", () => { enterDemo(true); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
-    $("demoBtn").addEventListener("click", () => { enterDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
+    $("demoBtn").addEventListener("click", () => { statsPing("открыл-пример"); enterDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });
     $("startBtn").addEventListener("click", () => { $("file").click(); });
     $("demoOwn").addEventListener("click", () => { $("file").click(); });   // из демо сразу к своей выписке (демо закроется, когда файл выбран)
     // Перетаскивание файла на карточку загрузки (ПК); на телефоне работает кнопка «Выбрать файл»
@@ -4281,8 +4309,9 @@
           if (err && err.unsupported) unsupportedFile = f;
         }
       }
-      if (unsupportedFile) offerSample(unsupportedFile);
+      if (unsupportedFile) { offerSample(unsupportedFile); statsPing("банк-не-читается"); }
       if (loaded) {
+        statsPing("загрузил-выписку");
         if (statements.length > 1) {
           const cross = Merge.markCrossPairs(txs, isRetail);
           if (cross) notes.push(`Найдено переводов между выписками: ${cross}. Они не считаются тратами и доходами.`);
@@ -4653,7 +4682,11 @@
       anonRefresh();
     });
     const r2 = v => Math.round(v * 100) / 100;
-    $("anonFile").addEventListener("change", () => anonLoad($("anonFile").files[0]));
+    function anonPickName(f) { $("anonFileName").textContent = f ? f.name : "PDF или CSV, можно перетащить сюда. Файл никуда не отправляется."; if ($("anonPick").classList) $("anonPick").classList.toggle("has", !!f); $("anonPickBtn").textContent = f ? "Выбрать другой файл" : "Выбрать файл выписки"; }
+    $("anonFile").addEventListener("change", () => { const f = $("anonFile").files[0]; anonPickName(f); anonLoad(f); });
+    ["dragenter", "dragover"].forEach(t => $("anonPick").addEventListener(t, e => { e.preventDefault(); $("anonPick").classList.add("over"); }));
+    ["dragleave", "drop"].forEach(t => $("anonPick").addEventListener(t, () => $("anonPick").classList.remove("over")));
+    $("anonPick").addEventListener("drop", e => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) { anonPickName(f); anonLoad(f); } });
     // Открыть мастер: новый заход начинается с первого шага, незавершённый продолжается
     function showAnon(lead) {
       $("anonLead").hidden = !lead;
@@ -4717,11 +4750,12 @@
     function offerSample(file) {
       anonStep = 1;
       showAnon(true);
+      anonPickName(file);
       anonLoad(file);
     }
     function anonReset() {
       anon = null; anonMade = null; anonStep = 1;
-      $("anonFile").value = ""; $("anonBank").value = ""; $("anonOk").checked = false;
+      $("anonFile").value = ""; $("anonBank").value = ""; $("anonOk").checked = false; anonPickName(null);
       $("anonStatus").textContent = ""; $("anonMadeMsg").textContent = ""; $("anonLead").hidden = true;
       $("anonPage").replaceChildren();
     }

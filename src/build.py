@@ -28,11 +28,11 @@ pwa = chr(10).join('  ' + t if i else t for i, t in enumerate(['<link rel="manif
 assert '<!--PWA-->' in s
 s = s.replace('<!--PWA-->', pwa, 1)
 
-# CSP: страница не может ходить в сеть; выполняются только встроенные скрипты (по хэшу), воркер из blob
+# CSP: страница не может ходить в сеть (кроме картинки-счётчика GoatCounter); выполняются только встроенные скрипты (по хэшу), воркер из blob
 hashes = []
 for m in re.finditer(r'<script(?![^>]*\bsrc=)(?![^>]*type="text/plain")[^>]*>(.*?)</script>', s, re.S):
     hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(m.group(1).encode('utf8')).digest()).decode() + "'")
-csp = ("default-src 'none'; script-src " + ' '.join(hashes) + "; style-src 'unsafe-inline'; img-src 'self' data:; "
+csp = ("default-src 'none'; script-src " + ' '.join(hashes) + "; style-src 'unsafe-inline'; img-src 'self' data: https://bankanalyzer.goatcounter.com; "
        "manifest-src 'self'; worker-src blob: 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'")
 meta = '<meta http-equiv="Content-Security-Policy" content="' + csp + '">'
 assert '<!--CSP-->' in s
