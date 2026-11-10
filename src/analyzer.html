@@ -688,6 +688,10 @@
     #demoBtn { color: var(--text); border-color: var(--line); }
     .upicon { color: var(--muted); }
     .hl { color: inherit; background: linear-gradient(transparent 55%, var(--sig) 55%, var(--sig) 92%, transparent 92%); padding: 0 .1em; }
+    .devcard { margin: .6rem 0 0; padding: .7rem .9rem; border: 1px solid var(--line, #d0d7de); border-radius: .7rem; text-align: left; }
+    .devcard p { margin: .2rem 0; }
+    .devkeep { display: flex; gap: .5rem; align-items: flex-start; margin: .3rem 0; }
+    .devkeep input { margin-top: .25rem; }
     .upcard .restore { margin: .4rem 0 0; font-size: .85rem; }
     .upcard .howlink { margin: .2rem 0 .8rem; font-size: .9rem; }
     .upcard .howlink a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
@@ -795,6 +799,10 @@
         <button id="demoBtn" type="button">Посмотреть на примере</button>
       </p>
       <p class="muted howlink">Нет выписки? <a href="#howInline">Как скачать её в своём банке</a></p>
+      <div id="deviceCard" class="devcard" hidden>
+        <p><b>С прошлого визита на этом устройстве:</b> <span id="deviceInfo"></span></p>
+        <p class="cta"><button id="deviceOpen" class="primary" type="button">Открыть сохранённую выписку</button> <button id="deviceForget" type="button">Забыть</button></p>
+      </div>
       <p id="landStatus" class="landstatus" role="status"></p>
       <p class="safe"><b>Файл не покидает ваше устройство.</b> Проверьте сами: включите авиарежим и загрузите выписку, всё сработает. <button id="privRow" class="linklike" type="button" aria-haspopup="dialog">Как это устроено</button></p>
       <p id="inAppNote" class="note inapp" hidden>Сайт открыт внутри приложения. Откройте его в обычном браузере (меню «⋯» → «Открыть в браузере»): там проще выбрать файл, и сайт запомнит ваши категории.</p>
@@ -1063,6 +1071,9 @@
         <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Файл разбора">
       </div>
       <p class="muted" id="backupMsg"></p>
+      <h3 id="deviceH" style="margin-top:1rem">Помнить выписку на этом устройстве</h3>
+      <label class="devkeep"><input type="checkbox" id="keepDevice"> Хранить выписку в этом браузере, чтобы в следующий раз открыть её одним нажатием</label>
+      <p class="muted" id="deviceMsg">Выключено: выписка исчезает, когда вы закрываете страницу (категории и правила запоминаются всегда). Если включить, копия лежит только в памяти этого браузера, наружу ничего не уходит. Не включайте на чужом или общем компьютере.</p>
       <h3 id="phoneH" style="margin-top:1rem">Передать на телефон</h3>
       <p class="muted">Без сервера: файл вы отправляете себе сами (мессенджер, почта, «Файлы»), сайт ничего не отправляет. Только правила и заметки: в файле нет сумм и названий операций. Вместе с операциями: на телефоне сразу откроется вся выписка.</p>
       <div class="cardbtns">
@@ -1194,6 +1205,7 @@
   <script src="planner.js"></script>
   <script src="recap.js"></script>
   <script src="backup.js"></script>
+  <script src="device.js"></script>
   <script src="history.js"></script>
   <script src="goals.js"></script>
   <script src="filters.js"></script>
@@ -1513,7 +1525,8 @@
       txs = []; header = {}; statements = [];
       bottomTab = null; allCat = "all"; allFilt = Filters.empty(); activeTab = "all";
       hideReport(); $("clearBtn").hidden = true;
-      setStatus("Выписки убраны. Ваш выбор категорий сохранён.");
+      forgetDeviceCopy();
+      setStatus("Выписки убраны" + (keepOnDevice ? ", копия на этом устройстве стёрта" : "") + ". Ваш выбор категорий сохранён.");
       $("backupMsg").textContent = backupSummary();
     });
     $("demoMoreExit").addEventListener("click", () => $("demoExit").click());
@@ -2115,6 +2128,7 @@
       $("resetRow").hidden = demoMode;
       recurring = findRecurring();
       saveHistory();
+      scheduleDeviceSave();
       renderCheck();
       renderRates();
       renderKeepNote();
@@ -4193,6 +4207,10 @@
       if (!files.length) return;
       leaveDemo();
       const notes = [];
+      await deviceReady;
+      if (!txs.length && keepOnDevice && deviceSnap) {      // новая выписка добавляется к той, что хранится на устройстве (повторы пропускаются)
+        try { applyBackup(deviceSnap); notes.push("К выписке, сохранённой на устройстве (" + Device.label(Device.describe(deviceSnap)) + "), добавляется новая."); } catch (e) { /* копия повреждена: работаем без неё */ }
+      }
       txs = Splits.collapse(txs);
       let loaded = 0, unsupportedFile = null;
       for (let k = 0; k < files.length; k++) {
@@ -4221,6 +4239,8 @@
         curSection = "overview";
         Rates.apply(txs, rates);
         applySplits();
+        const cov = rulesCoverage();
+        if (cov) notes.push(cov);
         render();
         $("backupMsg").textContent = backupSummary();
         try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
@@ -4300,6 +4320,62 @@
     }
     $("phoneRules").addEventListener("click", () => sendToPhone(false));
     $("phoneAll").addEventListener("click", () => sendToPhone(true));
+    // ---------- Память между визитами: правила уже на месте, выписка по желанию хранится на этом устройстве ----------
+    const isKnownTx = t => !!(txRules[txId(t)] || userRules[Cat.merchantKey(t)]);
+    function rulesCoverage() {
+      if (!Object.keys(userRules).length && !Object.keys(txRules).length) return "";
+      const c = Device.coverage(txs, isKnownTx);
+      return c.known ? `Ваши прошлые правила сработали на ${c.known} из ${c.total} трат: их разбирать заново не нужно.` : "";
+    }
+    const devStore = (() => { try { return Device.openStore(window.indexedDB); } catch (e) { return null; } })();
+    let keepOnDevice = !!loadJSON("ba_keep_v1", false) && !!devStore;
+    let deviceSnap = null, deviceTimer = null;
+    $("keepDevice").checked = keepOnDevice;
+    if (!devStore) { $("keepDevice").disabled = true; $("deviceMsg").textContent = "Этот браузер не разрешает хранить данные, поэтому выписку придётся загружать заново. Правила и категории сохраняются."; }
+    function renderDeviceCard() {
+      const info = deviceSnap && keepOnDevice ? Device.describe(deviceSnap) : null;
+      $("deviceCard").hidden = !info || txs.length > 0 || demoMode;
+      if (info) $("deviceInfo").textContent = Device.label(info) + (Device.when(info) ? ", сохранено " + Device.when(info) : "") + (info.old ? ". Копия давно не обновлялась, лучше загрузить свежую выписку." : ".");
+    }
+    const deviceReady = (async () => {
+      if (!keepOnDevice) return;
+      try { const snap = await devStore.get(); if (snap && Device.describe(snap)) deviceSnap = snap; } catch (e) { /* без копии */ }
+      renderDeviceCard();
+    })();
+    function scheduleDeviceSave() {
+      if (!keepOnDevice || demoMode || !txs.length) return;
+      clearTimeout(deviceTimer);
+      deviceTimer = setTimeout(async () => {
+        try {
+          const snap = Device.makeSnapshot(Splits.collapse(txs), statements, header);
+          await devStore.put(snap); deviceSnap = snap;
+        } catch (e) { $("deviceMsg").textContent = "Не удалось сохранить выписку на этом устройстве (возможно, нет места). Остальное работает как обычно."; }
+      }, 500);
+    }
+    function forgetDeviceCopy() {
+      if (deviceTimer) clearTimeout(deviceTimer);
+      deviceSnap = null;
+      if (devStore) devStore.del().catch(() => { /* нечего стирать */ });
+      renderDeviceCard();
+    }
+    $("keepDevice").addEventListener("change", () => {
+      keepOnDevice = $("keepDevice").checked && !!devStore;
+      saveJSON("ba_keep_v1", keepOnDevice);
+      if (keepOnDevice) { $("deviceMsg").textContent = txs.length ? "Включено: выписка сохранена на этом устройстве." : "Включено: после загрузки выписка сохранится на этом устройстве."; scheduleDeviceSave(); }
+      else { forgetDeviceCopy(); $("deviceMsg").textContent = "Выключено: сохранённая копия выписки стёрта. Категории и правила остались."; }
+    });
+    $("deviceOpen").addEventListener("click", () => {
+      if (!deviceSnap) return;
+      try {
+        applyBackup(deviceSnap);
+        bottomTab = null; curSection = "overview";
+        render();
+        setStatus("Открыта выписка, сохранённая на этом устройстве. Можно загрузить новую: она добавится к ней.");
+        try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
+      } catch (e) { forgetDeviceCopy(); setStatus("Сохранённая копия повреждена и удалена. Загрузите выписку заново."); }
+      renderDeviceCard();
+    });
+    $("deviceForget").addEventListener("click", () => { forgetDeviceCopy(); setStatus("Сохранённая копия выписки стёрта с этого устройства."); });
     function backupSummary() {
       const n = Object.keys(txRules).length, g = Object.keys(userRules).length;
       if (txs.length) {
