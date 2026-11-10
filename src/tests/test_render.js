@@ -198,6 +198,7 @@ check("мастер: «Закрыть окно» закрывает шторку
 
 // ---- «Как получить выписку»: банки и ссылки ----
 check("справка по банкам: не меньше 15 банков, у каждого шаги и срок", vm.runInContext(`BANK_HELP.length >= 15 && BANK_HELP.every(b => b.name && b.how.length && b.wait)`, ctx));
+check("справка по банкам: у каждого банка есть раздел про мобильное приложение", vm.runInContext(`BANK_HELP.every(b => Array.isArray(b.app) && b.app.length && typeof b.appSure === "boolean")`, ctx));
 check("справка по банкам: ссылки только https на сайты банков", vm.runInContext(`BANK_HELP.every(b => !b.link || /^https:[/][/][a-z0-9.-]+[.]by[/]/.test(b.link[0]))`, ctx));
 check("справка по банкам: «читается сайтом» совпадает с Banks.BANKS", vm.runInContext(`BANK_HELP.filter(b => b.reads).length === Banks.BANKS.length`, ctx));
 check("справка по банкам: список показывает все банки", byId["howBanks"].children.length === vm.runInContext(`BANK_HELP.length`, ctx));
