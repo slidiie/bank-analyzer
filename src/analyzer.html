@@ -809,6 +809,18 @@
     .sw-update button { min-height: 40px; padding: .3rem .9rem; background: var(--sig); color: var(--sig-ink); border: 0; font-weight: 600; }
     .sw-update .sw-x { background: transparent; color: var(--bg); min-width: 40px; padding: 0; font-size: 1.2rem; }
     @media (max-width: 768px) { .sw-update { bottom: calc(5rem + env(safe-area-inset-bottom)); } }
+    /* Единый вид полей (10 ноября): выбор файла в мастере образца, галочки и поля текста больше не «браузерные» */
+    .filepick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; width: 100%; box-sizing: border-box; min-height: 96px; padding: 1rem; border: 1.5px dashed var(--ctl-border); border-radius: var(--r-m); background: var(--surface-2); color: var(--text); text-align: center; cursor: pointer; }
+    .filepick:hover, .filepick.over { border-color: var(--text); background: var(--surface); }
+    .vh:focus-visible + .filepick { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .filepick .fpbtn { display: inline-flex; align-items: center; min-height: 40px; padding: 0 1.1rem; border-radius: var(--r-m); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .filepick .fpname { color: var(--muted); font-size: var(--fs-s, .9rem); overflow-wrap: anywhere; }
+    .filepick.has .fpname { color: var(--text); font-weight: 600; }
+    #anonStep2 label input[type=text] { width: 100%; max-width: 22rem; box-sizing: border-box; margin-top: .3rem; padding: .45rem .7rem; }
+    input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 18px; height: 18px; flex: 0 0 auto; cursor: pointer; vertical-align: -3px; }
+    input[type=checkbox]:disabled { cursor: not-allowed; }
+    textarea { width: 100%; box-sizing: border-box; background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .55rem .7rem; font: inherit; resize: vertical; }
+    textarea:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
   </style>
 </head>
 <body>
@@ -962,7 +974,7 @@
       <h2 id="fbTitle" style="margin-top:0">Написать автору</h2>
       <p class="muted">Выберите тему и напишите своими словами, что случилось. <b>Суммы, номера карт и описания операций писать не нужно.</b> Сайт сам ничего не отправляет: откроется ваше почтовое приложение с готовым письмом, вы просмотрите его и отправите сами.</p>
       <p><label for="fbTopic">Тема</label><br><select id="fbTopic"></select></p>
-      <p><label for="fbText">Что случилось</label><br><textarea id="fbText" rows="4" maxlength="1500" style="width:100%;box-sizing:border-box;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:var(--r-s);padding:.5rem;font:inherit" placeholder="Например: после загрузки выписки ВТБ показаны не все месяцы"></textarea></p>
+      <p><label for="fbText">Что случилось</label><br><textarea id="fbText" rows="4" maxlength="1500" placeholder="Например: после загрузки выписки ВТБ показаны не все месяцы"></textarea></p>
       <details class="datablock"><summary>Что уйдёт в письме кроме вашего текста</summary>
         <pre id="fbPreview" class="muted" style="white-space:pre-wrap;margin:.4rem 0 0;font:inherit"></pre>
       </details>
@@ -990,7 +1002,7 @@
         <div id="anonStep2" hidden>
           <p>Выберите свою выписку (PDF или CSV) того банка, которого нет в списке.</p>
           <p><label>Название банка (необязательно)<br><input type="text" id="anonBank" maxlength="60" autocomplete="off" placeholder="Например, Паритетбанк"></label></p>
-          <p><input type="file" id="anonFile" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"></p>
+          <p><input type="file" id="anonFile" class="vh" accept="application/pdf,.pdf,.csv,text/csv" aria-label="Выписка для образца"><label for="anonFile" id="anonPick" class="filepick"><span id="anonPickBtn" class="fpbtn">Выбрать файл выписки</span><span id="anonFileName" class="fpname">PDF или CSV, можно перетащить сюда. Файл никуда не отправляется.</span></label></p>
           <p id="anonStatus" class="muted"></p>
         </div>
         <div id="anonStep3" hidden>
@@ -1208,7 +1220,7 @@
       <details id="proCodeBox">
         <summary>У меня есть код</summary>
         <p class="muted">Код проверяется прямо здесь, в браузере: сайт никуда его не отправляет. В коде нет вашего имени и почты.</p>
-        <p><textarea id="proCode" rows="3" style="width:100%;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:5px" aria-label="Код расширенной версии" placeholder="BA1-…"></textarea></p>
+        <p><textarea id="proCode" rows="3" aria-label="Код расширенной версии" placeholder="BA1-…"></textarea></p>
         <p><button id="proCheck" type="button" class="primary">Проверить код</button></p>
       </details>
       <p id="proMsg" role="status" aria-live="polite"></p>
@@ -4653,7 +4665,11 @@
       anonRefresh();
     });
     const r2 = v => Math.round(v * 100) / 100;
-    $("anonFile").addEventListener("change", () => anonLoad($("anonFile").files[0]));
+    function anonPickName(f) { $("anonFileName").textContent = f ? f.name : "PDF или CSV, можно перетащить сюда. Файл никуда не отправляется."; if ($("anonPick").classList) $("anonPick").classList.toggle("has", !!f); $("anonPickBtn").textContent = f ? "Выбрать другой файл" : "Выбрать файл выписки"; }
+    $("anonFile").addEventListener("change", () => { const f = $("anonFile").files[0]; anonPickName(f); anonLoad(f); });
+    ["dragenter", "dragover"].forEach(t => $("anonPick").addEventListener(t, e => { e.preventDefault(); $("anonPick").classList.add("over"); }));
+    ["dragleave", "drop"].forEach(t => $("anonPick").addEventListener(t, () => $("anonPick").classList.remove("over")));
+    $("anonPick").addEventListener("drop", e => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) { anonPickName(f); anonLoad(f); } });
     // Открыть мастер: новый заход начинается с первого шага, незавершённый продолжается
     function showAnon(lead) {
       $("anonLead").hidden = !lead;
@@ -4717,11 +4733,12 @@
     function offerSample(file) {
       anonStep = 1;
       showAnon(true);
+      anonPickName(file);
       anonLoad(file);
     }
     function anonReset() {
       anon = null; anonMade = null; anonStep = 1;
-      $("anonFile").value = ""; $("anonBank").value = ""; $("anonOk").checked = false;
+      $("anonFile").value = ""; $("anonBank").value = ""; $("anonOk").checked = false; anonPickName(null);
       $("anonStatus").textContent = ""; $("anonMadeMsg").textContent = ""; $("anonLead").hidden = true;
       $("anonPage").replaceChildren();
     }
