@@ -123,7 +123,13 @@ const base = { unsorted: ["Не разобрано", "Платежи ЕРИП"],
   check("доход не изменился: вывода нет", !run(500, 2000).lines.some(x => x.kind === "income"));
   check("доход вырос меньше чем на 10 %: вывода нет", !run(500, 2100).lines.some(x => x.kind === "income"));
   check("обычный доход меньше 100 BYN: вывода нет", !run(500, 400, 50).lines.some(x => x.kind === "income"));
-  check("вывод про доход идёт второй строкой", run(500, 2600).lines[1].kind === "income");
+  check("после «Всего» идёт доля дохода, потом вывод про прибавку", (() => { const k = run(500, 2600).lines.map(q => q.kind); return k[1] === "rate" && k[2] === "income"; })());
+  // доля не потрачено: доход 2600, траты 1250+500=1750, осталось 850 = 33 %; обычно (2000-1250)/2000 = 38 %
+  l = run(500, 2600).lines.find(q => q.kind === "rate");
+  check("не потрачено 33% дохода (850 BYN), обычно 38%", l && /Не потрачено 33% дохода \(850 BYN\); обычно 38%/.test(l.text));
+  l = run(1800, 2000).lines.find(q => q.kind === "rate");
+  check("траты больше дохода: «на N% больше, чем пришло»", l && /Потрачено на 53% больше, чем пришло: 1\s050 BYN сверх дохода/.test(l.text));
+  check("без дохода строки доли нет", !R.monthRecap(Object.assign({ items: [...usualMonth("2026-09"), ...usualMonth("2026-10")], fullMonths: ["2026-09", "2026-10"] }, base)).lines.some(q => q.kind === "rate"));
   check("без списка доходов вывода нет", !R.monthRecap(Object.assign({ items: [...usualMonth("2026-09"), ...usualMonth("2026-10")], fullMonths: ["2026-09", "2026-10"] }, base)).lines.some(x => x.kind === "income"));
 }
 // 7. Форматирование
