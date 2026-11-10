@@ -176,8 +176,11 @@
   const GAME_RE = /hustle castle|supercell|clash of|roblox|steam|playstation|xbox|nintendo|epic games|wargaming|world of tanks|genshin|mobile legends|brawl|pubg|dota|valorant|riot games|blizzard/i;
   // Правила по названию места. Сведения о сетях собраны вручную по открытым источникам (см. MERCHANTS.md).
   // Намеренно НЕ включены посредники (bePaid, переводы MTBANK, Account Funding): по ним не видно, за что заплачено.
+  const GARDEN_RE = /ogorod|огород|sadovod|садовод|садов[ыа]й|semena|семена|rassad|рассад|garden ?cent|gardencent|sad ?i ?ogorod|pitomnik|питомник/i;
   const PLACE_RULES = [
     [GAMBLING, GAMBLING_RE],
+    // Садоводческие магазины банк часто ведёт под MCC 5992 («цветы»): название места сильнее кода
+    ["Товары для дома", GARDEN_RE],
     ["Подарки", /flowwow|rozi\.?bel|rozibel|florist|цвет[ыов]|букет|flowers|\bc?tsvety\b|\bcvety\b|buket|podarki|сувенир|souvenir/i],
     ["Путешествия", /belavia|белавиа|airline|airways|ryanair|wizz ?air|turkish air|aeroflot|аэрофлот|booking\.com|airbnb|agoda|hostel|hotel|отель|гостиниц|ostrovok|tutu\.ru|aviasales|ржд|rzd|белорусская железная дорога|\bbzd\b|бжд|bus ?for|ecolines|lux ?express/i],
     ["Продукты", /kopeechk|копеечк|universam|универсам|evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b|korona|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты|\bprodukty\b|e-?dostavka|е-?доставка|svetofor|светофор|hit ?ekspress|хит ?экспресс|groshyk|minimarket|минимаркет|gastronom|гастроном|supermarket|супермаркет|pekarn|пекарн|bakery|konditer|кондитер|myasn|мясн|ovoshi|овощ|bellakt|vinoteka|винотек|alkomarket|алкомаркет|\bmayak\b|маяк/i],
@@ -267,6 +270,7 @@
     if (!erip && RENT_RE.test(d)) return ["Аренда и жильё", "в названии есть аренда"];
     if (GAME_RE.test(d)) return ["Развлечения", "название игровой площадки"];
     if (!erip && SUBS_RE.test(d)) return ["Связь и подписки", "название подписки или онлайн-сервиса"];
+    if (!erip && GARDEN_RE.test(d)) return ["Товары для дома", "название садового магазина"];   // сильнее MCC 5992 («цветы»)
     if (tx.mcc && MCC[tx.mcc]) return [MCC[tx.mcc], "код MCC " + tx.mcc];
     if (/Выдача наличных/i.test(d)) return ["Наличные", "выдача наличных"];
     if (!erip) for (const [cat, re] of PLACE_RULES) if (re.test(d)) return [cat, "название места"];
