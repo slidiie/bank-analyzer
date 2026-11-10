@@ -230,6 +230,11 @@
     .goalsdet > summary { padding: .6rem 1rem; min-height: 44px; background: var(--surface); border-radius: var(--r-m); box-shadow: var(--shadow); font-weight: 600; }
     .goalsdet > summary > span { flex: 1 1 auto; margin-right: auto; }
     .goalsdet > .goals { margin-top: .6rem; }
+    .ovmore { border: 0; padding: 0; margin: .8rem 0; max-width: none; }
+    .ovmore > summary { padding: .6rem 1rem; min-height: 44px; background: var(--surface); border-radius: var(--r-m); box-shadow: var(--shadow); font-weight: 600; }
+    .ovmore > summary > span { flex: 1 1 auto; margin-right: auto; }
+    .ovmore > summary small { font-weight: 400; }
+    .ovmore[open] > summary { margin-bottom: .8rem; }
     .gdot { flex: none; width: .7rem; height: .7rem; border-radius: 50%; background: var(--accent); }
     .gdot.lvl-warn { background: var(--lvl-warn); } .gdot.lvl-over { background: var(--lvl-over); }
     #plan .psub { margin: 1rem 0 .3rem; font-size: var(--fs-m); }
@@ -631,7 +636,7 @@
        Плоские карточки с тонкой рамкой вместо мягких теней, меньше скруглений, чёткие заголовки и крупные числа,
        меньше декоративных значков, плотнее таблицы. */
     :root { --r-m:8px; --r-l:10px; }
-    .hsum, .icard, #plan details, #subs .scard, .goalsdet > summary, .rowcard, .morecard, .card, .mini, .steps li { box-shadow: none; border: 1px solid var(--line); }
+    .hsum, .icard, #plan details, #subs .scard, .goalsdet > summary, .ovmore > summary, .rowcard, .morecard, .card, .mini, .steps li { box-shadow: none; border: 1px solid var(--line); }
     #demoBar { box-shadow: none; border-bottom: 1px solid var(--line); }
     /* Демо: тонкая полоса вместо целой карточки */
     #demoBar { padding: .25rem .8rem; font-size: var(--fs-s, .9rem); gap: .3rem .8rem; border-radius: 8px; }
@@ -952,6 +957,10 @@
       <p>Отключите интернет перед загрузкой выписки: всё продолжит работать. Страница также запрещает себе сетевые запросы (политика CSP), так что отправить данные выписки ей некуда. Разрешён только счётчик посещений: он узнаёт, что страницу открыли, без cookies и без чего-либо из выписки.</p>
       <h3>Что хранится на устройстве?</h3>
       <p>Только ваши настройки: правила и свои категории, лимиты и числа калькулятора, выбранные тема и вид, а также выбор категории для отдельных операций. Сами выписки автоматически не сохраняются: после закрытия страницы их нужно загрузить заново или открыть сохранённый файл отчёта. Стереть всё можно кнопкой «Забыть мои данные» в разделе «Ещё» или в настройках браузера: «Данные сайтов».</p>
+      <h3>Как сайт понимает, на что потрачены деньги?</h3>
+      <p>По правилам, а не по «умному» серверу: название магазина или сервиса и код вида оплаты сверяются со списком известных мест. Что не узнали, вы отмечаете сами, и выбор запоминается на вашем устройстве. Ничего не отправляется на чужие сервисы, в том числе в нейросети.</p>
+      <h3>Кто за этим стоит и можно ли проверить код?</h3>
+      <p>Сайт делает один человек из Минска, он не связан ни с одним банком. <a href="https://github.com/slidiie/bank-analyzer">Исходный код открыт</a>: любой может прочитать, что делает страница, и убедиться, что выписка никуда не уходит.</p>
       <div class="modalbtns"><button id="privClose" type="button">Понятно</button> <a href="#faq" id="privFaq">Все вопросы</a></div>
     </div>
   </div>
@@ -2754,7 +2763,7 @@
       const d = list.map(t => t.date).filter(Boolean).sort();
       return d.length ? Math.round((Date.parse(d[d.length - 1]) - Date.parse(d[0])) / 864e5) + 1 : 0;
     }
-    let lastHeadline = "", lastTrend = "";
+    let lastHeadline = "", lastTrend = "", ovMoreOpen = false;
     // История между выписками (только в этом браузере): итоги по месяцам, без описаний операций
     let historyStore = loadJSON("ba_history_v1", {});
     function statementSummary() {
@@ -3105,7 +3114,7 @@
     function renderSummary() {
       const ctx = renderSummaryCore(), box = $("summary");
       try {
-        const head = headlineCard(ctx), tabs = [...box.children].filter(c => c.classList && c.classList.contains("tabs")).pop();
+        const head = headlineCard(ctx); ctx._head = head; const tabs = [...box.children].filter(c => c.classList && c.classList.contains("tabs")).pop();
         if (head) { if (tabs && tabs.nextSibling) box.insertBefore(head, tabs.nextSibling); else box.insertBefore(head, box.firstChild); }
         const goals = goalsBlock(ctx);
         if (goals && goals._sum) {
@@ -3124,6 +3133,17 @@
         if (nb && card) card.after(nb);
       } catch (e) { /* блок «Что заметили» необязателен */ }
       try { const rb = $("recap"), rc = recapCard(); if (rb) { rb.replaceChildren(); if (rc) rb.append(rc); } } catch (e) { /* «Итог месяца» необязателен */ }
+      // «Обзор» не должен быть простынёй: сверху вкладки, главная мысль, лимиты и «Куда ушло», остальное под «Подробнее»
+      try {
+        const keep = c => !c.classList || c.classList.contains("tabs") || c.classList.contains("goalsdet") || c.classList.contains("shortnote") || c === ctx._head || (c.classList.contains("ocard") && c.querySelector(".viewswitch"));
+        const rest = [...box.children].filter(c => !keep(c));
+        if (rest.length >= 2) {
+          const det = h("details", { class: "ovmore" }, h("summary", {}, h("span", {}, "Подробнее о периоде"), h("small", { class: "muted" }, "динамика, получатели, сравнение")), ...rest);
+          if (ovMoreOpen) det.setAttribute("open", "");
+          det.addEventListener("toggle", () => { ovMoreOpen = det.open; });
+          box.append(det);
+        }
+      } catch (e) { /* без сворачивания всё остаётся на виду */ }
       // Кнопки периода на телефоне листаются вбок: выбранную показываем, сдвигая только ряд (страница не прокручивается)
       try { box.querySelectorAll(".tabs").forEach(row => { const a = row.querySelector(".tab.active"); if (a && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, a.offsetLeft - row.offsetLeft - 16); }); } catch (e) { /* не важно */ }
       return ctx;

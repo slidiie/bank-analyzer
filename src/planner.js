@@ -76,7 +76,9 @@
     const step = median(gaps);
     const last = dates[dates.length - 1];
     const monthly = step >= 20 && step <= 40 && gaps.filter(g => g >= 15 && g <= 46).length >= gaps.length * 0.6;
-    const even = step >= 1 && step < 36 && gaps.filter(g => g >= step * 0.75 && g <= step * 1.25).length >= gaps.length * 0.6;
+    // Ровный шаг в днях: только недельный/двухнедельный ритм (до 16 дн.) и не меньше 75% промежутков в пределах ±20%.
+    // Покупка на одну сумму «каждые 17–35 дней» — привычка, а не расписание: «Раз в месяц» её не ловит, значит, это «без ровного срока»
+    const even = step >= 1 && step <= 16 && gaps.filter(g => g >= step * 0.8 && g <= step * 1.2).length >= gaps.length * 0.75;
     let next, kind;
     if (monthly) {
       kind = "month";
