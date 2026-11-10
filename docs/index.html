@@ -435,16 +435,18 @@
     .steps { margin-top: 1rem; }
     .mini { margin-top: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 1rem 1.1rem; }
     .minitag { font-size: .78rem; }
-    .minibody { display: grid; margin: .3rem 0; }
-    .miniview { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility .35s; min-width: 0; }
-    .miniview.on { opacity: 1; visibility: visible; }
+    .minibody { margin: .3rem 0; }
+    .miniview { min-width: 0; }
+    .miniview:not(.on) { display: none; }   /* занимает место только открытая вкладка: раньше высоту задавала самая длинная («Таблица») */
+    .miniview.on { animation: minifade .3s ease; }
+    @keyframes minifade { from { opacity: 0; } to { opacity: 1; } }
     .mini .viewswitch { margin: .3rem 0 .2rem; }
     .mini .pie { justify-content: center; gap: 1rem 1.5rem; }
     .mini .pieleft { width: 15rem; }
     .mini .pie svg.donut { width: 15rem; }
     .mini .pietip { min-height: 1.6rem; margin-bottom: .3rem; }
     .mini table { margin: 0; }
-    @media (prefers-reduced-motion: reduce) { .miniview { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .miniview.on { animation: none; } }
     .chart { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; align-items: center; justify-content: center; margin: .5rem 0; }
     .donut { position: relative; width: 9rem; height: 9rem; flex: none; }
     .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
