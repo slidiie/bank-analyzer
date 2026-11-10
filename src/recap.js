@@ -210,8 +210,31 @@
       if (often && often[1].n >= 4) lines.push({ kind: "often", value: often[1].s, text: `Чаще всего платили в «${nice(often[0])}»: ${often[1].n} ${plural(often[1].n, "раз", "раза", "раз")} на ${money(often[1].s)} BYN` });
     }
 
+    // Доля дохода, которая не потрачена (в процентах от дохода: так понятнее, чем в рублях). Без «норм» и советов, только факт и сравнение со своим обычным
+    let rate = null;
+    {
+      const incCur = month ? incIn(month) : inc.filter(t => t.date >= partial.from && t.date <= partial.to).reduce((a, t) => a + t.amount, 0);
+      if (incCur >= INC_MIN) {
+        const left = incCur - total, pct = Math.round(Math.abs(left) / incCur * 100);
+        let text;
+        if (left < 0) text = `Потрачено на ${pct}% больше, чем пришло: ${money(-left)} BYN сверх дохода`;
+        else if (pct === 0) text = "Почти весь доход ушёл в траты: не потрачено меньше 1%";
+        else text = `Не потрачено ${pct}% дохода (${money(left)} BYN)`;
+        if (month && base.length) {
+          const incU = [...Array(base.length).keys()].reduce((a, i) => a + incIn(addMonths(month, -(i + 1))), 0) / base.length;
+          if (incU >= INC_MIN) {
+            const uPct = Math.round((incU - usualTotal) / incU * 100);
+            if (uPct >= 0 && Math.abs(uPct - Math.round(left / incCur * 100)) >= 3) text += `; обычно ${uPct}%`;
+          }
+        }
+        if (save >= MIN_DIFF && left >= 0) text += `; без выросших трат было бы ${Math.round((left + save) / incCur * 100)}%`;
+        rate = Math.round(left / incCur * 100);
+        lines.splice(1, 0, { kind: "rate", value: rate, text });
+      }
+    }
+
     return {
-      month, partial, days, total, sortedShare,
+      month, partial, days, total, sortedShare, rate,
       save: save >= MIN_DIFF ? save : 0,
       compared: base.length,
       title: month ? `Итог ${monthGen(month)}` : `Итог за ${days} ${plural(days, "день", "дня", "дней")}`,
