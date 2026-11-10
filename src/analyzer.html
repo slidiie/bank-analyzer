@@ -4724,9 +4724,8 @@
       $("anonLead").hidden = !lead;
       if (!anon) anonStep = 1;
       anonRenderStep();
-      openSheet("anonSheet", $("anonOpen"));
+      openSheet("anonSheet", $("wantedOpen"));
     }
-    $("anonOpen").addEventListener("click", () => showAnon(false));
     $("anonOpenMore").addEventListener("click", () => showAnon(false));
     // ---------- Блок «Каких банков не хватает»: список нужных банков, ссылка-просьба #sample ----------
     const WANTED_BANKS = [
