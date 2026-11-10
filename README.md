@@ -119,4 +119,4 @@ cd src && node tests/ui_audit.mjs              # или: node tests/ui_audit.mjs
 
 ## Лицензия
 
-MIT, см. `LICENSE`.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0), см. `LICENSE`. Код открыт для чтения и проверки; использовать и менять его можно в некоммерческих целях. Для коммерческого использования нужно письменное разрешение автора. Сторонние части (pdf.js, шрифт Inter) остаются под своими лицензиями.
