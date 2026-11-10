@@ -209,7 +209,7 @@ vm.runInContext(`showHowList()`, ctx);
 check("тема по умолчанию следует системе", document.documentElement.attrs["data-theme"] === "auto" && byId["themeToggle"] && byId["themeToggle"].attrs["data-dark"] === "false");
 byId["themeToggle"].listeners.click[0]();
 check("один клик: включается тёмная и запоминается", document.documentElement.attrs["data-theme"] === "dark" && byId["themeToggle"].attrs["data-dark"] === "true");
-check("theme-color следует выбору", byId["themeMetaL"].attrs["content"] === "#0E1116" && byId["themeMetaD"].attrs["content"] === "#0E1116");
+check("theme-color следует выбору", byId["themeMetaL"].attrs["content"] === "#111112" && byId["themeMetaD"].attrs["content"] === "#111112");
 byId["themeToggle"].listeners.click[0]();
 check("второй клик возвращает светлую", document.documentElement.attrs["data-theme"] === "light" && byId["themeMetaL"].attrs["content"] === "#F4F6F9" && byId["themeMetaD"].attrs["content"] === "#F4F6F9");
 check("цвет категории постоянен и из --cat-*", vm.runInContext(`catColor("Продукты") === "var(--cat-food)" && catColor("Прочее") === "var(--cat-other)" && catColor("Моя своя") === catColor("Моя своя") && /^var\\(--cat-/.test(catColor("Моя своя"))`, ctx));

@@ -107,6 +107,25 @@ const base = { unsorted: ["Не разобрано", "Платежи ЕРИП"],
   const save = r.lines.find(l => l.kind === "save");
   check("«и ещё 2 категории»", save && /«Продукты», «Кафе и рестораны» и ещё 2 категории/.test(save.text));
 }
+// 6б. Доход вырос: уходит ли прибавка в траты
+{
+  const inc = (ym, a) => ({ date: `${ym}-01`, amount: a });
+  const run = (extra, octIncome, incomeAug) => {
+    const items = [...usualMonth("2026-08"), ...usualMonth("2026-09"), ...usualMonth("2026-10"), ...(extra ? [t("2026-10-12", -extra, "Одежда", "МАГАЗИН")] : [])];
+    return R.monthRecap(Object.assign({ items, income: [inc("2026-08", incomeAug || 2000), inc("2026-09", incomeAug || 2000), inc("2026-10", octIncome)], fullMonths: ["2026-08", "2026-09", "2026-10"] }, base));
+  };
+  let l = run(500, 2600).lines.find(x => x.kind === "income");
+  check("доход +30 %, траты +500 из 600: «на расходы ушло 83% прибавки»", l && /Доход вырос на 30% \(\+600 BYN\)/.test(l.text) && /траты выросли на 40% \(\+500 BYN\)/.test(l.text) && /ушло 83% прибавки/.test(l.text));
+  l = run(580, 2600).lines.find(x => x.kind === "income");
+  check("почти вся прибавка ушла в расходы", l && /почти вся прибавка ушла в расходы/.test(l.text));
+  l = run(0, 2600).lines.find(x => x.kind === "income");
+  check("траты те же: вся прибавка осталась", l && /траты почти не изменились: вся прибавка осталась/.test(l.text));
+  check("доход не изменился: вывода нет", !run(500, 2000).lines.some(x => x.kind === "income"));
+  check("доход вырос меньше чем на 10 %: вывода нет", !run(500, 2100).lines.some(x => x.kind === "income"));
+  check("обычный доход меньше 100 BYN: вывода нет", !run(500, 400, 50).lines.some(x => x.kind === "income"));
+  check("вывод про доход идёт второй строкой", run(500, 2600).lines[1].kind === "income");
+  check("без списка доходов вывода нет", !R.monthRecap(Object.assign({ items: [...usualMonth("2026-09"), ...usualMonth("2026-10")], fullMonths: ["2026-09", "2026-10"] }, base)).lines.some(x => x.kind === "income"));
+}
 // 7. Форматирование
 check("числа: тысячи через пробел, без копеек от 100", R.money(1234.56) === "1 235" && R.money(45) === "45" && R.money(9.5) === "9,50");
 check("«в N раз»", R.times(2) === "в 2 раза" && R.times(2.4) === "в 2,5 раза" && R.times(5.1) === "в 5 раз");

@@ -11,6 +11,7 @@
 //   period:     { from, to } — период выписки; нужен, если полных месяцев нет (тогда итог за эти дни без сравнений).
 //   unsorted:   названия «неразобранных» категорий (корзины ЕРИП, интернет-банк, «Не разобрано»).
 //   fixed:      категории, которые не предлагаем «вернуть к обычному уровню» (жильё, комиссии, здоровье, образование).
+//   income:     поступления [{ date, amount > 0 }] без переводов себе и возвратов; нужны для вывода «доход вырос, а траты вместе с ним».
 //   regular:    регулярные платежи [{ name, cat, perMonth }] (из Planner.findRegular); подписки берутся из них.
 //   subsCats:   категории подписок среди регулярных.
 //   nice:       как показать название места (по умолчанию как есть).
@@ -31,6 +32,7 @@
   const NEW_CAT = 100;        // категории не было, а теперь от 100 BYN
   const SMALL = 10;           // «мелкая покупка»: до 10 BYN
   const SMALL_MIN_N = 15, SMALL_MIN_SUM = 50;
+  const INC_MIN = 100, INC_GROW = 0.1, INC_DIFF = 50;   // доход вырос от +10 % и от +50 BYN (обычный месяц от 100 BYN)
   const SORTED_OK = 0.9;      // разобрано от 90 % трат: оговорка не нужна
 
   // Числа: пробел между тысячами, без копеек от 100 и выше (в выводах важна величина, а не копейки)
@@ -125,6 +127,24 @@
       lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} BYN, в среднем ${money(total / days)} BYN в день` });
     } else {
       lines.push({ kind: "total", value: total, text: `За ${days} ${plural(days, "день", "дня", "дней")} потрачено ${money(total)} BYN, в среднем ${money(total / days)} BYN в день` });
+    }
+
+    // 1б. Доход и траты: прибавка к доходу уходит в траты? (без советов, только арифметика по выписке)
+    const inc = (o.income || []).filter(t => t && t.date && t.amount > 0);
+    const incIn = ym => inc.filter(t => t.date.startsWith(ym)).reduce((a, t) => a + t.amount, 0);
+    if (month && base.length && usualTotal > 0 && inc.length) {
+      const incCur = incIn(month);
+      const incUsual = [...Array(base.length).keys()].reduce((a, i) => a + incIn(addMonths(month, -(i + 1))), 0) / base.length;
+      const dInc = incCur - incUsual, dSpend = total - usualTotal;
+      if (incUsual >= INC_MIN && dInc >= INC_DIFF && dInc / incUsual >= INC_GROW) {
+        const pi = Math.round(dInc / incUsual * 100), share = Math.max(0, dSpend) / dInc;
+        const head = `Доход вырос на ${pi}% (+${money(dInc)} BYN)`;
+        let tail;
+        if (dSpend / usualTotal < 0.03) tail = dSpend < 0 ? `, а траты снизились на ${money(-dSpend)} BYN: вся прибавка осталась` : ", а траты почти не изменились: вся прибавка осталась";
+        else if (share >= 0.9) tail = ` и траты выросли на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN): почти вся прибавка ушла в расходы`;
+        else tail = `, траты выросли на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN): на расходы ушло ${Math.round(share * 100)}% прибавки`;
+        lines.push({ kind: "income", value: dInc, text: head + tail });
+      }
     }
 
     // 2. Категории, которые выросли заметнее всего (только разобранные: про «Не разобрано» сказать нечего)

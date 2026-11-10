@@ -21,6 +21,14 @@ tags = '<script type="module">\n' + lib + '\n</script>\n  <script type="module" 
 assert '<!--PDFJS-->' in s
 s = s.replace('<!--PDFJS-->', tags, 1)
 
+# Шрифт Inter (лицензия OFL, переменный, кириллица и латиница) вшивается в страницу как data: (CSP не пускает внешние файлы)
+def _font(name, rng):
+    b64 = base64.b64encode(open(os.path.join(d, 'vendor', 'fonts', name), 'rb').read()).decode()
+    return ("@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64," + b64 + ") format('woff2');unicode-range:" + rng + "}")
+fonts = _font('inter-cyrillic.woff2', 'U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116') + chr(10) + '    ' + _font('inter-latin.woff2', 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD')
+assert '/*FONTS*/' in s
+s = s.replace('/*FONTS*/', fonts, 1)
+
 # PWA: манифест и иконки подключаются только в сборке (в src/analyzer.html их нет: файлов рядом нет)
 pwa = chr(10).join('  ' + t if i else t for i, t in enumerate(['<link rel="manifest" href="manifest.webmanifest">', '<link rel="icon" type="image/png" href="icons/icon-192.png">', '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">',
        '<meta name="mobile-web-app-capable" content="yes">', '<meta name="apple-mobile-web-app-capable" content="yes">',
@@ -32,7 +40,7 @@ s = s.replace('<!--PWA-->', pwa, 1)
 hashes = []
 for m in re.finditer(r'<script(?![^>]*\bsrc=)(?![^>]*type="text/plain")[^>]*>(.*?)</script>', s, re.S):
     hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(m.group(1).encode('utf8')).digest()).decode() + "'")
-csp = ("default-src 'none'; script-src " + ' '.join(hashes) + "; style-src 'unsafe-inline'; img-src 'self' data: https://bankanalyzer.goatcounter.com; "
+csp = ("default-src 'none'; script-src " + ' '.join(hashes) + "; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: https://bankanalyzer.goatcounter.com; "
        "manifest-src 'self'; worker-src blob: 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'")
 meta = '<meta http-equiv="Content-Security-Policy" content="' + csp + '">'
 assert '<!--CSP-->' in s
