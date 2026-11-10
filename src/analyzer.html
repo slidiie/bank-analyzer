@@ -3089,8 +3089,9 @@
       const dates = txs.map(t => t.date).filter(Boolean).sort();
       let regular = [];
       try { regular = regularCtx().regular; } catch (e) { /* без подписок */ }
+      const income = txs.filter(t => t.date && t.amount > 0 && displayCat(t) !== Cat.OWN && !isRefund(t)).map(t => ({ date: t.date, amount: t.amount }));
       const r = Recap.monthRecap({
-        items, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
+        items, income, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
         period: { from: [header.from, dates[0]].filter(Boolean).sort().pop(), to: [header.to, dates[dates.length - 1]].filter(Boolean).sort()[0] },
         unsorted: [...REVIEW_CATS], fixed: ["Аренда и жильё", "Комиссии банка", "Здоровье", "Образование", "Наличные", Cat.GAMBLING, Cat.P2P],
         regular, subsCats: ["Связь и подписки"], nice: softCase,
