@@ -435,6 +435,7 @@
     .miniview:not(.on) { display: none; }   /* занимает место только открытая вкладка: раньше высоту задавала самая длинная («Таблица») */
     .miniview.on { animation: minifade .3s ease; }
     @keyframes minifade { from { opacity: 0; } to { opacity: 1; } }
+    .minislot { min-height: 22rem; }
     .mini .viewswitch { margin: .3rem 0 .2rem; }
     .mini .pie { justify-content: center; gap: 1rem 1.5rem; }
     .mini .pieleft { width: 15rem; }
@@ -888,25 +889,7 @@
     <aside class="mini" aria-label="Пример отчёта на выдуманных данных">
       <div class="minihead"><b>Что вы получите</b></div>
       <p class="muted minitag">Загрузите выписку, и сайт сам покажет такой отчёт: сколько ушло, на что, что выросло против обычного. Ниже пример на выдуманных данных; кнопками «Итог», «Диаграмма» и «Таблица» можно переключать вид.</p>
-      <div class="chart">
-        <div class="donut" role="img" aria-label="Диаграмма трат за месяц: аренда и жильё 42%, продукты 22%, кафе 17%, наличные 6%, остальное 12%">
-          <svg viewBox="0 0 42 42" aria-hidden="true">
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-home)" stroke-dasharray="42.5 57.5" stroke-dashoffset="0"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-food)" stroke-dasharray="22.3 77.7" stroke-dashoffset="-42.5"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-cafe)" stroke-dasharray="17.3 82.7" stroke-dashoffset="-64.8"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-transfer)" stroke-dasharray="6.1 93.9" stroke-dashoffset="-82.1"/>
-            <circle cx="21" cy="21" r="15.9155" pathLength="100" stroke="var(--cat-other)" stroke-dasharray="11.8 88.2" stroke-dashoffset="-88.2"/>
-          </svg>
-          <div class="hole"><b>1 647</b><small>BYN за месяц</small></div>
-        </div>
-        <ul class="legend">
-          <li><i style="background:var(--cat-home)"></i>Аренда и жильё<span class="num">700</span></li>
-          <li><i style="background:var(--cat-food)"></i>Продукты<span class="num">367</span></li>
-          <li><i style="background:var(--cat-cafe)"></i>Кафе и рестораны<span class="num">286</span></li>
-          <li><i style="background:var(--cat-transfer)"></i>Наличные<span class="num">100</span></li>
-          <li><i style="background:var(--cat-other)"></i>Остальное<span class="num">195</span></li>
-        </ul>
-      </div>
+      <div class="minislot" aria-hidden="true"></div>   <!-- пример строится скриптом ниже; старой статичной диаграммы в файле больше нет -->
       <button id="miniDemoBtn" type="button">Посмотреть такой отчёт на демо</button>
     </aside>
     <section id="howInline" class="howinline" aria-labelledby="howInH">
@@ -4939,7 +4922,7 @@
     // Пример отчёта на стартовом экране: те же кольцо и таблица, что в настоящем отчёте (на выдуманных числах).
     // Вид меняется только по нажатию: автосмена выглядела как самопроизвольный клик (убрана 9.11.2026).
     try {
-      const mini = document.querySelector(".mini"), oldChart = mini && mini.querySelector(".chart");
+      const mini = document.querySelector(".mini"), oldChart = mini && mini.querySelector(".minislot");
       if (mini && oldChart) {
         const rows = LANDING_SAMPLE;
         const st = { rows, total: Math.round(rows.reduce((a, r) => a + r[1], 0) * 100) / 100, own: 0, loan: 0, saved: 0 };
@@ -4974,13 +4957,13 @@
         };
         const mk = (id, label) => { const b = h("button", { type: "button", "aria-pressed": "false" }, label); b.addEventListener("click", () => show(id)); btns[id] = b; return b; };
         const sw = h("div", { class: "viewswitch" }, mk("recap", "Итог"), mk("pie", "Диаграмма"), mk("table", "Таблица"));
-        oldChart.style.display = "none";
+        oldChart.removeAttribute("aria-hidden");
         oldChart.before(sw, slot);
         build();
         // Смена темы: цвета подписей на кольце считаются при построении, поэтому пересобираем
         new MutationObserver(() => build()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
       }
-    } catch (e) { /* без живого примера остаётся статичный */ }
+    } catch (e) { try { console.warn("Пример на главной не построился"); const m = document.querySelector(".mini"); if (m) m.hidden = true; } catch (e2) { /* без примера */ } }
   </script>
   <!--PDFJS-->
 </body>
