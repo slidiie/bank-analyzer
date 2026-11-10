@@ -758,6 +758,15 @@
     .pie .lrow.catopen { min-height: 24px; }   /* плюс отступы = 32 px */
     @media (max-width: 767px) { .pie .lrow.catopen { min-height: 36px; } }
     @media (max-width: 767px) { #privRow, #importLand, #howRow, #wantedCopy, #fbOpen3, #app .linklike, .howtabs button { min-height: 44px; } }
+    /* Единый вид полей и кнопок везде (без «системных» кусков): окно «Написать автору» и все формы */
+    :root { --ring-c: var(--accent); }
+    select:focus-visible, textarea:focus-visible, input[type=text]:focus-visible, input[type=date]:focus-visible { outline: none; border-color: var(--ring-c); box-shadow: 0 0 0 2px var(--ring-c); }
+    select { font: inherit; font-size: var(--fs-m, 1rem); }
+    textarea { resize: none; }   /* системный «уголок» для растяжки выбивался из дизайна */
+    input[type=date] { background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .25rem .5rem; min-height: 36px; font: inherit; }
+    * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    .modalbtns > button, .modalbtns > a.btnlink { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .5rem 1rem; border-radius: var(--r-m); font: inherit; line-height: 1.2; text-align: center; }
+    .modalbtns > a.btnlink { font-weight: 600; }
     .howtabs button[aria-selected="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
     .howpane { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l, 16px); padding: .6rem 1rem; }
     .howpane ol { margin: .4rem 0; padding-left: 1.2rem; }
@@ -831,7 +840,7 @@
     #anonStep2 label input[type=text] { width: 100%; max-width: 22rem; box-sizing: border-box; margin-top: .3rem; padding: .45rem .7rem; }
     input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 18px; height: 18px; flex: 0 0 auto; cursor: pointer; vertical-align: -3px; }
     input[type=checkbox]:disabled { cursor: not-allowed; }
-    textarea { width: 100%; box-sizing: border-box; background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .55rem .7rem; font: inherit; resize: vertical; }
+    textarea { width: 100%; box-sizing: border-box; background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .55rem .7rem; font: inherit; resize: none; }
     textarea:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
   </style>
 </head>
