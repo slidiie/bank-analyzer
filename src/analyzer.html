@@ -437,7 +437,6 @@
     .miniview:not(.on) { display: none; }   /* занимает место только открытая вкладка: раньше высоту задавала самая длинная («Таблица») */
     .miniview.on { animation: minifade .3s ease; }
     @keyframes minifade { from { opacity: 0; } to { opacity: 1; } }
-    .minislot { min-height: 22rem; }
     .mini .viewswitch { margin: .3rem 0 .2rem; }
     .mini .pie { justify-content: center; gap: 1rem 1.5rem; }
     .mini .pieleft { width: 15rem; }
@@ -3667,6 +3666,13 @@
       tailUndo.push(entry); if (tailUndo.length > 5) tailUndo.shift();
       render();
     }
+    // После «Подробно» группа становится обычной карточкой и переезжает ниже: показываем её, чтобы человек не потерял её из виду
+    function keepInView(key) {
+      try {
+        const el = [...document.querySelectorAll("#review .revcard")].find(e => e.dataset.gkey === key);
+        if (el) el.scrollIntoView({ block: "center" });
+      } catch (e) { /* без прокрутки */ }
+    }
     function renderTransferQuick(trList) {
       if (!trList.length) return "";
       const ops = trList.reduce((n, g) => n + g.items.length, 0), sum = trList.reduce((a, g) => a + Math.abs(g.sum), 0);
@@ -3690,7 +3696,7 @@
             qchip("Человеку", () => applyTrGroup(g, Cat.P2P, title), "Перевод другому человеку: считается расходом «" + Cat.P2P + "»"),
             qchip("Пропустить", () => deferKey(g.key), "Пока пропустить", "ghost")),
           // «Подробно» отдельной строкой ниже кнопок: чтобы не терялось среди них
-          h("div", { class: "qtrdetail" }, qchip("Подробно: другая категория или по одной операции", () => { trExpanded.add(g.key); renderReview(); }, "Другая категория или разбор по одной операции")));
+          h("div", { class: "qtrdetail" }, qchip("Подробно: другая категория или по одной операции", () => { trExpanded.add(g.key); renderReview(); keepInView(g.key); }, "Другая категория или разбор по одной операции")));
         wrap.append(row);
       }
       if (trList.length > trLimit) wrap.append(h("p", {}, h("button", { type: "button", onclick: () => { trLimit += 6; renderReview(); } }, `Показать ещё ${Math.min(6, trList.length - trLimit)}`)));
@@ -3905,6 +3911,7 @@
             sc > 1 ? h("div", { class: "muted", style: "margin-top:.3rem" }, `Применится ко всем ${sc}.`) : "",
             extra, rec ? ownAccountControl(g.tx, title) : "", more);
         }
+        if (card.dataset) card.dataset.gkey = g.key;
         card.append(hintLine(hintByKey.get(g.key), g.tx));
         box.append(card);
       }
@@ -4981,8 +4988,8 @@
         };
         const mk = (id, label) => { const b = h("button", { type: "button", "aria-pressed": "false" }, label); b.addEventListener("click", () => show(id)); btns[id] = b; return b; };
         const sw = h("div", { class: "viewswitch" }, mk("recap", "Итог"), mk("pie", "Диаграмма"), mk("table", "Таблица"));
-        oldChart.removeAttribute("aria-hidden");
         oldChart.before(sw, slot);
+        oldChart.remove();   // заглушка больше не нужна: иначе она оставляет пустое место под примером
         build();
         // Смена темы: цвета подписей на кольце считаются при построении, поэтому пересобираем
         new MutationObserver(() => build()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
