@@ -23,6 +23,7 @@ const Feedback = require("../feedback.js");
 const Hints = require("../hints.js");
 const Merchants = require("../merchants.js");
 const Recap = require("../recap.js");
+const Goals = require("../goals.js");
 const lsWrites = [];
 
 // ---- Заглушка страницы ----
@@ -69,7 +70,7 @@ const ctx = vm.createContext({
   document, Node, console,
   localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
-  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Rates, Feedback, Hints, Merchants, Recap,
+  StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Rates, Feedback, Hints, Merchants, Recap, Goals,
 });
 vm.runInContext(script, ctx);
 
@@ -108,35 +109,35 @@ check("вкладка неполного месяца помечена звёз�
   check("«Итог месяца»: всего за октябрь 900 и сравнение с сентябрём", /Всего потрачено 900 BYN/.test(rc) && /чем в сентябре/.test(rc));
   check("«Итог месяца»: оговорка про неразобранное (500 из 900 не разобрано)", /по разобранным 44/.test(rc));
 }
-check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170.00"));
+check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170,00"));
 check("на вкладке «весь период» нет отдельного «Сравнения месяцев» (его заменяет «Динамика трат»)", !s.includes("Сравнение месяцев"));
-check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250.00"));
+check("на странице видна только одна вкладка: итогов по месяцам отдельно нет", !hasTotal(s, "250,00"));
 
 // Отмечаем 500 как «Дал в долг»: уходит из трат и показывается отдельной строкой
 vm.runInContext(`setTxRule(txs[5], "Дал в долг");`, ctx);
 s = summaryText();
-check("после «Дал в долг» итого за период 670", hasTotal(s, "670.00"));
-check("строка «дал в долг: 500.00»", s.includes("дал в долг: 500.00"));
+check("после «Дал в долг» итого за период 670", hasTotal(s, "670,00"));
+check("строка «дал в долг: 500,00»", s.includes("дал в долг: 500,00"));
 
 // Переключаем вкладки
 check("нажатие на вкладку «Сентябрь»", clickButton(byId["summary"], "Сен"));
 s = summaryText();
-check("сентябрь: итого 250", hasTotal(s, "250.00"));
+check("сентябрь: итого 250", hasTotal(s, "250,00"));
 check("сентябрь: нет сравнения месяцев", !s.includes("Сравнение месяцев"));
 check("выводы сменились на сентябрь", textOf(byId["insightsTitle"]).includes("Сентябрь 2026"));
 
 check("нажатие на вкладку «Октябрь»", clickButton(byId["summary"], "Окт"));
 s = summaryText();
-check("октябрь без долга: итого 400", hasTotal(s, "400.00"));
+check("октябрь без долга: итого 400", hasTotal(s, "400,00"));
 
 check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноя *"));
 s = summaryText();
 check("ноябрь: пометка о неполном месяце (с 1 по 2 число)", s.includes("неполный месяц: данные с 1 по 2 число"));
-check("ноябрь: итого 20", hasTotal(s, "20.00"));
+check("ноябрь: итого 20", hasTotal(s, "20,00"));
 
 // Вкладка запоминается при перерисовке (например, после выбора категории)
 vm.runInContext(`render();`, ctx);
-check("после перерисовки осталась вкладка «Ноябрь»", hasTotal(summaryText(), "20.00"));
+check("после перерисовки осталась вкладка «Ноябрь»", hasTotal(summaryText(), "20,00"));
 
 // ---- Таблица «Все операции»: фильтр по месяцу ----
 vm.runInContext(`activeTab = "all"; renderAll();`, ctx);
@@ -444,9 +445,9 @@ vm.runInContext(`
 const allAfter = textOf(byId["all"]);
 check("пара остаётся в списке операций", allAfter.includes("ЗАЧИСЛЕНИЕ-ПАРА") && allAfter.includes("ЕРИП-ПАРА"));
 check("у пары заметная пометка «между своими»", (allAfter.match(/между своими/g) || []).length >= 2);
-check("пара в тратах не учитывается: итого 40", hasTotal(summaryText(), "40.00"));
+check("пара в тратах не учитывается: итого 40", hasTotal(summaryText(), "40,00"));
 const infoLine = textOf(byId["allFilter"]);
-check("в строке итогов расходы 40, поступления 100 (без пары)", infoLine.includes("расходы: 40.00") && infoLine.includes("поступления: 100.00"));
+check("в строке итогов расходы 40, поступления 100 (без пары)", infoLine.includes("расходы: 40,00") && infoLine.includes("поступления: 100,00"));
 check("в строке итогов отдельно показаны переводы между своими", infoLine.includes("между своими (не в счёт): 2"));
 vm.runInContext(`setTxRule(txs[1], "Прочее"); renderAll();`, ctx);
 check("выбор пользователя для операции сильнее пометки пары", vm.runInContext(`categoryOf(txs[1]) === "Прочее"`, ctx));
@@ -490,7 +491,7 @@ vm.runInContext(`
 `, ctx);
 const chk = textOf(byId["check"]);
 check("сверка показана для каждой выписки", chk.includes("ВТБ (Беларусь): 1 операций") && chk.includes("МТБанк: 2 операций") && chk.includes("повторов пропущено: 1"));
-check("у выписки с итогами видны галочки, общее число операций", chk.includes("найдено 100.00 ✓") && chk.includes("Всего операций: 2"));
+check("у выписки с итогами видны галочки, общее число операций", chk.includes("найдено 100,00 ✓") && chk.includes("Всего операций: 2"));
 check("кнопка «Убрать выписки» видна", byId["clearBtn"].hidden === false);
 byId["expSumText"].listeners.click[0]();
 check("выгрузка итогов текстом: заголовок таблицы с месяцем", byId["exportText"].value.startsWith("Категория;Март 2026;Итого") && byId["exportText"].value.includes("Продукты;40,00;40,00"));
@@ -523,7 +524,7 @@ check("переводы: компактная панель «в пару наж�
 clickButton(byId["review"], "Подробно");
 const rv = textOf(byId["review"]);
 check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
-check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50.00") && html.includes("в приложении банка"));
+check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50,00") && html.includes("в приложении банка"));
 check("разбор: есть быстрые категории и «Пропустить»", rv.includes("Связь и подписки") && rv.includes("Пропустить") && rv.includes("Ещё…"));
 check("разбор: переводы без получателя с разными суммами идут по одной", rv.includes("отметьте каждую операцию") && rv.includes("12.10") && rv.includes("09.10"));
 check("разбор: пояснение короткое, подробности под «Как это работает»", html.includes("Как это работает") && !html.includes("Непонятное и мелкое отправляйте"));
@@ -641,7 +642,7 @@ vm.runInContext(`
   render(); renderSubs();
 `, ctx);
 const subsText = textOf(byId["subs"]);
-check("подписки: сумма в месяц и число платежей", /30\.00\s*BYN/.test(subsText) && subsText.includes("BYN в месяц") && subsText.includes("Обязательные"));
+check("подписки: сумма в месяц и число платежей", /30,00\s*BYN/.test(subsText) && subsText.includes("BYN в месяц") && subsText.includes("Обязательные"));
 check("подписки: ближайшее списание 07.11", subsText.includes("Ближайшие списания") && subsText.includes("07.11"));
 check("подписки: есть полный список и оговорка про совпадение сумм", subsText.includes("Все регулярные платежи") && subsText.includes("по одинаковым суммам"));
 vm.runInContext(`txs = txs.slice(0, 2); header = { from: "2026-07-05", to: "2026-08-31" }; render(); renderSubs();`, ctx);
@@ -748,6 +749,16 @@ vm.runInContext(`leaveDemo();`, ctx);
   check("напоминание: строки не длиннее 75 байт", lines.every(l => Buffer.byteLength(l, "utf8") <= 75));
   check("напоминание: после склейки текст целый", ics.replace(/\r\n /g, "").includes("загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории"));
   check("напоминание: только CRLF и событие на весь день", !/[^\r]\n/.test(ics) && /DTSTART;VALUE=DATE:\d{8}\r\n/.test(ics));
+}
+// ---- Чистовая шлифовка: числа в одном виде, имена получателей, без повторов ----
+{
+  const fm = vm.runInContext(`[fmt(4608.04), fmt(-1536.01), fmt(5400), fmt(0)]`, ctx);
+  check("суммы: запятая и неразрывный пробел между тысячами", fm[0] === "4 608,04" && fm[1] === "−1 536,01" && fm[2] === "5 400,00" && fm[3] === "0,00");
+  check("суммы в выводах «Итога»: запятая, как и везде", Recap.money(40.49) === "40,49" && Recap.money(9.5) === "9,50");
+  const nm = vm.runInContext(`[tidyName("Перевод с карты на карту иванов и и"), tidyName("Перевод Петров А"), tidyName("Оплата в Евроопт"), tidyName("Перевод на карту иванов и")]`, ctx);
+  check("имя получателя: «Иванов И. И.», не «иванов и и»", nm[0] === "Перевод с карты на карту Иванов И. И." && nm[1] === "Перевод Петров А." && nm[2] === "Оплата в Евроопт" && nm[3] === "Перевод на карту иванов и");
+  check("в демо один выход (в полосе сверху), второй кнопки нет", !html.includes('id="demoMoreExit"'));
+  check("«ещё не уточнено» только в «Бюджете», в «Обзоре» его нет", /id="roughNote" data-sec="plan"/.test(html));
 }
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

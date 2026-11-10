@@ -36,7 +36,7 @@
   // Числа: пробел между тысячами, без копеек от 100 и выше (в выводах важна величина, а не копейки)
   function money(n) {
     const v = Math.abs(n) >= 100 ? Math.round(Math.abs(n)) : Math.round(Math.abs(n) * 100) / 100;
-    let s = Number.isInteger(v) ? String(v) : v.toFixed(2);
+    let s = Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ",");
     s = s.replace(/^(\d+)/, d => d.replace(/\B(?=(\d{3})+(?!\d))/g, " "));
     return (n < 0 && v ? "−" : "") + s;
   }
