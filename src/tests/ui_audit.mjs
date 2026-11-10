@@ -27,7 +27,7 @@ const edge = spawn(EDGE, ['--headless=new', '--remote-debugging-port=' + port, '
 const wait = ms => new Promise(r => setTimeout(r, ms));
 let ws;
 for (let i = 0; i < 60 && !ws; i++) { await wait(250); try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); const pg = l.find(x => x.type === 'page'); if (pg) ws = pg.webSocketDebuggerUrl; } catch (e) { /* ещё запускается */ } }
-if (!ws) { console.log('ОШИБКА: Edge не запустился'); edge.kill(); process.exit(2); }
+if (!ws) { console.log('ОШИБКА: Edge не запустился'); await (async () => { try { const v = await (await fetch('http://' + new URL(ws).host + '/json/version')).json(); const b = new WebSocket(v.webSocketDebuggerUrl); await new Promise((r, j) => { b.onopen = r; b.onerror = j; }); b.send(JSON.stringify({ id: 1, method: 'Browser.close' })); await new Promise(r => setTimeout(r, 800)); } catch (e) {} edge.kill(); })();   /* закрыть Edge целиком: один kill() оставлял браузер висеть и занимать диск */ process.exit(2); }
 const sock = new WebSocket(ws); await new Promise(r => sock.onopen = r);
 let id = 0; const pend = new Map();
 sock.onmessage = m => { const d = JSON.parse(m.data); if (d.id && pend.has(d.id)) { pend.get(d.id)(d); pend.delete(d.id); } };
@@ -218,7 +218,7 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   await closeDialog(); await wait(200);
   await check('ошибка: банк не поддерживается (после окна)', tag); await shot('ошибка-после-окна', tag);
 }
-sock.close(); edge.kill(); await wait(400);
+sock.close(); await (async () => { try { const v = await (await fetch('http://' + new URL(ws).host + '/json/version')).json(); const b = new WebSocket(v.webSocketDebuggerUrl); await new Promise((r, j) => { b.onopen = r; b.onerror = j; }); b.send(JSON.stringify({ id: 1, method: 'Browser.close' })); await new Promise(r => setTimeout(r, 800)); } catch (e) {} edge.kill(); })();   /* закрыть Edge целиком: один kill() оставлял браузер висеть и занимать диск */ await wait(400);
 try { rmSync(prof, { recursive: true, force: true }); } catch (e) { /* профиль занят */ }
 
 const all = WIDTHS.length * THEMES.length;
