@@ -55,4 +55,7 @@ ver = hashlib.sha256(s.encode('utf8')).hexdigest()[:12]
 sw = rd('sw.js')
 assert '__VERSION__' in sw
 open(os.path.join(out, 'sw.js'), 'w', encoding='utf8', newline='').write(sw.replace('__VERSION__', ver))
+# Страницы для поиска (по банкам, которые читаем), sitemap.xml и robots.txt: рядом со страницей, в ../pwa/
+import subprocess
+subprocess.run(['node', os.path.join(d, 'make_seo.mjs'), out], check=True)
 print('Готово: bank-analyzer.html,', round(len(s.encode('utf8')) / 1024), 'КБ, скриптов под CSP:', len(hashes))

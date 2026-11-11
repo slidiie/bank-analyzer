@@ -788,6 +788,8 @@
     .upcard { border: 1px solid var(--line); }
     .upcard .upicon { display: none; }
     .brand { display: inline-flex; align-items: center; gap: .55rem; font-size: 1.05rem; font-weight: 650; color: var(--text); letter-spacing: -.01em; }
+    .sharecanvas { display: block; width: min(100%, 340px); height: auto; margin: .25rem auto 1rem; border-radius: 14px; border: 1px solid var(--line); }
+    .rshare { margin-top: .9rem; }
     .brand .brand-sub { font-weight: 450; color: var(--muted); margin-left: .1rem; }
     @media (max-width: 480px) { .brand .brand-sub { display: none; } }
     .brand .logo { width: 28px; height: 28px; flex: none; border-radius: 7px; }
@@ -906,7 +908,7 @@
         <p>Выписка пришла на почту: откройте письмо и сохраните вложение, дальше так же. Если сайт открыт внутри Telegram или другого приложения и файл не выбирается, откройте сайт в обычном браузере: меню «⋯» → «Открыть в браузере».</p>
       </details>
       <p class="muted">Нужен именно файл из банка, не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Другие банки и подробности</button></p>
-      <p class="muted">Вашего банка нет? <a href="#wanted">Напишите, добавим</a></p>
+      <p class="muted">Вашего банка нет? <a href="#wanted">Напишите, добавим</a> · <a href="banks/">Все инструкции по банкам</a></p>
     </section>
     <section id="about" class="about" aria-labelledby="aboutH">
       <h2 id="aboutH">Кто это делает</h2>
@@ -976,6 +978,16 @@
       </div>
       <div id="howDetail" hidden></div>
       <div class="modalbtns"><button id="howClose" type="button">Понятно</button></div>
+    </div>
+  </div>
+  <div id="shareSheet" class="modal sheet" hidden>
+    <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="shareTitle" tabindex="-1">
+      <h2 id="shareTitle" style="margin-top:0">Картинка для друзей</h2>
+      <p class="muted">Картинка рисуется здесь, в браузере, и никуда не загружается. По умолчанию без сумм: только проценты и сравнения.</p>
+      <canvas id="shareCanvas" class="sharecanvas" role="img" aria-label="Карточка с итогом месяца"></canvas>
+      <label class="devkeep"><input type="checkbox" id="shareMoney"> Показать суммы в BYN</label>
+      <div class="modalbtns"><button id="shareSave" type="button">Скачать картинку</button> <button id="shareSend" type="button" hidden>Поделиться</button> <button id="shareClose" type="button">Закрыть</button></div>
+      <p id="shareMsg" class="muted" role="status"></p>
     </div>
   </div>
   <div id="fbSheet" class="modal sheet" hidden>
@@ -1528,7 +1540,7 @@
       try { const fl = e.dataTransfer && e.dataTransfer.files; if (fl && fl.length) { $("file").files = fl; $("file").dispatchEvent(new Event("change")); } } catch (err) { /* старый браузер: используйте кнопку */ }
     });
     // Шторки «Приватность» и «Как получить выписку»: Esc, клик по фону и кнопка «Понятно» закрывают, фокус возвращается на кнопку
-    const SHEETS = ["privSheet", "howSheet", "anonSheet", "fbSheet", "faqSheet"];
+    const SHEETS = ["privSheet", "howSheet", "anonSheet", "fbSheet", "faqSheet", "shareSheet"];
     let sheetOpener = null;
     function setStatus(t) { $("status").textContent = t; $("landStatus").textContent = t; }
     function openSheet(id, opener) { sheetOpener = opener; $(id).hidden = false; try { $(id).querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ } }
@@ -3120,12 +3132,102 @@
       if (!r || !r.lines.length) return null;
       const sub = r.month ? (r.compared ? `Сравнение со средним за ${r.compared === 1 ? "прошлый месяц" : r.compared + " прошлых месяца"}` : "Для сравнения загрузите выписку и за прошлые месяцы")
         : "В выписке нет ни одного целого месяца, поэтому без сравнения с обычным уровнем";
+      try {
+        const unsortedSet = new Set(REVIEW_CATS), per = new Map();
+        items.filter(t => t.amount < 0 && (!r.month || t.date.startsWith(r.month))).forEach(t => {
+          const c = unsortedSet.has(t.cat) ? "Остальное" : t.cat;
+          per.set(c, (per.get(c) || 0) - t.amount);
+        });
+        const rows = [...per].filter(([c]) => c !== "Остальное").sort((a, b) => b[1] - a[1]);
+        const all = [...per.values()].reduce((a, v) => a + v, 0);
+        const top = rows.slice(0, 4), rest = all - top.reduce((a, x) => a + x[1], 0);
+        shareData = { r, bar: all > 0 ? top.map(([c, v]) => ({ name: c, v, key: catVar(c) })).concat(rest > 0.5 ? [{ name: "Остальное", v: rest, key: "--cat-other" }] : []) : [], total: all };
+      } catch (e) { shareData = null; }
       return h("section", { class: "ocard recap", "aria-label": r.title },
         h("h3", {}, r.title), h("div", { class: "muted" }, sub),
         r.save ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")) : "",
         h("ul", {}, r.lines.filter(l => l.kind !== "save" || !r.save).map(l => h("li", { class: "k-" + l.kind }, l.text))),
-        r.note ? h("p", { class: "muted rnote" }, r.note, " ", h("button", { type: "button", class: "linklike", onclick: () => showSection("review") }, "Уточнить")) : "");
+        r.note ? h("p", { class: "muted rnote" }, r.note, " ", h("button", { type: "button", class: "linklike", onclick: () => showSection("review") }, "Уточнить")) : "",
+        shareData && shareData.bar.length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");
     }
+
+    // ---------- Карточка «Поделиться итогом»: картинка 4:5, рисуется на canvas в браузере (без сумм по умолчанию) ----------
+    let shareData = null;
+    const SHARE_COLORS = { "--cat-food": "#5CC592", "--cat-cafe": "#F0A94F", "--cat-transport": "#5B9DF0", "--cat-home": "#A38CF0", "--cat-subs": "#EE7FB1", "--cat-health": "#3FC4B9", "--cat-shop": "#DDBE4A", "--cat-fun": "#F2806A", "--cat-transfer": "#9BA2B0", "--cat-other": "#6E727B" };
+    function shareModel(withMoney) {
+      const r = shareData.r, rate = r.lines.find(l => l.kind === "rate");
+      let kicker, big, good = true, used = null;
+      if (rate && rate.value > 0) { kicker = "Не потрачено"; big = rate.value + "% дохода"; used = rate; }
+      else if (rate && rate.value < 0) { kicker = "Потрачено больше, чем пришло"; big = "на " + Math.abs(rate.value) + "%"; good = false; used = rate; }
+      else if (rate) { kicker = "Почти весь доход"; big = "ушёл в траты"; good = false; used = rate; }
+      else if (withMoney && r.save) { kicker = "Могло остаться"; big = "+" + Recap.money(r.save) + " BYN"; }
+      else { kicker = "Куда ушли деньги"; big = r.title; }
+      const lines = r.lines.filter(l => l !== used && l.kind !== "save" && (withMoney || l.short)).slice(0, 3).map(l => withMoney ? l.text : l.short);
+      return { kicker, big, good, lines, title: r.title };
+    }
+    async function drawShareCard(canvas, withMoney) {
+      if (!shareData) return;
+      const m = shareModel(withMoney), W = 1080, H = 1350, P = 76, F = "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+      canvas.width = W; canvas.height = H;
+      try { await document.fonts.load("400 30px Inter"); await document.fonts.load("600 30px Inter"); } catch (e) { /* системный шрифт */ }
+      const g = canvas.getContext("2d");
+      const rrect = (x, y, w, h, r) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); };
+      const wrap = (text, maxW) => { const out = []; let cur = ""; text.split(" ").forEach(w => { const t = cur ? cur + " " + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; }); if (cur) out.push(cur); return out; };
+      g.fillStyle = "#111112"; g.fillRect(0, 0, W, H);
+      // шапка: знак и название
+      g.fillStyle = "#16171A"; rrect(P, P, 52, 52, 13); g.fill();
+      g.strokeStyle = "#2A2B2F"; g.lineWidth = 2; g.stroke();
+      g.strokeStyle = "#B7E34A"; g.lineWidth = 7; g.beginPath(); g.arc(P + 26, P + 26, 12, 0.3, Math.PI * 2 - 0.5); g.stroke();
+      g.textBaseline = "middle"; g.fillStyle = "#F2F2F3"; g.font = "600 36px " + F; g.textAlign = "left"; g.fillText("Fernwood", P + 70, P + 27);
+      g.fillStyle = "#8C8D93"; g.font = "400 30px " + F; g.textAlign = "right"; g.fillText(m.title, W - P, P + 27);
+      g.textAlign = "left"; g.textBaseline = "alphabetic";
+      // главное число
+      g.fillStyle = "#8C8D93"; g.font = "400 34px " + F; g.fillText(m.kicker, P, 330);
+      let fs = 132; g.font = "600 " + fs + "px " + F;
+      while (g.measureText(m.big).width > W - 2 * P && fs > 56) { fs -= 4; g.font = "600 " + fs + "px " + F; }
+      g.fillStyle = m.good ? "#5FD08A" : "#F2806A"; g.fillText(m.big, P, 330 + fs + 10);
+      // полоса «куда ушли»
+      const by = 600, bw = W - 2 * P, tot = shareData.bar.reduce((a, x) => a + x.v, 0), gap = 4;
+      let x = P;
+      shareData.bar.forEach(b => {
+        const w = Math.max(6, bw * b.v / tot - gap);
+        g.fillStyle = SHARE_COLORS[b.key] || "#9BA2B0"; rrect(x, by, w, 30, 15); g.fill(); x += w + gap;
+      });
+      g.font = "400 31px " + F; g.fillStyle = "#B9BAC0";
+      const leg = shareData.bar.map(b => b.name + " " + Math.round(b.v / tot * 100) + "%").join(" · ");
+      wrap(leg, bw).slice(0, 3).forEach((ln, i) => g.fillText(ln, P, by + 80 + i * 46));
+      // выводы
+      g.fillStyle = "#2A2B2F"; g.fillRect(P, 800, bw, 2);
+      let y = 870; g.font = "400 37px " + F;
+      m.lines.forEach(t => {
+        const ls = wrap(t, bw - 40).slice(0, 2);
+        g.fillStyle = "#B7E34A"; g.beginPath(); g.arc(P + 8, y - 12, 7, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#F2F2F3"; ls.forEach((ln, i) => g.fillText(ln, P + 40, y + i * 52));
+        y += ls.length * 52 + 26;
+      });
+      g.fillStyle = "#8C8D93"; g.font = "400 30px " + F; g.fillText("fernwood.by · файл остаётся у вас", P, H - P);
+    }
+    function openShare(opener) {
+      $("shareMoney").checked = false; $("shareMsg").textContent = "";
+      $("shareSend").hidden = !(navigator.canShare && navigator.share);
+      openSheet("shareSheet", opener);
+      drawShareCard($("shareCanvas"), false);
+    }
+    const shareBlob = () => new Promise(res => $("shareCanvas").toBlob(res, "image/png"));
+    $("shareMoney").addEventListener("change", () => drawShareCard($("shareCanvas"), $("shareMoney").checked));
+    $("shareClose").addEventListener("click", closeSheets);
+    $("shareSave").addEventListener("click", async () => {
+      const b = await shareBlob(); if (!b) return;
+      const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "fernwood-итог.png"; a.click();
+      $("shareMsg").textContent = "Картинка сохранена в папку загрузок.";
+    });
+    $("shareSend").addEventListener("click", async () => {
+      try {
+        const b = await shareBlob(), f = new File([b], "fernwood-итог.png", { type: "image/png" });
+        if (navigator.canShare({ files: [f] })) await navigator.share({ files: [f], text: "fernwood.by" });
+        else $("shareMsg").textContent = "Здесь «Поделиться» недоступно: скачайте картинку.";
+      } catch (e) { /* человек закрыл окно */ }
+    });
     function renderSummary() {
       const ctx = renderSummaryCore(), box = $("summary");
       try {
@@ -4773,6 +4875,8 @@
       $("wantedMsg").textContent = (await copyText(url)) ? "Ссылка скопирована." : "Не удалось скопировать: " + url;
     });
     // Ссылка «…/#sample» сразу открывает мастер образца (для знакомых, которым владелец прислал просьбу)
+    // Ссылка «…/#demo» (со страниц банков для поиска) сразу открывает пример
+    if (typeof location !== "undefined" && location.hash === "#demo") setTimeout(() => { const d = $("demoBtn"); if (d) d.click(); }, 0);
     if (typeof location !== "undefined" && location.hash === "#sample") { const w = $("wanted"); if (w && w.scrollIntoView) w.scrollIntoView(); setTimeout(() => showAnon(false), 300); }
     // ---------- Расширенная версия (монетизация) ----------
     // Пока автор не выбрал способ оплаты, enabled = false и карточку видят только те, у кого уже есть код.
