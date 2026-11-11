@@ -132,6 +132,14 @@ const base = { unsorted: ["Не разобрано", "Платежи ЕРИП"],
   check("без дохода строки доли нет", !R.monthRecap(Object.assign({ items: [...usualMonth("2026-09"), ...usualMonth("2026-10")], fullMonths: ["2026-09", "2026-10"] }, base)).lines.some(q => q.kind === "rate"));
   check("без списка доходов вывода нет", !R.monthRecap(Object.assign({ items: [...usualMonth("2026-09"), ...usualMonth("2026-10")], fullMonths: ["2026-09", "2026-10"] }, base)).lines.some(x => x.kind === "income"));
 }
+// 6б. Короткий текст для картинки «Поделиться»: без сумм в BYN (кроме порога «до 10 BYN»), у каждой строки с цифрами есть short
+{
+  const oct = usualMonth("2026-10").concat([t("2026-10-20", -250, "Кафе и рестораны", "КАФЕ")]);
+  const r = R.monthRecap(Object.assign({ items: [...usualMonth("2026-07"), ...usualMonth("2026-08"), ...usualMonth("2026-09"), ...oct], fullMonths: ["2026-07", "2026-08", "2026-09", "2026-10"] }, base));
+  const withShort = r.lines.filter(l => l.short);
+  check("у строк итога есть короткий текст", withShort.length >= 2);
+  check("короткий текст без сумм в BYN", withShort.every(l => !/\d[\d\s,]*\s*BYN/.test(l.short.replace(/до \d+ BYN/g, ""))));
+}
 // 7. Форматирование
 check("числа: тысячи через пробел, без копеек от 100", R.money(1234.56) === "1 235" && R.money(45) === "45" && R.money(9.5) === "9,50");
 check("«в N раз»", R.times(2) === "в 2 раза" && R.times(2.4) === "в 2,5 раза" && R.times(5.1) === "в 5 раз");
