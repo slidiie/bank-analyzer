@@ -79,6 +79,8 @@
       count: res.txs.length, added, skipped,
       check: res.check || null,
     });
+    // Что не удалось прочитать (только в памяти, в файл разбора не попадает): показывается над «Итогом»
+    if (res.header.unread && res.header.unread.length) state.statements[index].unread = res.header.unread;
     if (cur) state.statements[index].currency = cur;
     dropOrphanPairs(state.txs);
     return { added, skipped, index };

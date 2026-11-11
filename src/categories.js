@@ -190,7 +190,7 @@
     ["Красота и уход", /salon|салон красот|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж|gold ?apple|zolotoe ?yabloko|золотое яблоко|parfum|parfyum|парфюм|nogti|ногтев|\bnails?\b|brow ?bar|podruzhka|подружка|letual|летуаль|sephora|cosmetic|kosmetika|epilyaci|эпиляц|tattoo|ресниц/i],
     ["Образование", /udemy|coursera|skillbox|skyeng|duolingo|школа|school|универс|universit|лицей|гимназ|детский сад|kindergarten|repetitor|репетитор|kursy|курсы|academy|академия|логопед|razvivayush|развивающ/i],
     ["Товары для дома", /fix ?price|фикс ?прайс|три цены|tri ?ceny|tri ?tseny|ikea|икеа|leroy|леруа|castorama|касторама|\bobi\b|domovoy|домовой|hoff|хофф|domovenok|santehnika|сантехник|stroitel|строитель|\bstroy|mebel|мебел|elektrotovar|электротовар|hozyajstvenn|хозяйственн|bauhaus|baucenter|posuda|посуда|tekstil|текстиль/i],
-    ["Одежда и покупки", /wildberries|\bwb\b|\bozon\b|озон|lamoda|aliexpress|алиэкспресс|21vek|21 век|onliner|\bemall\b|kufar|куфар|deal\.by|shop\.by|delivio|5element|5 элемент|5 element|electrosila|электросила|\bmila\b|\bмила\b|megatop|мегатоп|\bmarko\b|belwest|белвест|formelle|\bconte\b|милавица|milavitsa|zara|bershka|oodji|o'?stin|остин|lc ?waikiki|sinsay|reserved|deichmann|белпочта|belpost|evropochta|европочта|moda ?maks|\bmodi\b|mooon|moooon|\btvoe\b|\bтвое\b|gloria ?jeans|obuv|обув|odezhd|одежд|trikotazh|трикотаж|detskiy ?mir|детский мир|knigi|книги|knizhn|книжн|kanctovar|канцтовар|kancelyar|канцеляр|igrushk|игрушк|zapchast|запчаст|avtotovar|автотовар|avtomagazin|автомагазин/i],
+    ["Одежда и покупки", /wildberries|verally|\bwb\b|\bozon\b|озон|lamoda|aliexpress|алиэкспресс|21vek|21 век|onliner|\bemall\b|kufar|куфар|deal\.by|shop\.by|delivio|5element|5 элемент|5 element|electrosila|электросила|\bmila\b|\bмила\b|megatop|мегатоп|\bmarko\b|belwest|белвест|formelle|\bconte\b|милавица|milavitsa|zara|bershka|oodji|o'?stin|остин|lc ?waikiki|sinsay|reserved|deichmann|белпочта|belpost|evropochta|европочта|moda ?maks|\bmodi\b|mooon|moooon|\btvoe\b|\bтвое\b|gloria ?jeans|obuv|обув|odezhd|одежд|trikotazh|трикотаж|detskiy ?mir|детский мир|knigi|книги|knizhn|книжн|kanctovar|канцтовар|kancelyar|канцеляр|igrushk|игрушк|zapchast|запчаст|avtotovar|автотовар|avtomagazin|автомагазин/i],
     ["Связь и подписки", /\ba1\b|a1\.by|\bmts\b|мтс|\blife[:)]|beltelecom|белтелеком|byfly|байфлай|\bzala\b|атлант телеком|velcom|google ?\*? ?(youtube|one|play)|yandex ?(plus|music)|яндекс ?(плюс|музыка)|spotify|netflix|itunes|apple\.com\/bill|icloud|okko|kinopoisk|кинопоиск|megogo|boosty|patreon|openai|chatgpt|telegram premium|подписка|subscription|telegram|\bmts ?money|\blife ?:\)|a1 ?\.?by|beltelecom|интернет-провайдер|provider/i],
     ["Развлечения", /fitnes|fitness|фитнес|world ?class|kino|кино|cinema|театр|\bsport|(?:^|[^а-яё])спорт|бассейн|aquapark|аквапарк|bowling|боулинг|квест|музей|museum|zoo|зоопарк/i],
   ];
@@ -276,6 +276,9 @@
     if (!erip) for (const [cat, re] of PLACE_RULES) if (re.test(d)) return [cat, "название места"];
     const bc = tx.bankCat && BANK_CATS[norm(tx.bankCat)];
     if (bc) return [bc, "категория банка «" + tx.bankCat + "»"];
+    // Нет кода MCC (PDF Приорбанка): безымянный «магазин» или «торговый объект» почти всегда продуктовый у дома.
+    // Только последним шагом, когда ни одно правило не сработало (в CSV те же покупки узнаются по коду MCC)
+    if (!erip && !tx.mcc && tx.amount < 0 && /\b(magazin|shop n ?\d+|torg\.? ?ob\.?|магазин)\b/i.test(d)) return ["Продукты", "похоже на магазин у дома"];
     return [null, ""];
   }
   const categorize = tx => resolve(tx)[0];

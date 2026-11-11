@@ -35,10 +35,7 @@
         txs.push(...SP.parseTransactions(lines));
       });
       header.bank = "mtb";
-      // Повреждённые операции (нет даты или сумма не число) не пропускаем в разбор: они бы испортили итоги и таблицу
-      const good = txs.filter(t => /^\d{4}-\d\d-\d\d$/.test(t.date || "") && Number.isFinite(t.amount));
-      header.broken = txs.length - good.length;
-      return { header, txs: good };
+      return { header, txs };   // повреждённые операции отсеивает общий sieve() ниже, с описанием для пользователя
     },
     validate: (txs, header) => SP.validate(txs, header),
   };
@@ -117,8 +114,45 @@
   // CSV-выписки (кроме PDF): пока только Приорбанк. text: уже расшифрованный текст файла.
   const CSV_BANKS = [{ bank: PRIOR, detect: PRCSV.detect, parse: PRCSV.parse }];
 
+  // Проверка операций после любого разбора: дата настоящая (не 32.13) и в пределах периода выписки (±45 дней),
+  // сумма число. Плохие не попадают в итоги, а описываются в header.unread, чтобы сайт прямо сказал, что не прочитано.
+  const ISO = /^\d{4}-\d\d-\d\d$/;
+  function realDate(iso) {
+    if (!ISO.test(iso || "")) return false;
+    const [y, m, d] = iso.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return y >= 2000 && y <= 2100 && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+  }
+  const shift = (iso, days) => new Date(Date.parse(iso + "T00:00:00Z") + days * 864e5).toISOString().slice(0, 10);
+  const inPeriod = (iso, h) => !(realDate(h.from) && realDate(h.to)) || (iso >= shift(h.from, -45) && iso <= shift(h.to, 45));
+  function sieve(header, txs) {
+    const good = [], bad = Array.isArray(header.unread) ? header.unread.slice() : [];
+    for (const t of txs) {
+      if (realDate(t.date) && inPeriod(t.date, header) && Number.isFinite(t.amount)) { good.push(t); continue; }
+      bad.push({ date: realDate(t.date) ? t.date : null, rawDate: realDate(t.date) ? null : String(t.date || "").slice(0, 12) || null,
+        amount: Number.isFinite(t.amount) ? t.amount : null, details: String(t.details || "").replace(/\s+/g, " ").trim().slice(0, 70) });
+    }
+    if (good.length !== txs.length) header.broken = (header.broken || 0) + (txs.length - good.length);
+    if (bad.length) header.unread = bad.slice(0, 30);
+    return good;
+  }
+  // Цепочка остатков: если у операций есть остаток после операции, место пропуска видно по разрыву цепочки.
+  // Возвращает { from, to } (даты по краям разрыва) или null (остатков нет, цепочка цела или разрывов слишком много).
+  function balanceGap(txs) {
+    const list = txs.filter(t => t.balance != null && Number.isFinite(t.balance) && !t.pending);
+    if (list.length < 3) return null;
+    const c = n => Math.round(n * 100);
+    const breaks = dir => { const out = []; for (let i = 1; i < list.length; i++) {
+      const a = list[i - 1], b = list[i];
+      const ok = dir > 0 ? c(a.balance + b.amount) === c(b.balance) : c(b.balance + a.amount) === c(a.balance);
+      if (!ok) out.push([a.date, b.date]); } return out; };
+    const f = breaks(1), r = breaks(-1), best = f.length <= r.length ? f : r;
+    if (!best.length || best.length > 2) return null;   // показывается только при несошедшейся сверке
+    const [x, y] = best[0]; return x <= y ? { from: x, to: y } : { from: y, to: x };
+  }
+
   const api = {
-    BANKS,
+    BANKS, realDate, balanceGap,
     // Найти банк по выписке; null, если ни один не подошёл
     detect: pages => BANKS.find(b => b.detect(pages)) || null,
     // CSV-выписка: { bank, header, txs } или null, если формат не узнан
@@ -126,19 +160,28 @@
       const c = CSV_BANKS.find(b => b.detect(text));
       if (!c) return null;
       const { header, txs } = c.parse(text);
-      const good = txs.filter(t => /^\d{4}-\d\d-\d\d$/.test(t.date || "") && Number.isFinite(t.amount));
-      if (good.length !== txs.length) header.broken = (header.broken || 0) + (txs.length - good.length);
-      return { bank: c.bank, header, txs: good };
+      return { bank: c.bank, header, txs: sieve(header, txs) };
     },
     // Разобрать выписку: { bank, header, txs } или null, если банк не определён
     parse(pages) {
       const bank = api.detect(pages);
       if (!bank) return null;
       const { header, txs } = bank.parse(pages);
-      // Страховка для любого банка: операции без даты или с нечисловой суммой в разбор не попадают
-      const good = txs.filter(t => /^\d{4}-\d\d-\d\d$/.test(t.date || "") && Number.isFinite(t.amount));
-      if (good.length !== txs.length) header.broken = (header.broken || 0) + (txs.length - good.length);
-      return { bank, header, txs: good };
+      // Страховка для любого банка: операции без настоящей даты или с нечисловой суммой в итоги не попадают
+      return { bank, header, txs: sieve(header, txs) };
+    },
+    // Банк не узнан: похоже ли это на выписку поддерживаемого банка без начала (первой страницы с шапкой)?
+    // Возвращает название банка или null.
+    partialOf(pages) {
+      const text = pages.map(p => p.map(i => i.text).join(" ")).join(" ");
+      const dates = (text.match(/\b\d{2}\.\d{2}\.\d{4}\b/g) || []).length;
+      if (dates < 5) return null;
+      const NAMES = [["МТБанк", /МТБанк|MTBank|MTB MOBILE/i], ["Приорбанк", /Приорбанк|Priorbank/i], ["ВТБ (Беларусь)", /ВТБ|VTB/],
+        ["Беларусбанк", /Беларусбанк|Belarusbank|ASB/], ["Альфа-Банк", /Альфа-Банк|Alfa-Bank/i], ["Сбер Банк", /Сбер Банк|Sber/i], ["Белинвестбанк", /Белинвест|Belinvest/i]];
+      // Название чаще всего встречается у своего банка (в операциях бывают чужие: «MTB MOBILE» в выписке ВТБ)
+      const count = re => (text.match(new RegExp(re.source, re.flags.includes("i") ? "gi" : "g")) || []).length;
+      const best = NAMES.map(([n, re]) => [n, count(re)]).sort((a, b) => b[1] - a[1])[0];
+      return best && best[1] >= 3 ? best[0] : null;   // одно-два упоминания бывают в операциях (банкомат или платёж в другом банке)
     },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
