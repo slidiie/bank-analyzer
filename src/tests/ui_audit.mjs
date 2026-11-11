@@ -179,6 +179,8 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   await dialog('окно сброса', tag, `document.getElementById("reset").click()`);
 
   // «Все операции» с поиском и фильтром, «Своя категория»
+  // Окно сброса могло вывести из демо: возвращаемся в него, иначе вкладок нет
+  if (!(await ev('!!document.querySelector("#tabbar button")'))) { await ev('document.getElementById("demoBtn") && document.getElementById("demoBtn").click()'); await wait(1200); }
   await ev(`[...document.querySelectorAll("#tabbar button")].find(b => /Разобрать|Уточнить/.test(b.textContent)).click()`); await wait(400);
   if (await ev(clickText('button', '/^Все операции/'))) {
     await ev(`(() => { const q = document.querySelector(".fq"); if (q) { q.value = "кофе"; q.dispatchEvent(new Event("input", { bubbles: true })); } })()`); await wait(500);

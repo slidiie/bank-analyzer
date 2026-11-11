@@ -131,7 +131,7 @@ s = summaryText();
 check("октябрь без долга: итого 400", hasTotal(s, "400,00"));
 {
   const ins = textOf(byId["insights"]);
-  check("крупная трата: одна карточка с «Что это было?» и «Показать операцию»", ins.includes("Самая крупная трата") && ins.includes("Что это было?") && ins.includes("Показать операцию") && !ins.includes("Необычно крупная трата"));
+  check("крупная трата: одна карточка с «Что это было?» и «Показать операцию»", ins.includes("Самая крупная трата") && (ins.includes("Что это было?") || ins.includes("Сайт определил категорию")) && ins.includes("Показать операцию") && !ins.includes("Необычно крупная трата"));
   clickButton(byId["insights"], "Показать операцию");
   check("«Показать операцию» открывает «Все операции» с поиском по дате и сумме", vm.runInContext(`bottomTab`, ctx) === "all" && /^\d\d\.\d\d\.\d{4} \d+,\d\d$/.test(vm.runInContext(`allFilt.query`, ctx)));
   vm.runInContext(`allFilt = Filters.empty(); bottomTab = null;`, ctx);
@@ -339,7 +339,7 @@ clickButton(byId["reviewOther"], "Октябрь");
 check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("плашка разбора стоит под итогами, вкладки внизу", html.indexOf('id="summary"') < html.indexOf('id="reviewBanner"') && html.indexOf('id="reviewBanner"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
 check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Можно уточнить") && textOf(byId["reviewBanner"]).length < 200 && textOf(byId["reviewBanner"]).includes("Уточнить"));
-check("есть нижние вкладки «Все операции» и «Нужно разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
+check("есть нижние вкладки «Все операции» и «Разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Разобрать ("));
 vm.runInContext(`bottomTab = null; render();`, ctx);
 check("если есть неразобранное, открыта вкладка «Нужно разобрать»", byId["reviewSection"].hidden === false && byId["allPanel"].hidden === true);
 clickButton(byId["bottomTabs"], "Все операции");
@@ -742,6 +742,8 @@ vm.runInContext(`txs = []; txNotes = {}; statements = []; header = {};`, ctx);
 // Пример на главной совпадает с последним месяцем постоянного демо, а кнопка «Посмотреть такой отчёт» открывает этот месяц
 vm.runInContext(`enterDemo(true);`, ctx);
 check("демо постоянное: два входа дают одни и те же операции", vm.runInContext(`JSON.stringify(Demo.make(undefined, new Date()).txs) === JSON.stringify(Demo.make(undefined, new Date()).txs)`, ctx));
+check("«в день»: октябрь делится на 31 день, весь период 01.08–31.10 на 92", vm.runInContext(`periodDays(txs.filter(t => t.date.startsWith("2026-10"))) === 31 && periodDays(txs) === 92`, ctx));
+check("регулярные в демо: подписка «в месяц» = цена, итог 36,59", vm.runInContext(`(() => { const r = regularCtx().regular; const v = r.find(x => /video/i.test(x.name)); return !!v && Math.abs(v.perMonth - v.amount) < 1e-9 && !r.some(x => /burger/i.test(x.name)); })()`, ctx));
 check("«Посмотреть такой отчёт» открывает последний месяц демо", vm.runInContext(`activeTab === header.to.slice(0, 7)`, ctx));
 { const got = vm.runInContext(`JSON.stringify(statsFor(txs.filter(t => t.date.startsWith(activeTab))).rows.map(r => [r[0], Math.round(r[1] * 100) / 100]))`, ctx); const want = vm.runInContext(`JSON.stringify(LANDING_SAMPLE)`, ctx); if (got !== want) console.log("  LANDING_SAMPLE должен быть:", got); check("пример на главной = последний месяц демо", got === want); }
 { const rc = vm.runInContext(`(() => { const t = n => typeof n === "string" ? n : (n.children || []).map(t).join(""); const c = recapCard(); return c ? t(c) : ""; })()`, ctx); const w = JSON.parse(vm.runInContext(`JSON.stringify(LANDING_RECAP)`, ctx)); const miss = [w.save, ...w.lines.map(l => l[1])].filter(s => !rc.includes(s)); if (miss.length) console.log("  «Итог» в демо:", rc, " | нет строк:", miss); check("«Итог месяца» на главной = «Итог» последнего месяца демо", miss.length === 0); }
