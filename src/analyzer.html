@@ -744,7 +744,7 @@
     .about { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--sig); border-radius: 0; }
     .about h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
     .about ul { margin: .4rem 0; padding-left: 1.2rem; }
-    .howinline h2 { font-size: 1.15rem; margin: 0 0 .3rem; }
+    .howinline > summary { cursor: pointer; font-weight: 600; font-size: 1.05rem; margin: 0 0 .5rem; }
     .howtabs { display: flex; gap: .4rem; overflow-x: auto; padding: .5rem 0 .6rem; scrollbar-width: thin; }
     .howtabs button { flex: none; min-height: 40px; padding: .35rem .8rem; border-radius: 999px; font-size: .9rem; }
     /* Зоны нажатия: ссылки-кнопки на главной и в «Обзоре» не меньше 32 px на ПК и 44 px на телефоне (Чистовая шлифовка) */
@@ -904,8 +904,8 @@
       <div class="minislot" aria-hidden="true"></div>   <!-- пример строится скриптом ниже; старой статичной диаграммы в файле больше нет -->
       <button id="miniDemoBtn" type="button">Открыть весь пример</button>
     </aside>
-    <section id="howInline" class="howinline" aria-labelledby="howInH">
-      <h2 id="howInH">Сначала нужна выписка. Вот где её взять</h2>
+    <details id="howInline" class="howinline">
+      <summary id="howInH">Сначала нужна выписка. Вот где её взять</summary>
       <p class="muted">Выберите свой банк. Лучше взять период за 3–6 месяцев: так видны подписки и регулярные платежи.</p>
       <div id="howTabs" class="howtabs" role="tablist" aria-label="Банк"></div>
       <div id="howPane" class="howpane" role="tabpanel"></div>
@@ -915,16 +915,7 @@
         <p>Выписка пришла на почту: откройте письмо и сохраните вложение, дальше так же. Если сайт открыт внутри Telegram или другого приложения и файл не выбирается, откройте сайт в обычном браузере: меню «⋯» → «Открыть в браузере».</p>
       </details>
       <p class="muted">Нужен именно файл из банка (PDF или CSV), не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Подробности</button> · <a href="banks/">Все инструкции по банкам</a> · <a href="#wanted">Вашего банка нет?</a></p>
-    </section>
-    <section id="about" class="about" aria-labelledby="aboutH">
-      <h2 id="aboutH">Кто это делает</h2>
-      <p>Меня зовут Ярослав, живу в Минске. Хотел понять, куда уходят мои деньги, но готовые приложения не читают выписки белорусских банков или делают базовые вещи платными. Поэтому сделал сайт, где основное бесплатно. Делаю его один, в свободное время.</p>
-      <ul>
-        <li>Бесплатно, без регистрации и без рекламы.</li>
-        <li>Не связан ни с одним банком и не даёт финансовых советов.</li>
-      </ul>
-      <p class="muted"><a href="https://github.com/slidiie/bank-analyzer">Исходный код открыт</a>, любой может проверить, что делает страница. Нашли ошибку или ваш банк не читается? <button id="fbOpen3" class="linklike" type="button" aria-haspopup="dialog">Напишите мне</button>.</p>
-    </section>
+    </details>
     <h2 id="faq">Частые вопросы</h2>
     <details><summary>Куда уходит моя выписка?</summary>
       <p>Никуда: она читается прямо в вашем браузере. Проверить просто: включите авиарежим и загрузите файл, всё сработает.</p></details>
@@ -934,13 +925,12 @@
       <p>Только ваши настройки и выбранные категории, на этом устройстве. Саму выписку он не хранит, если вы сами не включили «Помнить выписку на этом устройстве». Стереть всё можно кнопкой «Забыть мои данные» в разделе «Настройки».</p></details>
     <details><summary>Какие банки читает?</summary>
       <p id="faqBanks"></p></details>
-    <section id="wanted" class="wanted" aria-labelledby="wantedH">
-      <h2 id="wantedH">Вашего банка нет в списке?</h2>
-      <p>У каждого банка свой формат выписки, и научить сайт новому банку я могу только по настоящему образцу. Если хотите помочь, пришлите его мне письмом. Это по желанию, для вашего разбора не нужно.</p>
-      <details id="wantedMore" class="wantedmore"><summary>Какие банки нужны и как прислать образец</summary>
+    <section id="wanted" class="wanted" aria-label="Вашего банка нет в списке?">
+      <details id="wantedMore" class="wantedmore"><summary>Вашего банка нет в списке? Можно помочь добавить его</summary>
+      <p>У каждого банка свой формат выписки, и научить сайт новому банку я могу только по настоящему образцу. Это по желанию, для вашего разбора не нужно.</p>
       <p><b>Нужны выписки этих банков:</b></p>
       <ul id="wantedList" class="wantedlist"></ul>
-      <p class="muted">Подойдёт PDF из интернет-банка. Мастер прямо здесь закроет ФИО, номера карт и счетов, адреса и телефоны. Вы проверите результат и сами решите, отправлять ли. Образец приходит только мне на почту, нужен лишь чтобы научить сайт читать ваш банк; потом письмо удаляю, передумаете — удалю сразу.</p>
+      <p class="muted">Подойдёт PDF из интернет-банка. Мастер прямо здесь закроет ФИО, номера карт и счетов, адреса и телефоны. Вы проверите результат и сами решите, отправлять ли. Образец приходит только мне на почту, нужен лишь чтобы научить сайт читать этот банк.</p>
       <p class="cta"><button id="wantedOpen" type="button" class="primary">Подготовить образец выписки</button></p>
       <p class="muted">Ссылкой на эту просьбу можно поделиться: <button id="wantedCopy" class="linklike" type="button">скопировать ссылку</button> <span id="wantedMsg" role="status"></span></p>
       </details>
@@ -1276,14 +1266,6 @@
       <h3>Помочь проекту</h3>
       <p class="muted">Сайт ничего не отправляет сам: всё, что ниже, вы готовите и отправляете по желанию.</p>
       <div class="cardbtns"><button id="anonOpenMore" type="button">Помочь добавить банк</button> <button id="fbOpen4" type="button">Что-то не так?</button></div>
-      <details id="shareBox" class="datablock">
-        <summary>Помочь справочнику магазинов</summary>
-        <p>Сайт ничего никуда не отправляет. Здесь можно подготовить текст со списком магазинов и выбранных вами категорий, и, если захотите, переслать его автору сами. В тексте только название и категория, без сумм, дат и номеров счетов. Сначала отметьте галочками, что можно включить: по умолчанию не отмечено ничего. Личные переводы по ФИО не включайте.</p>
-        <p><button id="shareBtn" type="button">Подготовить список</button></p>
-        <div id="shareList"></div>
-        <p><textarea id="shareText" rows="6" style="width:100%;display:none;background:var(--ctl-bg);color:var(--ctl-text);border:1px solid var(--ctl-border);border-radius:5px" readonly></textarea></p>
-        <p><button id="shareCopy" type="button" hidden>Скопировать текст</button> <span id="shareMsg"></span></p>
-      </details>
     </section>
 
   </main>
@@ -1566,7 +1548,7 @@
       ownUndo.length = 0;
       openKeys.clear();
       if (txs.length) render();
-      else { hideReport(); $("demoBar").hidden = true; $("dataRules").hidden = false; $("shareBox").hidden = true; $("clearBtn").hidden = true; }
+      else { hideReport(); $("demoBar").hidden = true; $("dataRules").hidden = false; $("clearBtn").hidden = true; }
     }
     function hideReport() { $("report").hidden = true; $("exportBox").hidden = true; $("setDl").hidden = true; document.body.setAttribute("data-view", "none"); curSection = "overview"; }
     const scrollTo = id => { try { $(id).scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { /* без прокрутки */ } };
@@ -1842,6 +1824,8 @@
     let savedBank = null;
     try { savedBank = localStorage.getItem("ba_bank_v1"); } catch (e) { /* без запоминания */ }
     showHowInline(savedBank);
+    const openHowInline = () => { if (typeof location !== "undefined" && location.hash === "#howInline") $("howInline").open = true; };
+    openHowInline(); if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("hashchange", openHowInline);
 
     // Значки: простые линии одного цвета (берут цвет текста). Для стандартных категорий свои, для своих выбирает пользователь
     const ICON_SVG = {
@@ -2300,7 +2284,6 @@
       $("dlBtn").hidden = !txs.length || demoMode;
       renderKeepAsk();
       $("dataRules").hidden = demoMode; $("setData").hidden = demoMode;
-      $("shareBox").hidden = !txs.length;
       $("resetRow").hidden = demoMode;
       recurring = findRecurring();
       saveHistory();
@@ -4856,42 +4839,6 @@
 
     // Запасной способ для боковой панели, где скачивание файлов запрещено: копирование текстом
     // «Помочь справочнику»: только название места и категория, без сумм и дат. Ничего не отправляется: пользователь копирует текст сам.
-    let hiddenPeople = 0;
-    function shareCandidates() {
-      const out = [];
-      hiddenPeople = 0;
-      for (const [key, cat] of Object.entries(userRules)) {
-        if (key[0] !== "-") continue;
-        const text = key.slice(key.indexOf("|") + 1).trim();
-        if (/^(ЕРИП|СЧЁТ) /.test(text) || text.length < 3) continue;
-        if (Cat.looksLikePerson(text)) { hiddenPeople++; continue; }   // имена людей наружу не отдаём
-        out.push({ name: text.slice(0, 60), cat });
-      }
-      return out;
-    }
-    $("shareBtn").addEventListener("click", () => {
-      const box = $("shareList"); box.textContent = "";
-      const items = shareCandidates();
-      $("shareMsg").textContent = (items.length ? "" : "Пока нет магазинов, которые вы разобрали вручную. ") + (hiddenPeople ? `Скрыто как похожие на имена людей: ${hiddenPeople}.` : "");
-      items.forEach((it, i) => {
-        const id = "shareChk" + i;
-        const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = id; cb.dataset.i = i;
-        const lb = document.createElement("label"); lb.htmlFor = id; lb.textContent = " " + it.name + " → " + it.cat;
-        const row = document.createElement("div"); row.append(cb, lb); box.append(row);
-      });
-      const build = () => {
-        const lines = [...box.querySelectorAll("input:checked")].map(c => items[+c.dataset.i]).map(it => it.name + " → " + it.cat);
-        $("shareText").value = lines.join("\n");
-        $("shareText").style.display = lines.length ? "" : "none";
-        $("shareCopy").hidden = !lines.length;
-      };
-      box.onchange = build; build();
-    });
-    $("shareCopy").addEventListener("click", async () => {
-      const t = $("shareText"); t.select();
-      try { await navigator.clipboard.writeText(t.value); $("shareMsg").textContent = "Скопировано."; }
-      catch (e) { $("shareMsg").textContent = "Выделено, нажмите Ctrl+C."; }
-    });
     $("textExportBtn").addEventListener("click", () => {
       const box = $("backupText");
       box.style.display = "block";
