@@ -361,13 +361,13 @@ clickButton(byId["bottomTabs"], "Все операции");
 check("клик по вкладке снова: список открыт", byId["allPanel"].hidden === false);
 
 // ---- Разделы-экраны и панель разделов ----
-check("панель: пять разделов", ["Обзор", "Уточнить", "Регулярные", "Бюджет", "Ещё"].every(n => textOf(byId["tabbar"]).includes(n)) && !textOf(byId["tabbar"]).includes("Выводы"));
+check("панель: пять разделов", ["Обзор", "Уточнить", "Регулярные", "Бюджет", "Настройки"].every(n => textOf(byId["tabbar"]).includes(n)) && !textOf(byId["tabbar"]).includes("Выводы"));
 vm.runInContext(`curSection = "overview"; render();`, ctx);
 check("панель: у «Обзора» отмечен текущий раздел", vm.runInContext("curSection", ctx) === "overview" && byId["tabbar"].children[0].className === "active");
 clickButton(byId["tabbar"], "Регулярные");
 check("раздел «Регулярные»: data-view и активная кнопка", document.body.attrs["data-view"] === "subs" && byId["tabbar"].children[2].className === "active");
-clickButton(byId["tabbar"], "Ещё");
-check("раздел «Ещё»: data-view", document.body.attrs["data-view"] === "more");
+clickButton(byId["tabbar"], "Настройки");
+check("раздел «Настройки»: data-view", document.body.attrs["data-view"] === "more");
 clickButton(byId["tabbar"], "Обзор");
 check("возврат на «Обзор»", document.body.attrs["data-view"] === "overview");
 

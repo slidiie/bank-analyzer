@@ -22,6 +22,8 @@
       version: clean(r.version, 20),
       banks: (Array.isArray(r.banks) ? r.banks : []).slice(0, 8).map(b => clean(b, 40)).filter(Boolean),
       count: num(r.count),
+      unread: num(r.unread),
+      mismatch: r.mismatch === true,
       section: clean(r.section, 20),
       screen: num(r.width) + "×" + num(r.height),
       theme: r.theme === "dark" ? "тёмная" : "светлая",
@@ -38,6 +40,7 @@
       "Версия сайта: " + (i.version || "—"),
       "Банки: " + (i.banks.length ? i.banks.join(", ") : "—"),
       "Операций загружено: " + i.count,
+      "Не прочитано операций: " + i.unread + ", суммы с итогами выписки " + (i.mismatch ? "не сошлись" : "сошлись или сверить не с чем"),
       "Раздел: " + (i.section || "—"),
       "Экран: " + i.screen + ", тема: " + i.theme];
     return lines.join("\n");
