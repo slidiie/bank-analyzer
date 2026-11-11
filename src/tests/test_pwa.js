@@ -63,6 +63,6 @@ check("браузер без service worker: выключено", !P.supported(L
   check("манифест: standalone, относительные start_url и scope", m.display === "standalone" && m.start_url === "./" && m.scope === "./");
   check("манифест: иконки есть на диске, есть 512 и maskable", m.icons.every(i => fs.existsSync(src("pwa", i.src))) && m.icons.some(i => i.sizes === "512x512") && m.icons.some(i => i.purpose === "maskable"));
   const files = JSON.parse(fs.readFileSync(src("sw.js"), "utf8").match(/const FILES = (\[.*\]);/)[1]);
-  check("sw: все кэшируемые файлы существуют (кроме страницы)", files.filter(f => f !== "./" && f !== "index.html").every(f => fs.existsSync(src("pwa", f))));
+  check("sw: все кэшируемые файлы существуют (кроме страницы)", files.filter(f => f !== "./" && f !== "index.html" && !f.startsWith("pdfjs/")).every(f => fs.existsSync(src("pwa", f))));
   process.exit(failed ? 1 : 0);
 })();

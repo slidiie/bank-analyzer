@@ -4,7 +4,7 @@
 // Версию (метку в имени кэша) подставляет build.py (хэш готовой страницы): новая сборка = новый кэш, старый удаляется.
 "use strict";
 const CACHE = "bank-analyzer-__VERSION__";
-const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
+const FILES = ["./", "index.html", "manifest.webmanifest", "pdfjs/lib.js", "pdfjs/worker.js", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
