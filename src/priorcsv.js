@@ -81,13 +81,18 @@
     const header = parseHeader(text);
     const txs = [];
     let broken = 0;
+    const unread = [];
     for (const line of lines(text)) {
       if (/^Заблокированные суммы/.test(line)) break;                 // ещё не списанные суммы, в итоги не входят
       if (!/^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2};/.test(line)) continue;
       const f = splitRow(line);
       const [dt, op, amtS, cur, post, , turnS, , cat] = f;
       const turn = num(turnS);
-      if (!DT_RE.test(dt) || !CUR_RE.test(cur || "") || !Number.isFinite(turn)) { broken++; continue; }
+      if (!DT_RE.test(dt) || !CUR_RE.test(cur || "") || !Number.isFinite(turn)) {
+        broken++;
+        if (unread.length < 30) unread.push({ date: null, rawDate: (dt || "").slice(0, 10) || null, amount: Number.isFinite(turn) ? turn : null, details: String(op || "").replace(/\s+/g, " ").trim().slice(0, 70) });
+        continue;
+      }
       if (turn === 0) continue;
       const [datePart, time] = dt.split(" ");
       let details = PR.stripSecrets(op || "");
@@ -115,6 +120,7 @@
       txs.push(tx);
     }
     header.broken = broken;
+    if (unread.length) header.unread = unread;
     return { header, txs };
   }
 

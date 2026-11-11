@@ -730,6 +730,11 @@
     .wanted h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
     .wantedlist { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: .4rem 0 .8rem; }
     .wantedlist li { padding: .25rem .7rem; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+    .readwarn { margin: 0 0 1rem; }
+    .recap .rweak { margin: .4rem 0; padding: .4rem .6rem; border-left: 3px solid var(--warn-border, var(--line)); }
+    .readwarn p { margin: .3rem 0; }
+    .readwarn .unread { margin: .3rem 0; padding-left: 1.2rem; }
+    .readwarn .rwbank { margin: .4rem 0; }
     .wantedmore > summary { cursor: pointer; font-weight: 600; margin: .2rem 0 .4rem; }
     .wanted:target { outline: 2px solid var(--accent); outline-offset: 4px; }
     .about { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--sig); border-radius: 0; }
@@ -1064,6 +1069,7 @@
   <div id="report" hidden>
     <div id="demoMore" class="note" data-sec="more" hidden><p style="margin:0 0 .5rem">В демо ничего не сохраняется и не загружается. Чтобы добавить свою выписку, нажмите «Загрузить свою выписку» вверху.</p></div>
     <nav id="tabbar" aria-label="Разделы"></nav>
+    <div id="readWarn" data-sec="overview plan" role="alert" hidden></div>
     <div id="recap" data-sec="overview"></div>
     <div id="check" data-sec="overview"></div>
     <div class="nav" id="nav" hidden></div>
@@ -1675,7 +1681,7 @@
       { id: "prior", name: "Приорбанк", reads: true,
         app: ["Приложение Prior Online, раздел «История»: значок фильтра справа вверху (продукт, тип операции, период) показывает операции.", "Официальная выписка: «Еще» → «Заявки на продукты» → «Заказ документов» → «Заказ справок и выписок», тип «Выписка по счету»."], appSure: true,
         how: ["Prior Online, раздел «История»: значок фильтра справа вверху (продукт, тип операции, период) показывает операции.", "Официальную выписку закажите так: «Еще» → «Заявки на продукты» → «Заказ документов» → «Заказ справок и выписок», тип документа «Выписка по счету». По данным банка, выписка по счёту бесплатна."],
-        wait: "Выписка по заявке приходит не сразу: срок виден в самой заявке. Пока ждёте, можно посмотреть пример отчёта.",
+        wait: "Выписка по заявке приходит не сразу: срок виден в самой заявке. Пока ждёте, можно посмотреть пример отчёта. Если банк предлагает выписку и в CSV, берите CSV: в нём есть код магазина, и категории определяются точнее, чем по PDF.",
         link: ["https://www.priorbank.by/offers/services/mobile-applications/zakaz-documentov", "Приорбанк: заказ справок и выписок в Prior Online"] },
       { id: "bps", name: "Сбер Банк", reads: true,
         app: ["Приложение СберБанк Онлайн: выписки за прошлые периоды доступны не везде. Если нужного пункта нет, откройте веб-версию СберБанк Онлайн в браузере телефона или обратитесь в отделение."], appSure: false,
@@ -1893,7 +1899,7 @@
     // Пометка для операции, если её сумма повторяется
     function recurLabel(tx) {
       const r = recurring.get(tx.amount.toFixed(2));
-      return r ? `↻ эта сумма повторялась: ${r.count} раз в ${r.months} мес., обычно около ${r.day}-го числа` : "";
+      return r ? `↻ такая сумма за всю выписку: ${r.count} ${plur(r.count, "раз", "раза", "раз")} за ${r.months} мес., обычно около ${r.day}-го числа` : "";
     }
 
     // Простая функция создания элементов (текст вставляем безопасно, без innerHTML)
@@ -1921,7 +1927,8 @@
     function setRule(tx, category, icon) {
       category = Cat.canonical(category);
       ensureCategory(category, icon);
-      userRules[Cat.merchantKey(tx)] = category;
+      // Объединённая группа (ЕРИП в один и тот же день месяца) несёт ключи всех своих операций
+      (tx.__keys || [Cat.merchantKey(tx)]).forEach(k => { userRules[k] = category; });
       saveJSON("ba_rules_v1", userRules);
       render();
     }
@@ -2057,11 +2064,14 @@
       }
       if (Cat.isErip(tx)) return `Платёж через ЕРИП, ${fmt(Math.abs(tx.amount))} BYN`;
       if (/списание при переводе/i.test(tx.details || "")) return "Списание при переводе";
-      if (/p2p|р2р/i.test(tx.details || "")) return "Перевод с карты на карту, получатель не указан";
-      if (/sou sber bank/i.test(tx.details || "")) return "Платёж из приложения Сбера, получатель не указан";
+      if (/\bp2p|р2р/i.test(tx.details || "")) return "Перевод с карты на карту, получатель не указан";
+      if (/\bsou sber bank/i.test(tx.details || "")) return "Платёж из приложения Сбера, получатель не указан";
+      // Банкоматы: «Списание по операции ПЦ выдача наличных денег в АТМ …» → «Снятие наличных»
+      if (tx.amount < 0 && /выдача наличных|снятие наличных|\bATM\b|АТМ|банкомат/i.test(tx.details || "")) return "Снятие наличных";
+      if (/дебетная часть перевода/i.test(tx.details || "")) return "Перевод с карты через интернет-банк, получатель не указан";
       // Остальное: название места без хвоста «MINSK BY» и без общей фразы «Оплата товаров и услуг»
       // Известные места получают красивое название (merchants.js), остальные очищаются от мусора; категории и суммы не затрагиваются
-      const label = ruleLabel(Cat.merchantKey(tx));
+      const label = ruleLabel(Cat.merchantKey(tx)).replace(/^Списание по операции ПЦ\s*/i, "");
       const pretty = Merchants.pretty(label);
       if (pretty) return pretty;
       return Merchants.clean(label) || label.replace(/\s+(MINSK|МИНСК)\s+BY\b/i, " ").replace(/\s*ОПЛАТА ТОВАРОВ И УСЛУГ\s*$/i, "").replace(/\s+BY\s*$/i, "").replace(/\s+/g, " ").trim() || "Без названия";
@@ -2084,7 +2094,7 @@
       if (items.length < 2 || months.size < 2) return "";
       const days = items.map(t => parseInt((t.date || "").slice(8, 10), 10)).filter(Number.isFinite).sort((a, b) => a - b);
       const day = days.length ? days[Math.floor(days.length / 2)] : null;
-      return `в ${months.size} мес.` + (day ? `, обычно около ${day}-го числа` : "");
+      return `за ${months.size} мес.` + (day ? `, обычно около ${day}-го числа` : "");
     }
     // ---------- «Это мой счёт» и подпись счёта ----------
     const acctId = tx => { const rc = Cat.recipient(tx); return rc ? rc.last4 + "-" + rc.hash : null; };
@@ -2409,8 +2419,8 @@
     function renderCheck() {
       const box = $("check");
       renderBankChips();
-      if (demoMode) { box.className = ""; box.replaceChildren(); return; }
-      let ok = true;
+      if (demoMode) { box.className = ""; box.replaceChildren(); renderReadWarn(); return; }
+      let ok = true, unchecked = [];
       const lines = statements.map(st => {
         let t = `${st.bankName}: ${st.count} операций` + (st.from ? ` за период ${fmtDate(st.from)} — ${fmtDate(st.to)}` : "");
         if (st.skipped) t += `, повторов пропущено: ${st.skipped}`;
@@ -2420,22 +2430,73 @@
           t += `Поступления: по выписке ${fmt(c.headerIncome)}, найдено ${fmt(c.income)} ${c.incomeOk ? "✓" : "✗"}. `;
           t += `Списания: по выписке ${fmt(c.headerExpense)}, найдено ${fmt(c.expense)} ${c.expenseOk ? "✓" : "✗"}.`;
           if (c.pending) t += ` Ещё не проведено банком: ${c.pending} ${opsWord(c.pending)}. Они учтены в тратах и не входят в итоги выписки; после проведения банк покажет их в следующей выписке.`;
-          if (!c.ok) { ok = false; t += " Суммы не сошлись: часть операций прочитана неверно или пропущена. Сообщите об этом автору сайта."; }
-        }
+          if (!c.ok) { ok = false; t += " Суммы не сошлись: часть операций прочитана неверно или пропущена (подробности вверху раздела)."; }
+        } else { unchecked.push(st.bankName); t += "Итоговых сумм в этой выписке нет, сверить не с чем."; }
+        if (st.unread && st.unread.length) ok = false;
         return h("div", {}, t);
       });
       if (statements.length > 1) lines.push(h("div", {}, `Всего операций: ${txs.length}.`));
       const pairs = Merge.pairCount(txs);
       if (pairs) lines.push(h("div", {}, `Пар «пришло и сразу ушло»: ${pairs}: они не считаются ни доходом, ни расходом, но остаются в списке.`));
-      box.className = ok ? "ok" : "warn";
-      // Сверка свёрнута: если всё сошлось, хватает одной строки; при расхождении раскрыта сразу
-      const sum = ok ? `Сверка итогов с выпиской: всё сходится ✓ (выписок: ${statements.length}, операций: ${txs.length})` : "Сверка итогов с выпиской: есть расхождения ✗";
+      const allUnchecked = ok && unchecked.length === statements.length;
+      box.className = ok && !allUnchecked ? "ok" : allUnchecked ? "note" : "warn";
+      // Сверка свёрнута: если всё сошлось, хватает одной строки; при расхождении раскрыта сразу.
+      // Нет итогов в выписке (бывает у Альфа-Банка): честно «сверить не с чем», а не «всё сходится ✓»
+      const sum = !ok ? "Сверка итогов с выпиской: есть расхождения ✗"
+        : allUnchecked ? `Сверка: в выписке нет итоговых сумм, сверить не с чем (операций: ${txs.length})`
+        : `Сверка итогов с выпиской: всё сходится ✓ (выписок: ${statements.length - unchecked.length}${unchecked.length ? `, без итогов: ${unchecked.length}` : ""}, операций: ${txs.length})`;
       const det = h("details", ok ? {} : { open: "" }, h("summary", { style: "cursor:pointer" }, sum), ...lines);
       // Банки, у которых мало образцов: честно предупреждаем, что возможны ошибки
       const fresh = statements.some(st => st.bank === "alfa") ? [h("p", { class: "muted", style: "margin:.6rem 0 0" },
         "Альфа-Банк подключён недавно, образцов выписок пока мало (проверены кредитная карта и карта с несколькими операциями), поэтому чтение может быть неточным. Если заметили ошибку или пропущенную операцию, ",
         h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "отправьте образец выписки"), ".")] : [];
       box.replaceChildren(det, ...fresh);
+      renderReadWarn();
+    }
+    // Плашка над «Итогом месяца»: что не удалось прочитать и насколько не сошлись суммы. Пока она есть, итог может врать,
+    // поэтому говорим прямо: какая операция, на какую сумму и где искать.
+    function readProblems() {
+      if (demoMode) return [];
+      const out = [];
+      statements.forEach(st => {
+        const c = st.check, items = [];
+        if (st.unread && st.unread.length) {
+          const n = st.unread.length;
+          items.push(h("div", {}, `Не удалось прочитать ${n} ${opsWord(n)}:`));
+          items.push(h("ul", { class: "unread" }, st.unread.slice(0, 5).map(u => h("li", {},
+            [u.date ? fmtDate(u.date) : u.rawDate ? `дата «${u.rawDate}» неверная` : "без даты",
+             u.amount != null ? `${u.amount > 0 ? "+" : "−"}${fmt(Math.abs(u.amount))} BYN` : "сумма не читается",
+             u.details || ""].filter(Boolean).join(" · ")))));
+          if (n > 5) items.push(h("div", { class: "muted" }, `и ещё ${n - 5}.`));
+        }
+        if (c && c.headerIncome != null && !c.ok) {
+          const part = (name, head, got) => {
+            const d = Math.round((head - got) * 100) / 100;
+            if (!d) return "";
+            return d > 0 ? `в ${name} не хватает ${fmt(d)} BYN` : `в ${name} лишние ${fmt(-d)} BYN`;
+          };
+          const diffs = [part("поступлениях", c.headerIncome, c.income), part("списаниях", c.headerExpense, c.expense)].filter(Boolean);
+          let t = `Суммы не совпали с итогами выписки: ${diffs.join(", ")}.`;
+          if (c.gapFrom) t += ` Пропуск где-то ${c.gapFrom === c.gapTo ? fmtDate(c.gapFrom) : `между ${fmtDate(c.gapFrom)} и ${fmtDate(c.gapTo)}`}: сверьте эти дни с приложением банка.`;
+          else t += " Скорее всего, одна или несколько операций не прочитаны или прочитаны с ошибкой.";
+          items.push(h("div", {}, t));
+        }
+        if (items.length) out.push(h("div", { class: "rwbank" }, statements.length > 1 ? h("b", {}, st.bankName + ". ") : "", ...items));
+      });
+      return out;
+    }
+    function renderReadWarn() {
+      const box = $("readWarn");
+      if (!box) return;
+      const probs = readProblems();
+      box.hidden = !probs.length;
+      if (!probs.length) { box.replaceChildren(); return; }
+      box.className = "warn readwarn";
+      box.replaceChildren(h("b", {}, "Выписка прочитана не полностью"),
+        h("p", {}, "Цифры ниже могут быть неточными: итог месяца, категории и бюджет посчитаны без этих операций."),
+        ...probs,
+        h("p", { class: "muted" }, "Попробуйте скачать выписку из банка заново. Если ошибка повторится, ",
+          h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "пришлите образец"), " (личные данные закроются), и я поправлю чтение."));
     }
 
     // ---------- Траты по категориям: за весь период и по месяцам ----------
@@ -2450,6 +2511,13 @@
     // Склонение по числу: plur(5, "категория", "категории", "категорий")
     const plur = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? few : many;
     const fmtDate = iso => iso.split("-").reverse().join(".");
+    // Дата коротко: «17.10». Если в выписке несколько лет или год не текущий, с годом: «17.10.2024» (иначе непонятно, какой год)
+    let dsMemo = { n: -1, many: false };
+    function dShort(d) {
+      if (!d || d.length < 10) return "";
+      if (dsMemo.n !== txs.length) dsMemo = { n: txs.length, many: new Set(txs.map(t => t.date && t.date.slice(0, 4)).filter(Boolean)).size > 1 };
+      return dsMemo.many || d.slice(0, 4) !== String(new Date().getFullYear()) ? fmtDate(d.slice(0, 10)) : `${d.slice(8, 10)}.${d.slice(5, 7)}`;
+    }
 
     // Месяцы, в которых есть операции (по порядку)
     function monthsInStatement() {
@@ -2918,7 +2986,7 @@
       const top = st.rows.find(([c]) => !REVIEW_CATS.has(c));
       if (top) facts.push(`Больше всего: ${top[0]}, ${Math.round(top[1] / st.total * 100)}%`);
       const unsorted = st.rows.filter(([c]) => REVIEW_CATS.has(c)).reduce((a, [, v]) => a + v, 0) / st.total;
-      if (unsorted >= 0.1) facts.push(`Ещё не разобрано: ${Math.round(unsorted * 100)}% трат`);
+      if (unsorted >= 0.1) facts.push(`Без точной категории (переводы, ЕРИП, платежи без названия): ${Math.round(unsorted * 100)}% трат`);
       const biggest = spendList(all).reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
       if (biggest) facts.push(`Самая крупная трата: ${fmt(-biggest.amount)} BYN${biggest.date ? ", " + shortDate(biggest.date) : ""}`);
       // Пришло: поступления без переводов между своими счетами и без возвратов (возврат уменьшает траты, а не доход)
@@ -3024,7 +3092,7 @@
       }
       const groups = new Map();
       const unclear = list.filter(t => REVIEW_CATS.has(displayCat(t)));
-      list.filter(t => !REVIEW_CATS.has(displayCat(t))).forEach(t => { const k = Cat.merchantKey(t), g = groups.get(k) || { sum: 0, n: 0, tx: t }; g.sum -= t.amount; g.n++; groups.set(k, g); });
+      list.filter(t => !REVIEW_CATS.has(displayCat(t))).forEach(t => { const k = displayCat(t) === "Наличные" ? "cash:" : Cat.merchantKey(t), g = groups.get(k) || { sum: 0, n: 0, tx: t }; g.sum -= t.amount; g.n++; groups.set(k, g); });
       const top = [...groups.values()].sort((a, b) => b.sum - a.sum).slice(0, 5);
       if (top.length) {
         const topMax = top[0].sum;
@@ -3069,44 +3137,13 @@
       return h("div", { class: "noticed" }, h("h3", {}, "Что заметили"), h("ul", {}, lines.slice(0, 3).map(l => h("li", {}, ...l))));
     }
 
-    // Напоминание через месяц: файл .ics открывается календарём телефона или компьютера (Google, Apple, Outlook)
-    // Файл календаря по RFC 5545: в тексте экранируются \ ; , и перевод строки, строки длиннее 75 байт переносятся (продолжение начинается с пробела)
-    const icsText = t => String(t).replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
-    function icsFold(line) {
-      const enc = typeof TextEncoder === "function" ? new TextEncoder() : null;
-      const bytes = ch => enc ? enc.encode(ch).length : (ch.charCodeAt(0) < 128 ? 1 : 2);
-      const out = []; let cur = "", n = 0;
-      for (const ch of line) {
-        const b = bytes(ch);
-        if (n + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; n = 0; }
-        cur += ch; n += b;
-      }
-      out.push(cur);
-      return out.join("\r\n ");
-    }
-    function remindIcs(days) {
-      const d = new Date(Date.now() + days * 864e5), pad = n => String(n).padStart(2, "0");
-      const day = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-      const next = new Date(d.getTime() + 864e5), day2 = `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`;
-      const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
-      return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//bank-analyzer//RU", "BEGIN:VEVENT", `UID:${now}-${Math.random().toString(36).slice(2)}@bank-analyzer`, `DTSTAMP:${now}`,
-        `DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${day2}`, "SUMMARY:" + icsText("Проверить, куда ушли деньги за месяц"),
-        "DESCRIPTION:" + icsText("Скачайте выписку из банка за прошлый месяц и загрузите на https://fernwood.by/ . Ваши категории уже запомнены в браузере."),
-        "BEGIN:VALARM", "TRIGGER:PT10H", "ACTION:DISPLAY", "DESCRIPTION:" + icsText("Проверить траты за месяц"), "END:VALARM", "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
-    }
-    function remindCard() {
-      const btn = h("button", { type: "button" }, "Напомнить через месяц");
-      btn.addEventListener("click", () => {
-        try {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(new Blob([remindIcs(30)], { type: "text/calendar" }));
-          a.download = "напоминание-выписка.ics";
-          document.body.append(a); a.click(); a.remove();
-          btn.textContent = "Файл напоминания скачан: откройте его, чтобы добавить в календарь";
-        } catch (e) { btn.textContent = "Не получилось создать напоминание"; }
-      });
-      return h("div", { class: "ocard remind" }, h("h3", {}, "Сравнить со следующим месяцем"),
-        h("p", { class: "muted" }, "Через месяц загрузите новую выписку: сайт покажет, стало ли больше или меньше, а уточнять придётся меньше. Напоминание добавится в календарь вашего телефона или компьютера, сайт ничего никуда не отправляет."), btn);
+    // Период для «Итога» без целых месяцев: от начала до конца загруженных выписок (а не только дни, когда были операции:
+    // выписка за 8 дней с операциями в один день — это «8 дней», а не «1 день»)
+    function recapPeriod(dates) {
+      const st = statements.filter(x => x.from && x.to);
+      const from = [...st.map(x => x.from), dates[0]].filter(Boolean).sort()[0];
+      const to = [...st.map(x => x.to), dates[dates.length - 1]].filter(Boolean).sort().pop();
+      return { from, to };
     }
     // «Итог месяца»: 3–5 выводов о последнем полном месяце (или о выбранном полном). Логика в recap.js, здесь только данные и вид
     function recapCard() {
@@ -3120,7 +3157,7 @@
       const income = txs.filter(t => t.date && t.amount > 0 && displayCat(t) !== Cat.OWN && !isRefund(t)).map(t => ({ date: t.date, amount: t.amount }));
       const r = Recap.monthRecap({
         items, income, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
-        period: { from: [header.from, dates[0]].filter(Boolean).sort().pop(), to: [header.to, dates[dates.length - 1]].filter(Boolean).sort()[0] },
+        period: recapPeriod(dates),
         unsorted: [...REVIEW_CATS], fixed: ["Аренда и жильё", "Комиссии банка", "Здоровье", "Образование", "Наличные", Cat.GAMBLING, Cat.P2P],
         regular, subsCats: ["Связь и подписки"], nice: softCase,
       });
@@ -3138,12 +3175,17 @@
         const top = rows.slice(0, 4), rest = all - top.reduce((a, x) => a + x[1], 0);
         shareData = { r, bar: all > 0 ? top.map(([c, v]) => ({ name: c, v, key: catVar(c) })).concat(rest > 0.5 ? [{ name: "Остальное", v: rest, key: "--cat-other" }] : []) : [], total: all };
       } catch (e) { shareData = null; }
+      const goReview = h("button", { type: "button", class: "linklike", onclick: () => showSection("review") }, "Уточнить");
+      // Разобрано слишком мало: громкие выводы были бы гаданием, честно просим сначала уточнить крупное
+      if (r.sortedShare < 0.25) return h("section", { class: "ocard recap", "aria-label": r.title },
+        h("h3", {}, r.title), h("p", {}, `Пока рано делать выводы: понятно, на что ушло, только ${Math.floor(r.sortedShare * 100)}% трат. Остальное это переводы, ЕРИП и платежи без названия. Уточните самые крупные, и здесь появится итог.`), goReview);
+      const weak = r.sortedShare < 0.6;
       return h("section", { class: "ocard recap", "aria-label": r.title },
         h("h3", {}, r.title), h("div", { class: "muted" }, sub),
-        r.save ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")) : "",
+        r.note ? h("p", { class: "rnote" + (weak ? " rweak" : " muted") }, r.note, " ", goReview) : "",
+        r.save && !weak ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")) : "",
         h("ul", {}, r.lines.filter(l => l.kind !== "save" || !r.save).map(l => h("li", { class: "k-" + l.kind }, l.text))),
-        r.note ? h("p", { class: "muted rnote" }, r.note, " ", h("button", { type: "button", class: "linklike", onclick: () => showSection("review") }, "Уточнить")) : "",
-        shareData && shareData.bar.length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");
+        shareData && shareData.bar.length && !readProblems().length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");
     }
 
     // ---------- Карточка «Поделиться итогом»: картинка 4:5, рисуется на canvas в браузере (без сумм по умолчанию) ----------
@@ -3242,7 +3284,7 @@
         } else if (goals) box.append(goals);
         const dyn = dynamicsBlock(ctx);
         if (dyn) box.append(dyn);
-        if (!demoMode && txs.length) box.append(remindCard());
+        // Напоминание в календарь убрано по решению владельца (10.11): напоминания не нужны
       } catch (e) { /* без украшений, основной обзор уже построен */ }
       try {
         const nb = noticedBlock(ctx), vs = box.querySelector(".viewswitch");
@@ -3351,8 +3393,9 @@
             }
           }
         } else if (ctx.current == null && full.length > 1) {
-          const hi = full.reduce((a, m) => (m.st.total > a.st.total ? m : a)), lo = full.reduce((a, m) => (m.st.total < a.st.total ? m : a));
-          ul.append(icard(monthTitle(hi.ym), `Самый затратный полный месяц · ${fmt(hi.st.total)} BYN`, `Самый скромный: ${monthTitle(lo.ym)} (${fmt(lo.st.total)} BYN).`));
+          const hi = full.reduce((a, m) => (m.st.total > a.st.total ? m : a)), nz = full.filter(m => m.st.total >= 1), lo = nz.length > 1 ? nz.reduce((a, m) => (m.st.total < a.st.total ? m : a)) : null;
+          // Месяц без трат (карта лежала без дела) «скромным» не называем
+          ul.append(icard(monthTitle(hi.ym), `Самый затратный полный месяц · ${fmt(hi.st.total)} BYN`, lo && lo !== hi ? `Самый скромный: ${monthTitle(lo.ym)} (${fmt(lo.st.total)} BYN).` : ""));
         }
         // К прошлому месяцу: только если оба месяца полные и идут подряд
         if (ctx.current != null && ctx.current > 0) {
@@ -3441,7 +3484,7 @@
       return { months, fullAll, full, items, regular };
     }
 
-    const dmy = d => d.slice(8, 10) + "." + d.slice(5, 7);
+    const dmy = d => dShort(d);
     const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 
     // Экран «Подписки и регулярные»: сколько уходит в месяц, ближайшие списания, весь список
@@ -3466,7 +3509,8 @@
       const spend = full.map(ym => statsFor(txs.filter(t => t.date && t.date.startsWith(ym))).total);
       const avg = spend.reduce((a, v) => a + v, 0) / spend.length;
       const share = avg > 0 ? Math.round(Math.min(100, sum / avg * 100)) : null;
-      const kindOf = r => SUBS_CATS.includes(r.cat) ? "subs" : (MUST_CATS.includes(r.cat) || Cat.BUCKETS.includes(r.cat)) ? "must" : "other";
+      // ЕРИП и интернет-банк обычно коммуналка и связь (обязательные), а переводы на карты и счета нет: их в «Другие»
+      const kindOf = r => SUBS_CATS.includes(r.cat) ? "subs" : (MUST_CATS.includes(r.cat) || (Cat.BUCKETS.includes(r.cat) && r.cat !== TR_BUCKET)) ? "must" : "other";
       const sumOf = k => regular.filter(r => kindOf(r) === k).reduce((a, r) => a + r.perMonth, 0);
       const subsSum = sumOf("subs"), mustSum = sumOf("must"), otherSum = sumOf("other");
       const nSubs = regular.filter(r => kindOf(r) === "subs").length;
@@ -3494,11 +3538,14 @@
         h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
         h("span", { class: "samount" }, `${money(x.r.amount)} BYN`, h("small", { class: "syr muted" }, `≈ ${money(x.r.perMonth * 12)} в год`)));
       const solid = rows.filter(x => x.s.kind === "month" || x.s.kind === "days"), loose = rows.filter(x => !(x.s.kind === "month" || x.s.kind === "days"));
-      const main = solid.length ? solid : rows;
+      // Платёж без ровного срока не называем «обязательным» или «подпиской»: это скорее частая покупка на одну сумму
       [["subs", "Подписки и сервисы"], ["must", "Обязательные"], ["other", "Другие регулярные"]].forEach(([k, title]) => {
-        const part = main.filter(x => kindOf(x.r) === k);
+        const part = solid.filter(x => kindOf(x.r) === k);
         if (part.length) box.append(h("h4", { class: "skind" }, `${title} · ${part.length}`), h("ul", { class: "slist" }, part.map(liOf)));
       });
+      if (!solid.length && loose.length) box.append(h("h4", { class: "skind" }, `Без ровного срока · ${loose.length}`),
+        h("p", { class: "muted" }, "Одна и та же сумма повторяется, но без ровного срока: скорее всего, это частые покупки или пополнения, а не подписки."),
+        h("ul", { class: "slist" }, loose.map(liOf)));
       if (solid.length && loose.length) box.append(h("details", {}, h("summary", {}, `Без ровного срока: ${loose.length} (скорее всего, не подписки)`), h("ul", { class: "slist" }, loose.map(liOf))));
     }
 
@@ -3566,7 +3613,7 @@
         const sum = regular.reduce((a, r) => a + r.perMonth, 0);
         d.append(h("p", {}, `Платежи одной и той же суммы почти в каждом месяце: около ${money(sum)} BYN в месяц.`));
         d.append(h("table", {}, regular.slice(0, 12).map(r => h("tr", {},
-          h("td", { class: "muted" }, `~${r.day}-го`), h("td", {}, r.name), h("td", { class: "muted" }, r.cat), h("td", { class: "num" }, money(r.amount))))));
+          h("td", { class: "muted" }, r.count > r.months * 1.2 ? "чаще раза в месяц" : `~${r.day}-го`), h("td", {}, r.name), h("td", { class: "muted" }, r.cat), h("td", { class: "num" }, money(r.amount))))));
         if (regular.length > 12) d.append(h("p", { class: "muted" }, `…и ещё ${regular.length - 12}.`));
         d.append(h("p", { class: "muted" }, "Это совпадение сумм, а не подтверждённые подписки: проверьте список сами."));
         d.append(h("p", {}, h("button", { type: "button", onclick: () => showSection("subs") }, "Открыть «Регулярные»: ближайшие списания и весь список")));
@@ -3707,7 +3754,7 @@
       }
       d.append(h("div", { class: "prow" }, h("span", { class: "pname" }, "А если жильё будет стоить…"),
         numInput("calc:rentNew", calc.rentNew != null ? calc.rentNew : "", v => { if (v == null) delete calc.rentNew; else calc.rentNew = v; }, { placeholder: "например, 600", "aria-label": "Новая стоимость жилья" }),
-        h("span", { class: "muted" }, rent > 0 ? `BYN (сейчас около ${money(rent)})` : "BYN")));
+        h("span", { class: "muted" }, rent >= 50 ? `BYN (сейчас около ${money(rent)})` : "BYN")));   // 18 BYN «за жильё» бывает, когда аренда идёт переводами: не подсказываем бессмыслицу
       const rentNew = calc.rentNew != null ? calc.rentNew : NaN;
       const r = Planner.leftover({ income: x.income, savings: x.plan.amount, obligations: x.obligations, other: x.other, rentNow: rent, rentNew });
       d.append(h("div", { class: "result" }, `Остаётся на жизнь: ${r.base < 0 ? "−" : ""}${money(Math.abs(r.base))} BYN в месяц`));
@@ -3725,9 +3772,9 @@
       return monthsInStatement().length > 1 && monthsInStatement().includes(activeTab) ? activeTab : "all";
     }
     // ---------- «Нужно разобрать»: подсказки по признакам, ключи для памяти, быстрые категории ----------
-    const dm = d => (d && d.length >= 10 ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : "");
+    const dm = d => dShort(d);
     const isPersonTransfer = tx => /p2p|р2р|на карту|перевод/i.test(tx.details || "") && !/интернет-банк|ерип/i.test(tx.details || "");
-    const chipLabel = c => (c === Cat.OWN ? "Свои счета" : c);
+    const chipLabel = c => (c === Cat.OWN ? "Свой счёт" : c);
     // Самые частые категории, которые человек уже выбирал: ими дополняем подсказки
     function usedCats() {
       const cnt = new Map();
@@ -3790,8 +3837,12 @@
       rem.checked = trRemember;
       rem.addEventListener("change", () => { trRemember = rem.checked; });
       wrap.append(h("label", { class: "qtrrem", for: "trRemember" }, rem, " Запомнить для всех будущих выписок"));
+      // Одинаковые заголовки (банк показал у разных счетов одни и те же последние цифры, например …0000) различаем номером
+      const seenTitles = new Map();
       for (const g of trList.slice(0, trLimit)) {
-        const title = softCase(friendlyTitle(g.tx));
+        let title = g.title || softCase(friendlyTitle(g.tx));
+        const dup = (seenTitles.get(title) || 0) + 1; seenTitles.set(title, dup);
+        if (dup > 1) title += ` (другой получатель, ${dup})`;
         const rec = Cat.recipient(g.tx);
         const n = g.items.length;
         const row = h("div", { class: "qtrrow" },
@@ -3809,6 +3860,33 @@
       return wrap;
     }
 
+    // ЕРИП без названия получателя ключуется по сумме, и ежемесячный платёж с разной суммой распадается на десятки групп.
+    // Платежи ЕРИП в один и тот же день месяца (±2 дня) минимум в 3 разных месяцах собираем в одну группу:
+    // одна категория для всех (правило ставится на ключ каждой операции).
+    function mergeEripByDay(groups, parked) {
+      const erip = [...groups.values()].filter(g => g.items.length <= 2 && g.items[0].amount < 0 && Cat.isErip(g.tx) && g.items.every(t => t.date));
+      const byDay = new Map();
+      for (const g of erip) {
+        const d = Math.round(g.items.reduce((a, t) => a + Number(t.date.slice(8, 10)), 0) / g.items.length);
+        let slot = [...byDay.keys()].find(k => Math.abs(k - d) <= 2);
+        if (slot == null) { slot = d; byDay.set(slot, []); }
+        byDay.get(slot).push(g);
+      }
+      for (const [slot, all] of byDay) {
+        // Только платежи близкого размера (в пределах ×3 от медианы): 14 BYN и 1 500 BYN в один день это скорее разные услуги
+        const sums = all.map(g => Math.abs(g.sum) / g.items.length).sort((x, y) => x - y), med = sums[Math.floor(sums.length / 2)];
+        const gs = all.filter(g => { const v = Math.abs(g.sum) / g.items.length; return v >= med / 3 && v <= med * 3; });
+        const months = new Set(gs.flatMap(g => g.items.map(t => t.date.slice(0, 7))));
+        if (gs.length < 3 || months.size < 3) continue;
+        const items = gs.flatMap(g => g.items).sort((a, b) => a.date.localeCompare(b.date));
+        const days = items.map(t => Number(t.date.slice(8, 10))).sort((x, y) => x - y), day = days[Math.floor(days.length / 2)];
+        const key = "erip-day:" + slot + ":" + Math.round(med);
+        gs.forEach(g => groups.delete(g.key));
+        if (deferred.has(key)) { parked.push(...items); continue; }
+        const tx = Object.assign({}, items[items.length - 1], { __keys: [...new Set(gs.map(g => g.key))] });
+        groups.set(key, { key, tx, items, sum: items.reduce((a, t) => a + t.amount, 0), title: `Платежи через ЕРИП около ${day}-го числа`, monthly: months.size });
+      }
+    }
     const deferred = new Set();                // отложено кнопкой «Пропустить»: только в памяти страницы, категория не назначается
     const deferKey = k => { deferred.add(k); render(); };
     function renderReview() {
@@ -3829,6 +3907,7 @@
         const g = groups.get(key);
         g.items.push(tx); g.sum += tx.amount;
       }
+      mergeEripByDay(groups, parked);
       // Сначала самые крупные по сумме
       const list = [...groups.values()].sort((a, b) => Math.abs(b.sum) - Math.abs(a.sum));
       const hintByKey = new Map(Hints.transferHints(list, Cat, txs).map(x => [x.key, x]));
@@ -3914,7 +3993,7 @@
           ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
         const dates = items.map(t => t.date).filter(Boolean);
         const range = dates.length
-          ? (dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} — ${dates[dates.length - 1]}`)
+          ? (dates[0] === dates[dates.length - 1] ? fmtDate(dates[0]) : `${fmtDate(dates[0])} — ${fmtDate(dates[dates.length - 1])}`)
           : "";
         // Какие суммы встречаются в группе (по ним легко заметить регулярные платежи)
         const amountCounts = new Map();
@@ -3926,7 +4005,7 @@
         const recurCount = items.filter(t => recurLabel(t)).length;
 
         const sc = ruleScope(g.tx);
-        const title = softCase(friendlyTitle(g.tx));
+        const title = g.title || softCase(friendlyTitle(g.tx));
         const rhythm = rhythmText(items);
         const rec = Cat.recipient(g.tx);
         // Всё второстепенное спрятано под «Подробнее»: на виду название, сумма и выбор категории (две строки)
@@ -3950,7 +4029,7 @@
               const rl = recurLabel(tx);
               return h("div", { class: "oprow" },
                 h("div", { style: "font-size:1.05rem" },
-                  h("b", {}, `${tx.date || ""}${tx.time ? " " + tx.time : ""}`), " · ",
+                  h("b", {}, `${tx.date ? fmtDate(tx.date) : ""}${tx.time ? " " + tx.time.slice(0, 5) : ""}`), " · ",
                   h("b", {}, (tx.amount > 0 ? "+" : "") + fmt(tx.amount) + " BYN")),
                 rl ? h("div", { class: "muted" }, rl) : "",
                 whatBlock(tx),
@@ -3986,8 +4065,8 @@
           const askRow = h("div", { class: "chips" },
             isBalance ? qchip("Телефон или сервис", () => show(h("div", { class: "muted" }, "Что это?"),
               h("div", { class: "chips" }, ["Связь и подписки", "Развлечения", "Прочее"].map(c => qchip(c, () => setRule(g.tx, c)))))) : "",
-            rec ? ownAccountControl(g.tx, title, { chip: true, label: "Мой счёт" }) : "",
-            qchip(rec ? "Другого человека" : "Перевод человеку", () => show(h("div", { class: "muted" }, "Что это за перевод?"),
+            rec ? ownAccountControl(g.tx, title, { chip: true, label: "Свой счёт" }) : "",
+            qchip("Человеку", () => show(h("div", { class: "muted" }, "Что это за перевод?"),
               h("div", { class: "chips" }, (rec ? [Cat.LOAN, "Подарки", "Прочее"] : [Cat.OWN, Cat.LOAN, "Подарки", "Прочее"]).map(c => qchip(chipLabel(c), () => setRule(g.tx, c)))))),
             qchip("Оплата услуги или магазина", () => show(h("div", { class: "muted" }, "За что?"),
               h("div", { class: "chips" }, sug.cats.map(c => qchip(chipLabel(c), () => setRule(g.tx, c))), qchip("Ещё…", () => { extra.hidden = !extra.hidden; }, "Выбрать из полного списка", "ghost")), extra)),
@@ -4092,7 +4171,7 @@
         const many = g.items.length > 1;
         const items = [...g.items].sort((a, b) => ((a.date || "") + (a.time || "")).localeCompare((b.date || "") + (b.time || "")));
         const dates = items.map(t => t.date).filter(Boolean);
-        const range = dates.length ? (dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} — ${dates[dates.length - 1]}`) : "";
+        const range = dates.length ? (dates[0] === dates[dates.length - 1] ? fmtDate(dates[0]) : `${fmtDate(dates[0])} — ${fmtDate(dates[dates.length - 1])}`) : "";
         const amountCounts = new Map();
         for (const t of items) { const k = fmt(t.amount); amountCounts.set(k, (amountCounts.get(k) || 0) + 1); }
         const amountsText = [...amountCounts.entries()].map(([a, n]) => (n > 1 ? `${a} × ${n}` : a)).slice(0, 8).join(", ");
@@ -4107,7 +4186,7 @@
           card.append(h("details", { style: "margin-top:.5rem" },
             h("summary", {}, "Операции по отдельности"),
             items.map(tx => h("div", { class: "oprow" },
-              h("div", { style: "font-size:1.05rem" }, h("b", {}, `${tx.date || ""}${tx.time ? " " + tx.time : ""}`), " · ", h("b", {}, "+" + fmt(tx.amount) + " BYN")),
+              h("div", { style: "font-size:1.05rem" }, h("b", {}, `${tx.date ? fmtDate(tx.date) : ""}${tx.time ? " " + tx.time.slice(0, 5) : ""}`), " · ", h("b", {}, "+" + fmt(tx.amount) + " BYN")),
               h("div", { style: "margin-top:.3rem" }, chooser("Только эта", (cat, icon) => setTxRule(tx, cat, icon)))))));
         }
         box.append(card);
@@ -4397,7 +4476,14 @@
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
         { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
+      addGap(res);
       return res;
+    }
+    // Сверка не сошлась: по цепочке остатков ищем, между какими датами пропала операция (если остатки в выписке есть)
+    function addGap(res) {
+      if (!res.check || res.check.ok || !Banks.balanceGap) return;
+      const g = Banks.balanceGap(res.txs);
+      if (g) { res.check.gapFrom = g.from; res.check.gapTo = g.to; }
     }
     // Читает один файл и возвращает { bank, header, txs, check } или бросает ошибку с понятным текстом
     async function readStatement(file, label) {
@@ -4442,11 +4528,14 @@
         throw new Error("в PDF нет текста: похоже на скан или фотографию. Нужна выписка, скачанная из интернет-банка, а не сфотографированная");
       }
       const res = Banks.parse(pages);
-      if (!res) throw Object.assign(new Error("этот банк пока не поддерживается (сейчас читаются: " + bankNames + "). Можно за пару минут подготовить образец без личных данных и отправить автору (откроется пошаговое окно): тогда банк добавим. Файл пока никуда не отправлялся"), { unsupported: true });
+      const partial = !res && Banks.partialOf ? Banks.partialOf(pages) : null;
+      if (partial) throw new Error("похоже на выписку «" + partial + "», но без начала: нет первой страницы с итогами и периодом. Скачайте выписку из банка заново целиком и загрузите весь файл");
+      if (!res) throw Object.assign(new Error("этот банк пока не поддерживается (сейчас читаются: " + bankNames + "). Если ваш банк в этом списке, проверьте, что файл целый, с первой страницей: по ней сайт узнаёт банк. Можно за пару минут подготовить образец без личных данных и отправить автору (откроется пошаговое окно): тогда банк добавим. Файл пока никуда не отправлялся"), { unsupported: true });
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось. Возможно, за выбранный период их не было, или банк изменил формат файла");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
         { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
+      addGap(res);
       return res;
     }
     const isRetail = t => !!(t.mcc && Cat.MCC[t.mcc]);

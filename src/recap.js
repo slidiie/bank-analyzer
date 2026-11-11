@@ -141,7 +141,8 @@
         const head = `Доход вырос на ${pi}% (+${money(dInc)} BYN)`;
         let tail;
         if (dSpend / usualTotal < 0.03) tail = dSpend < 0 ? `, а траты снизились на ${money(-dSpend)} BYN: вся прибавка осталась` : ", а траты почти не изменились: вся прибавка осталась";
-        else if (share >= 0.9) tail = ` и траты выросли на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN): почти вся прибавка ушла в расходы`;
+        else if (share > 1.05) tail = `, а траты выросли сильнее: на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN), это больше всей прибавки`;
+        else if (share >= 0.9) tail = `, траты выросли почти на столько же (+${money(dSpend)} BYN): почти вся прибавка ушла в расходы`;
         else tail = `, траты выросли на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN): на расходы ушло ${Math.round(share * 100)}% прибавки`;
         lines.push({ kind: "income", value: dInc, text: head + tail, short: `Доход вырос на ${pi}%` });
       }
@@ -217,7 +218,8 @@
       if (incCur >= INC_MIN) {
         const left = incCur - total, pct = Math.round(Math.abs(left) / incCur * 100);
         let text;
-        if (left < 0) text = `Потрачено на ${pct}% больше, чем пришло: ${money(-left)} BYN сверх дохода`;
+        if (left < 0 && pct === 0) text = `Потрачено почти столько же, сколько пришло: на ${money(-left)} BYN больше дохода`;
+        else if (left < 0) text = `Потрачено на ${pct}% больше, чем пришло: ${money(-left)} BYN сверх дохода`;
         else if (pct === 0) text = "Почти весь доход ушёл в траты: не потрачено меньше 1%";
         else text = `Не потрачено ${pct}% дохода (${money(left)} BYN)`;
         if (month && base.length) {
@@ -229,7 +231,7 @@
         }
         if (save >= MIN_DIFF && left >= 0) text += `; без выросших трат было бы ${Math.round((left + save) / incCur * 100)}%`;
         rate = Math.round(left / incCur * 100);
-        lines.splice(1, 0, { kind: "rate", value: rate, text, short: left < 0 ? `Потрачено на ${pct}% больше, чем пришло` : pct === 0 ? "Почти весь доход ушёл в траты" : `Не потрачено ${pct}% дохода` });
+        lines.splice(1, 0, { kind: "rate", value: rate, text, short: left < 0 ? (pct === 0 ? "Потрачено почти столько же, сколько пришло" : `Потрачено на ${pct}% больше, чем пришло`) : pct === 0 ? "Почти весь доход ушёл в траты" : `Не потрачено ${pct}% дохода` });
       }
     }
 

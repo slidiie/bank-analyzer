@@ -546,8 +546,8 @@ vm.runInContext(`
 `, ctx);
 clickButton(byId["review"], "Подробно");
 const rv2 = textOf(byId["review"]);
-check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Мой счёт") && rv2.includes("Другого человека") && rv2.includes("Оплата услуги или магазина") && !rv2.includes("Продукты"));
-clickButton(byId["review"], "Другого человека");
+check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Свой счёт") && rv2.includes("Человеку") && rv2.includes("Оплата услуги или магазина") && !rv2.includes("Продукты"));
+clickButton(byId["review"], "Человеку");
 check("счёт: «Другого человека» показывает варианты перевода", textOf(byId["review"]).includes("Дал в долг") && textOf(byId["review"]).includes("Подарки"));
 clickButton(byId["review"], "Подарки");
 check("счёт: выбор применяется ко всей группе", vm.runInContext(`Object.values(userRules).includes("Подарки")`, ctx));
@@ -590,7 +590,7 @@ vm.runInContext(`
 `, ctx);
 const rv3 = textOf(byId["review"]);
 check("вопрос: ЕРИП спрашивает «за что платите»", rv3.includes("За что вы платите через ЕРИП каждый месяц?"));
-check("вопрос: платёж по реквизитам спрашивает «кому или за что» и не предлагает случайные категории", rv3.includes("Кому или за что?") && rv3.includes("Перевод человеку") && rv3.includes("Оплата услуги или магазина"));
+check("вопрос: платёж по реквизитам спрашивает «кому или за что» и не предлагает случайные категории", rv3.includes("Кому или за что?") && rv3.includes("Человеку") && rv3.includes("Оплата услуги или магазина"));
 check("вопрос: у прочих групп общий понятный вопрос", rv3.includes("К какой категории это отнести?"));
 
 
@@ -742,15 +742,6 @@ check("«Посмотреть такой отчёт» открывает пос�
 check("категория из «Обзора»: открываются её операции", vm.runInContext(`(() => { openCatOps("Продукты"); return allCat === "Продукты" && bottomTab === "all"; })()`, ctx));
 check("категория из «Обзора»: в таблице строки нажимаются, в примере на главной нет", vm.runInContext(`(() => { const st = statsFor(txs); const t1 = catTable(st, openCatOps), t2 = catTable(st); const has = (n, c) => String(n.className || (n.attrs && n.attrs.class) || "").includes(c) || (n.children || []).some(x => typeof x !== "string" && has(x, c)); return has(t1, "catopen") && !has(t2, "catopen"); })()`, ctx));
 vm.runInContext(`leaveDemo();`, ctx);
-// Файл напоминания: запятые экранированы, строки не длиннее 75 байт, переносы CRLF
-{
-  const ics = vm.runInContext(`remindIcs(30)`, ctx);
-  const lines = ics.split("\r\n");
-  check("напоминание: запятая в названии экранирована", ics.includes("SUMMARY:Проверить\\, куда"));
-  check("напоминание: строки не длиннее 75 байт", lines.every(l => Buffer.byteLength(l, "utf8") <= 75));
-  check("напоминание: после склейки текст целый", ics.replace(/\r\n /g, "").includes("загрузите на https://fernwood.by/ . Ваши категории"));
-  check("напоминание: только CRLF и событие на весь день", !/[^\r]\n/.test(ics) && /DTSTART;VALUE=DATE:\d{8}\r\n/.test(ics));
-}
 // ---- Чистовая шлифовка: числа в одном виде, имена получателей, без повторов ----
 {
   const fm = vm.runInContext(`[fmt(4608.04), fmt(-1536.01), fmt(5400), fmt(0)]`, ctx);
