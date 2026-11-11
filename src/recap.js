@@ -26,6 +26,7 @@
   const MONTHS_NOM = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
 
   const BASE_MONTHS = 3;      // с чем сравниваем: среднее до трёх предыдущих полных месяцев
+  const THIN = 0.4;            // месяц, где трат меньше 40 % обычного, с обычным не сравниваем
   const MIN_USUAL = 20;       // категория меньше 20 BYN в обычный месяц: рост «в 5 раз» ничего не значит
   const MIN_DIFF = 25;        // разница меньше 25 BYN не стоит отдельной строки
   const GROW = 1.3;           // «больше обычного»: от +30 %
@@ -114,7 +115,13 @@
     }
     const usual = new Map();
     base.forEach(m => m.forEach((v, c) => usual.set(c, (usual.get(c) || 0) + v / base.length)));
-    const usualTotal = sum(usual);
+    let usualTotal = sum(usual);
+    // Месяц почти без трат (отпуск, карта лежала без дела, выписка за часть месяца): сравнивать с обычным нечестно, «траты упали на 97%» было бы ложью
+    let thinNote = "";
+    if (month && base.length && usualTotal > 0 && total < usualTotal * THIN) {
+      thinNote = `В этом месяце трат всего ${money(total)} BYN при обычных около ${money(usualTotal)} BYN: возможно, карта почти не использовалась, поэтому с обычным месяцем не сравниваем.`;
+      base.length = 0; usual.clear();
+    }
     const usualWord = base.length === 1 ? `, чем в ${monthNom(addMonths(month, -1)).replace(/ь$/, "е").replace(/й$/, "е").replace(/т$/, "те")}` : " обычного";
 
     const lines = [];
@@ -132,7 +139,9 @@
     // 1б. Доход и траты: прибавка к доходу уходит в траты? (без советов, только арифметика по выписке)
     const inc = (o.income || []).filter(t => t && t.date && t.amount > 0);
     const incIn = ym => inc.filter(t => t.date.startsWith(ym)).reduce((a, t) => a + t.amount, 0);
-    if (month && base.length && usualTotal > 0 && inc.length) {
+    // Зарплата, пришедшая то раньше, то позже, даёт «рост дохода» на ровном месте: если в прошлых месяцах доход скачет вдвое, строку не пишем
+    const incSteady = !base.length || (() => { const v = base.map((_, i) => incIn(addMonths(month, -(i + 1)))); return Math.min(...v) >= 0.5 * Math.max(...v); })();
+    if (month && base.length && usualTotal > 0 && inc.length && incSteady) {
       const incCur = incIn(month);
       const incUsual = [...Array(base.length).keys()].reduce((a, i) => a + incIn(addMonths(month, -(i + 1))), 0) / base.length;
       const dInc = incCur - incUsual, dSpend = total - usualTotal;
@@ -240,7 +249,8 @@
       save: save >= MIN_DIFF ? save : 0,
       compared: base.length,
       title: month ? `Итог ${monthGen(month)}` : `Итог за ${days} ${plural(days, "день", "дня", "дней")}`,
-      note: sortedShare < SORTED_OK ? `Выводы по разобранным ${Math.floor(sortedShare * 100)}% трат. Остальное можно уточнить, и итог станет точнее.` : "",
+      thin: !!thinNote,
+      note: (thinNote ? thinNote + " " : "") + (sortedShare < SORTED_OK ? `Выводы по разобранным ${Math.floor(sortedShare * 100)}% трат. Остальное можно уточнить, и итог станет точнее.` : ""),
       lines: lines.slice(0, 5),
     };
   }

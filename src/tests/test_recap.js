@@ -144,5 +144,21 @@ const base = { unsorted: ["Не разобрано", "Платежи ЕРИП"],
 check("числа: тысячи через пробел, без копеек от 100", R.money(1234.56) === "1 235" && R.money(45) === "45" && R.money(9.5) === "9,50");
 check("«в N раз»", R.times(2) === "в 2 раза" && R.times(2.4) === "в 2,5 раза" && R.times(5.1) === "в 5 раз");
 
+// 9. Молчаливые ошибки: месяц почти без трат не должен давать «траты упали на 97%»
+{
+  const items = [...usualMonth("2026-08"), ...usualMonth("2026-09"), t("2026-10-05", -40, "Продукты", "МАГАЗИН")];
+  const r = R.monthRecap(Object.assign({ items, fullMonths: ["2026-08", "2026-09", "2026-10"] }, base));
+  check("пустой месяц: нет «меньше обычного»", r && !r.lines.some(l => /меньше/.test(l.text)));
+  check("пустой месяц: честная оговорка про почти пустой месяц", r.thin === true && /не сравниваем/.test(r.note));
+}
+// 10. Зарплата сдвинулась на соседний месяц: «доход вырос» не пишем
+{
+  const inc = (d, a) => ({ date: d, amount: a });
+  const items = [...usualMonth("2026-07"), ...usualMonth("2026-08"), ...usualMonth("2026-09"), ...usualMonth("2026-10")];
+  const income = [inc("2026-07-10", 2000), inc("2026-08-10", 2000), inc("2026-10-01", 2000), inc("2026-10-28", 2000)];
+  const r = R.monthRecap(Object.assign({ items, income, fullMonths: ["2026-07", "2026-08", "2026-09", "2026-10"] }, base));
+  check("сдвиг зарплаты: строки «Доход вырос» нет", r && !r.lines.some(l => l.kind === "income"));
+}
+
 console.log(failed ? `\nОШИБКА: не прошло ${failed}` : "\nВсе проверки прошли");
 process.exit(failed ? 1 : 0);

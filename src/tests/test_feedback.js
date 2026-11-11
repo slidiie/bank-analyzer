@@ -22,5 +22,10 @@ check("банков не больше 8, названия обрезаются",
 check("мусор в числах не ломает", F.info({ count: "abc", width: -5, height: NaN }).count === 0 && F.info({ width: -5 }).screen === "0×0");
 check("четыре темы", F.TOPICS.length === 4 && F.TOPICS.every(t => t.id && t.label));
 
+{
+  const b = F.buildMail("parse", "x", Object.assign({}, raw, { unread: 3, mismatch: true, secret: "SECRET9" })).body;
+  check("в справке видно, сколько операций не прочитано и сошлись ли суммы", b.includes("Не прочитано операций: 3") && b.includes("не сошлись") && !b.includes("SECRET9"));
+}
+
 if (failed) { console.log("Не пройдено проверок: " + failed); process.exit(1); }
 console.log("Все проверки пройдены.");

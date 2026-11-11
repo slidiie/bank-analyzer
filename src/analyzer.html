@@ -819,6 +819,7 @@
     .sigchip { display: inline-block; padding: 0 .45rem; border-radius: 999px; background: var(--sig); color: var(--sig-ink); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
     /* Демо, «Настройки»: вместо пустоты карточки видны, но неактивны (inert), с подписью */
     body.demo[data-view="more"] #app > section.morecard:not(#demoBar):not(#report):not([hidden]) { display: block !important; position: relative; opacity: .55; filter: grayscale(1); }
+    body.demo[data-view="more"] #app > h2.setgroup:not([hidden]) { display: block !important; }
     body.demo[data-view="more"] #app > section.morecard:not([hidden])::before { content: "Доступно с вашей выпиской"; display: inline-block; margin: 0 0 .4rem; padding: .05rem .55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--text); font-size: var(--fs-xs); }
     #subs .sbig .syear { margin-left: .6rem; padding: .05rem .5rem; border-radius: 999px; background: var(--sig); color: var(--sig-ink); font-size: var(--fs-s); font-weight: 600; vertical-align: middle; white-space: nowrap; }
     /* Ряд вкладок на телефоне листается: правый край тает, пока есть что листать (сам себя не трогает, если ряд помещается) */
@@ -999,8 +1000,16 @@
   </div>
   <div id="fbSheet" class="modal sheet" hidden>
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="fbTitle" tabindex="-1">
-      <h2 id="fbTitle" style="margin-top:0">Написать автору</h2>
+      <h2 id="fbTitle" style="margin-top:0">Что-то не так?</h2>
       <p class="muted">Выберите тему и напишите своими словами, что случилось. <b>Суммы, номера карт и описания операций писать не нужно.</b> Сайт сам ничего не отправляет: откроется ваше почтовое приложение с готовым письмом, вы просмотрите его и отправите сами.</p>
+      <details class="datablock" id="fbHelp"><summary>Если что-то не так: частые случаи</summary>
+        <p><b>Выписка не прочиталась или прочитана не полностью.</b> Скачайте её в банке заново: нужен именно PDF (или CSV Приорбанка) из интернет-банка, не фото и не скан. Если банка нет в списке, пришлите образец через блок «Вашего банка нет в списке?» на главной.</p>
+        <p><b>Суммы не сошлись с итогами выписки.</b> Значит, часть операций не прочиталась. Над «Итогом месяца» сайт пишет, где пропуск. Сверьте эти дни с приложением банка, а нам напишите, какой это банк.</p>
+        <p><b>Неверная категория.</b> Поменяйте её в «Все операции» или в «Уточнить»: выбор запоминается, и в следующий раз этот получатель уже будет в нужной категории.</p>
+        <p><b>Траты кажутся завышенными.</b> Переводы между своими счетами отметьте как «Это мои деньги»: они перестанут считаться тратой. Возвраты покупок сайт вычитает сам.</p>
+        <p><b>Файл не скачивается или не открывается.</b> В «Настройках» у «Мои данные» и «Скачать» есть запасной способ: показать текстом и сохранить в заметках.</p>
+        <p><b>Хочу стереть всё.</b> «Настройки», «Забыть мои данные»: стираются правила, категории и сохранённая выписка. Саму выписку сайт нигде кроме вашего браузера не хранит.</p>
+      </details>
       <p><label for="fbTopic">Тема</label><br><select id="fbTopic"></select></p>
       <p><label for="fbText">Что случилось</label><br><textarea id="fbText" rows="4" maxlength="1500" placeholder="Например: после загрузки выписки ВТБ показаны не все месяцы"></textarea></p>
       <details class="datablock"><summary>Что уйдёт в письме кроме вашего текста</summary>
@@ -1153,7 +1162,7 @@
     </section>
   </div>
 
-    <h2 class="setgroup" data-sec="more">Мои данные</h2>
+    <h2 class="setgroup" data-sec="more" id="setData">Мои данные</h2>
     <section class="morecard" id="dataRules" data-sec="more">
       <h3>Мой разбор</h3>
       <p class="muted" id="backupHint">Сохраните разбор, а через месяц загрузите новую выписку: сайт сравнит месяцы и покажет, что изменилось. В файле ваши категории и операции, его можно открыть и на другом устройстве. Храните его у себя.</p>
@@ -1266,7 +1275,7 @@
     <section class="morecard" id="helpBox" data-sec="more">
       <h3>Помочь проекту</h3>
       <p class="muted">Сайт ничего не отправляет сам: всё, что ниже, вы готовите и отправляете по желанию.</p>
-      <div class="cardbtns"><button id="anonOpenMore" type="button">Помочь добавить банк</button></div>
+      <div class="cardbtns"><button id="anonOpenMore" type="button">Помочь добавить банк</button> <button id="fbOpen4" type="button">Что-то не так?</button></div>
       <details id="shareBox" class="datablock">
         <summary>Помочь справочнику магазинов</summary>
         <p>Сайт ничего никуда не отправляет. Здесь можно подготовить текст со списком магазинов и выбранных вами категорий, и, если захотите, переслать его автору сами. В тексте только название и категория, без сумм, дат и номеров счетов. Сначала отметьте галочками, что можно включить: по умолчанию не отмечено ничего. Личные переводы по ФИО не включайте.</p>
@@ -1602,6 +1611,7 @@
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
     function fbInfo() {
       return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
+        unread: demoMode ? 0 : statements.reduce((a, st) => a + (st.unread ? st.unread.length : 0), 0), mismatch: !demoMode && statements.some(st => st.check && st.check.headerIncome != null && !st.check.ok),
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
         theme: document.documentElement.getAttribute("data-theme") === "dark" || (document.documentElement.getAttribute("data-theme") !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light" };
     }
@@ -1611,7 +1621,7 @@
       $("fbPreview").textContent = m.body.slice(m.body.indexOf("— Техническая"));
     }
     $("fbTopic").replaceChildren(...Feedback.TOPICS.map(t => h("option", { value: t.id }, t.label)));
-    ["fbOpen", "fbOpen2", "fbOpen3"].forEach(b => $(b).addEventListener("click", () => { $("fbMsg").textContent = ""; fbRefresh(); openSheet("fbSheet", $(b)); }));
+    ["fbOpen", "fbOpen2", "fbOpen3", "fbOpen4"].forEach(b => $(b).addEventListener("click", () => { $("fbMsg").textContent = ""; fbRefresh(); openSheet("fbSheet", $(b)); }));
     $("fbClose").addEventListener("click", closeSheets);
     $("fbTopic").addEventListener("change", fbRefresh);
     $("fbText").addEventListener("input", fbRefresh);
@@ -2289,7 +2299,7 @@
       $("printBtn").hidden = !txs.length && !demoMode;
       $("dlBtn").hidden = !txs.length || demoMode;
       renderKeepAsk();
-      $("dataRules").hidden = demoMode;
+      $("dataRules").hidden = demoMode; $("setData").hidden = demoMode;
       $("shareBox").hidden = !txs.length;
       $("resetRow").hidden = demoMode;
       recurring = findRecurring();
@@ -2531,6 +2541,7 @@
         h("p", {}, "Цифры ниже могут быть неточными: итог месяца, категории и бюджет посчитаны без этих операций."),
         ...probs,
         h("p", { class: "muted" }, "Попробуйте скачать выписку из банка заново. Если ошибка повторится, ",
+          h("button", { type: "button", class: "linklike", onclick: () => { $("fbTopic").value = "parse"; $("fbOpen4").click(); } }, "напишите, что не так"), " или ",
           h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "пришлите образец"), " (личные данные закроются), и я поправлю чтение."));
     }
 
