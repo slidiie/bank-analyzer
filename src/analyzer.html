@@ -2599,7 +2599,8 @@
         if (sl.group) nodes.push(h("div", { class: "muted" }, sl.cats.map(([c, v]) => `${c}: ${fmt(v)}`).join("; ")));
         return nodes;
       };
-      const hideTip = () => { topTip.replaceChildren(h("span", { class: "muted" }, (typeof matchMedia === "function" && matchMedia("(hover: none)").matches) ? "Нажмите на долю" : "Наведите или нажмите на долю")); };
+      const defIdx = opts.pick ? (sliceOf.has(opts.pick) ? sliceOf.get(opts.pick) : -1) : -1;   // доля, подписанная заранее (пример на главной)
+      const hideTip = () => { if (defIdx >= 0) { topTip.replaceChildren(...tipNodes(defIdx)); return; } topTip.replaceChildren(h("span", { class: "muted" }, (typeof matchMedia === "function" && matchMedia("(hover: none)").matches) ? "Нажмите на долю" : "Наведите или нажмите на долю")); };
       const show = i => { topTip.replaceChildren(...tipNodes(i)); };
       hideTip();
 
@@ -2621,7 +2622,7 @@
         const row = h("div", { ...oa, class: "lrow" + (oa.class ? " " + oa.class : "") }, sw, h("span", { class: "lname" }, iconEl(iconKey(cat)), cat),
           h("span", { class: "num" }, fmt(sum) + " · " + pctText(sum, st.total)));
         row.addEventListener("mouseenter", () => { show(si); markSlice(si); });
-        row.addEventListener("mouseleave", () => { hideTip(); markSlice(-1); });
+        row.addEventListener("mouseleave", () => { hideTip(); markSlice(defIdx); });
         bindCatOpen(row, cat, opts.onCat);
         legend.append(row);
       });
@@ -2639,8 +2640,9 @@
         };
         svg.addEventListener("mouseover", handler);
         svg.addEventListener("click", handler);
-        svg.addEventListener("mouseleave", () => { hideTip(); markSlice(-1); });
+        svg.addEventListener("mouseleave", () => { hideTip(); markSlice(defIdx); });
       }
+      markSlice(defIdx);
       return wrap;
     }
     function viewSwitch() {
@@ -4977,7 +4979,7 @@
                   ...parts.map(p => h("i", { style: `flex:${p[1]};background:${p[2]}` }))),
                 h("ul", { class: "mlegend" }, parts.map(p => h("li", {}, h("i", { style: `background:${p[2]}` }), `${p[0]} ${Math.round(p[1] / st.total * 100)}%`))));
             })()));
-          views.pie = h("div", { class: "miniview" }, pieChart(st, { pull: "Кафе и рестораны" }));
+          views.pie = h("div", { class: "miniview" }, pieChart(st, { pull: "Кафе и рестораны", pick: "Кафе и рестораны" }));
           views.table = h("div", { class: "miniview" }, catTable(st));
           slot.replaceChildren(views.recap, views.pie, views.table);
           show(cur);
