@@ -182,7 +182,7 @@
     }
 
     // 4. Мелкие покупки: много мелочи незаметно складывается в заметную сумму
-    const small = list.filter(t => t.amount < 0 && -t.amount <= SMALL && !unsorted.has(t.cat || "Не разобрано"));
+    const small = list.filter(t => t.amount < 0 && -t.amount <= SMALL && !unsorted.has(t.cat || "Не разобрано") && t.cat !== "Комиссии банка");
     const smallSum = small.reduce((a, t) => a - t.amount, 0);
     if (small.length >= SMALL_MIN_N && smallSum >= SMALL_MIN_SUM) {
       lines.push({ kind: "small", value: smallSum, text: `Мелкие покупки до ${SMALL} BYN: ${small.length} ${plural(small.length, "штука", "штуки", "штук")} на ${money(smallSum)} BYN`, short: `Мелкие покупки до ${SMALL} BYN: ${small.length} ${plural(small.length, "штука", "штуки", "штук")}` });
@@ -223,6 +223,7 @@
     // Доля дохода, которая не потрачена (в процентах от дохода: так понятнее, чем в рублях). Без «норм» и советов, только факт и сравнение со своим обычным
     let rate = null;
     {
+      let usualPct = null;
       const incCur = month ? incIn(month) : inc.filter(t => t.date >= partial.from && t.date <= partial.to).reduce((a, t) => a + t.amount, 0);
       if (incCur >= INC_MIN) {
         const left = incCur - total, pct = Math.round(Math.abs(left) / incCur * 100);
@@ -235,12 +236,13 @@
           const incU = [...Array(base.length).keys()].reduce((a, i) => a + incIn(addMonths(month, -(i + 1))), 0) / base.length;
           if (incU >= INC_MIN) {
             const uPct = Math.round((incU - usualTotal) / incU * 100);
+            usualPct = uPct;
             if (uPct >= 0 && Math.abs(uPct - Math.round(left / incCur * 100)) >= 3) text += `; обычно ${uPct}%`;
           }
         }
         if (save >= MIN_DIFF && left >= 0) text += `; без выросших трат было бы ${Math.round((left + save) / incCur * 100)}%`;
         rate = Math.round(left / incCur * 100);
-        lines.splice(1, 0, { kind: "rate", value: rate, text, short: left < 0 ? (pct === 0 ? "Потрачено почти столько же, сколько пришло" : `Потрачено на ${pct}% больше, чем пришло`) : pct === 0 ? "Почти весь доход ушёл в траты" : `Не потрачено ${pct}% дохода` });
+        lines.splice(1, 0, { kind: "rate", value: rate, usual: usualPct, text, short: left < 0 ? (pct === 0 ? "Потрачено почти столько же, сколько пришло" : `Потрачено на ${pct}% больше, чем пришло`) : pct === 0 ? "Почти весь доход ушёл в траты" : `Не потрачено ${pct}% дохода` });
       }
     }
 
