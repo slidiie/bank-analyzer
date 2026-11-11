@@ -748,7 +748,7 @@ vm.runInContext(`leaveDemo();`, ctx);
   const lines = ics.split("\r\n");
   check("напоминание: запятая в названии экранирована", ics.includes("SUMMARY:Проверить\\, куда"));
   check("напоминание: строки не длиннее 75 байт", lines.every(l => Buffer.byteLength(l, "utf8") <= 75));
-  check("напоминание: после склейки текст целый", ics.replace(/\r\n /g, "").includes("загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории"));
+  check("напоминание: после склейки текст целый", ics.replace(/\r\n /g, "").includes("загрузите на https://fernwood.by/ . Ваши категории"));
   check("напоминание: только CRLF и событие на весь день", !/[^\r]\n/.test(ics) && /DTSTART;VALUE=DATE:\d{8}\r\n/.test(ics));
 }
 // ---- Чистовая шлифовка: числа в одном виде, имена получателей, без повторов ----

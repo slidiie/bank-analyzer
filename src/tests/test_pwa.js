@@ -6,7 +6,7 @@ const check = (n, ok) => { console.log((ok ? "OK    " : "ОШИБКА ") + n); i
 const nav = { serviceWorker: { register: () => Promise.resolve({}) } };
 const L = (protocol, hostname) => ({ protocol, hostname });
 
-check("https: включено", P.supported(L("https:", "slidiie.github.io"), nav, true));
+check("https: включено", P.supported(L("https:", "fernwood.by"), nav, true));
 check("localhost по http: включено", P.supported(L("http:", "localhost"), nav, true) && P.supported(L("http:", "127.0.0.1"), nav, true));
 check("file://: выключено", !P.supported(L("file:", ""), nav, true));
 check("чужой http: выключено", !P.supported(L("http:", "example.com"), nav, true));
