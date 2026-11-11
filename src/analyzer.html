@@ -20,10 +20,10 @@
   <meta name="description" content="Загрузите выписку белорусского банка и увидите траты по категориям, подписки и регулярные платежи. Считается прямо в браузере, файл никуда не загружается. Бесплатно, без регистрации.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
-  <meta property="og:url" content="https://slidiie.github.io/bank-analyzer/">
+  <meta property="og:url" content="https://fernwood.by/">
   <meta property="og:title" content="Куда утекают ваши деньги">
   <meta property="og:description" content="Траты по категориям, подписки и регулярные платежи из выписки вашего банка. Файл не покидает ваше устройство. Бесплатно, без регистрации.">
-  <meta property="og:image" content="https://slidiie.github.io/bank-analyzer/og.png">
+  <meta property="og:image" content="https://fernwood.by/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
@@ -1466,7 +1466,7 @@
     const STATS_URL = "https://bankanalyzer.goatcounter.com/count";
     function statsPing(name) {
       try {
-        if (typeof location === "undefined" || location.hostname !== "slidiie.github.io") return;
+        if (typeof location === "undefined" || location.hostname !== "fernwood.by") return;
         if (typeof navigator !== "undefined" && (navigator.doNotTrack === "1" || navigator.webdriver)) return;
         const once = "ba-stat-" + (name || "visit");
         try { if (sessionStorage.getItem(once)) return; sessionStorage.setItem(once, "1"); } catch (e) { /* без памяти вкладки: считаем как есть */ }
@@ -3080,7 +3080,7 @@
       const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
       return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//bank-analyzer//RU", "BEGIN:VEVENT", `UID:${now}-${Math.random().toString(36).slice(2)}@bank-analyzer`, `DTSTAMP:${now}`,
         `DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${day2}`, "SUMMARY:" + icsText("Проверить, куда ушли деньги за месяц"),
-        "DESCRIPTION:" + icsText("Скачайте выписку из банка за прошлый месяц и загрузите на https://slidiie.github.io/bank-analyzer/ . Ваши категории уже запомнены в браузере."),
+        "DESCRIPTION:" + icsText("Скачайте выписку из банка за прошлый месяц и загрузите на https://fernwood.by/ . Ваши категории уже запомнены в браузере."),
         "BEGIN:VALARM", "TRIGGER:PT10H", "ACTION:DISPLAY", "DESCRIPTION:" + icsText("Проверить траты за месяц"), "END:VALARM", "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
     }
     function remindCard() {
