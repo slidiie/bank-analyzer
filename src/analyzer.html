@@ -1504,7 +1504,7 @@
     // Пример на главной = последний месяц постоянного демо (Demo.make без зерна). test_render.js сверяет эти числа с демо.
     const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 367.17], ["Кафе и рестораны", 285.64], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
     // «Итог месяца» в примере на главной: те же выводы, что в демо за этот месяц (сверяет test_render.js)
-    const LANDING_RECAP = { save: "+207 BYN", lines: [["total", "Всего потрачено 1 647 BYN: на 11% больше обычного"], ["grew", "Кафе и рестораны: 286 BYN, в 3,6 раза больше обычного"], ["subs", "Связь и подписки: 36,59 BYN в месяц, это 439 BYN в год (2 платежа)"], ["small", "Мелкие покупки до 10 BYN: 24 штуки на 144 BYN"]] };
+    const LANDING_RECAP = { save: "+207 BYN", lines: [["total", "Всего потрачено 1 647 BYN: на 11% больше обычного"], ["grew", "Кафе и рестораны: 286 BYN, в 3,6 раза больше обычного"], ["subs", "Связь и подписки: 36,59 BYN в месяц, это 439 BYN в год (2 платежа)"], ["small", "Мелкие покупки до 10 BYN: 23 штуки на 141 BYN"]] };
     // Счётчик посещений (GoatCounter): только «страницу открыли» и 3 события без данных выписки.
     // Работает лишь на настоящем сайте, без cookies; уважает «Не отслеживать». Сумм, имён, файлов здесь нет и быть не может.
     const STATS_URL = "https://bankanalyzer.goatcounter.com/count";
@@ -3249,14 +3249,18 @@
     const SHARE_COLORS = { "--cat-food": "#5CC592", "--cat-cafe": "#F0A94F", "--cat-transport": "#5B9DF0", "--cat-home": "#A38CF0", "--cat-subs": "#EE7FB1", "--cat-health": "#3FC4B9", "--cat-shop": "#DDBE4A", "--cat-fun": "#F2806A", "--cat-transfer": "#9BA2B0", "--cat-other": "#6E727B" };
     function shareModel(withMoney) {
       const r = shareData.r, rate = r.lines.find(l => l.kind === "rate");
-      let kicker, big, good = true, used = null;
-      if (rate && rate.value > 0) { kicker = "Не потрачено"; big = rate.value + "% дохода"; used = rate; }
+      let kicker, big, good = true, neutral = false, used = null;
+      if (rate && rate.value > 0) {
+        // хуже обычного для этого человека: не подаём как успех
+        const worse = rate.usual != null && rate.value <= rate.usual - 3;
+        kicker = worse ? `Не потрачено (обычно ${rate.usual}%)` : "Не потрачено"; big = rate.value + "% дохода"; used = rate; good = !worse; neutral = worse;
+      }
       else if (rate && rate.value < 0) { kicker = "Потрачено больше, чем пришло"; big = "на " + Math.abs(rate.value) + "%"; good = false; used = rate; }
       else if (rate) { kicker = "Почти весь доход"; big = "ушёл в траты"; good = false; used = rate; }
       else if (withMoney && r.save) { kicker = "Могло остаться"; big = "+" + Recap.money(r.save) + " BYN"; }
       else { kicker = "Куда ушли деньги"; big = r.title; }
       const lines = r.lines.filter(l => l !== used && l.kind !== "save" && (withMoney || l.short)).slice(0, 3).map(l => withMoney ? l.text : l.short);
-      return { kicker, big, good, lines, title: r.title };
+      return { kicker, big, good, neutral, lines, title: r.title };
     }
     async function drawShareCard(canvas, withMoney) {
       if (!shareData) return;
@@ -3283,7 +3287,7 @@
       g.fillStyle = "#8C8D93"; g.font = "400 34px " + F; g.fillText(m.kicker, P, 330);
       let fs = 132; g.font = "600 " + fs + "px " + F;
       while (g.measureText(m.big).width > W - 2 * P && fs > 56) { fs -= 4; g.font = "600 " + fs + "px " + F; }
-      g.fillStyle = m.good ? "#5FD08A" : "#F2806A"; g.fillText(m.big, P, 330 + fs + 10);
+      g.fillStyle = m.good ? "#5FD08A" : (m.neutral ? "#F2F2F3" : "#F2806A"); g.fillText(m.big, P, 330 + fs + 10);
       // полоса «куда ушли»
       const by = 600, bw = W - 2 * P, tot = shareData.bar.reduce((a, x) => a + x.v, 0), gap = 4;
       let x = P;
