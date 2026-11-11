@@ -14,12 +14,19 @@ lib = rd('vendor', 'pdf.min.mjs')
 i = lib.rindex('export{')
 names = re.findall(r'([\w$]+)(?: as ([\w$]+))?', lib[i + 7:lib.rindex('}')])
 lib = lib[:i] + 'globalThis.pdfjsLib={' + ','.join(f'{b or a}:{a}' for a, b in names) + '};'
-worker = rd('vendor', 'pdf.worker.min.mjs')
-for part in (lib, worker):
-    assert '</script' not in part.lower() and '<!--' not in part
-tags = '<script type="module">\n' + lib + '\n</script>\n  <script type="module" id="pdfWorkerModule">\n' + worker + '\n</script>'
-assert '<!--PDFJS-->' in s
-s = s.replace('<!--PDFJS-->', tags, 1)
+# pdf.js (1,8 МБ, 70 % веса) больше не вшивается в страницу: два отдельных файла pdfjs/lib.js и pdfjs/worker.js
+# грузятся только когда человек выбирает выписку (страница открывается в ~2,5 раза быстрее). Офлайн их держит sw.js.
+# В воркер сразу вписаны дополнения для Safari (installPolyfills из analyzer.html).
+m = re.search(r'\n    (function installPolyfills\(\) \{.*?\n    \})\n', s, re.S)
+assert m, 'installPolyfills'
+worker = '(' + m.group(1) + ')();\n' + rd('vendor', 'pdf.worker.min.mjs')
+pdfv = hashlib.sha256((lib + worker).encode('utf8')).hexdigest()[:10]
+assert '__PDFV__' in s
+s = s.replace('__PDFV__', pdfv)
+def _write_pdfjs(folder):
+    os.makedirs(os.path.join(folder, 'pdfjs'), exist_ok=True)
+    for name, body in (('lib.js', lib), ('worker.js', worker)):
+        open(os.path.join(folder, 'pdfjs', name), 'w', encoding='utf8', newline='').write(body)
 
 # Шрифт Inter (лицензия OFL, переменный, кириллица и латиница) вшивается в страницу как data: (CSP не пускает внешние файлы)
 def _font(name, rng):
@@ -40,7 +47,7 @@ s = s.replace('<!--PWA-->', pwa, 1)
 hashes = []
 for m in re.finditer(r'<script(?![^>]*\bsrc=)(?![^>]*type="text/plain")[^>]*>(.*?)</script>', s, re.S):
     hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(m.group(1).encode('utf8')).digest()).decode() + "'")
-csp = ("default-src 'none'; script-src " + ' '.join(hashes) + "; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: https://bankanalyzer.goatcounter.com; "
+csp = ("default-src 'none'; script-src 'self' " + ' '.join(hashes) + "; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: https://bankanalyzer.goatcounter.com; "
        "manifest-src 'self'; worker-src blob: 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'")
 meta = '<meta http-equiv="Content-Security-Policy" content="' + csp + '">'
 assert '<!--CSP-->' in s
@@ -51,6 +58,8 @@ open(os.path.join(d, '..', 'bank-analyzer.html'), 'w', encoding='utf8').write(s)
 out = os.path.join(d, '..', 'pwa')
 shutil.rmtree(out, ignore_errors=True)
 shutil.copytree(os.path.join(d, 'pwa'), out)
+_write_pdfjs(out)                     # для сайта (docs/pdfjs/)
+_write_pdfjs(os.path.join(d, '..'))   # для просмотра bank-analyzer.html из папки проекта (конфигурация real)
 ver = hashlib.sha256(s.encode('utf8')).hexdigest()[:12]
 sw = rd('sw.js')
 assert '__VERSION__' in sw

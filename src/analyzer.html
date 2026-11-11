@@ -27,6 +27,8 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://fernwood.by/">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Fernwood","url":"https://fernwood.by/","applicationCategory":"FinanceApplication","operatingSystem":"Любой браузер","inLanguage":"ru","description":"Анализ выписки белорусского банка: траты по категориям, итог месяца, подписки и регулярные платежи. Бесплатно, без регистрации.","offers":{"@type":"Offer","price":"0","priceCurrency":"BYN"}}</script>
   <style>
     /*FONTS*/
     /* Палитра А (светлая холодная, тёмная графитовая с 10.11; категории обновлены 10.11). Светлая по умолчанию; тёмная: системная (если выбор не светлый) и явная [data-theme="dark"].
@@ -123,8 +125,6 @@
     .hsum { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
     .hsum.anim { animation: rise .35s ease both; }
     .hsum .hlabel { font-size: .9rem; }
-    .hsum .hbig { font-size: 2.2rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-    .hsum .hbig small { font-size: var(--fs-m); font-weight: 500; color: var(--muted); margin-left: .35rem; }
     .hsum ul { list-style: none; margin: .6rem 0 0; padding: 0; }
     .hsum li { margin: .25rem 0; padding-left: 1rem; position: relative; font-size: .95rem; }
     .hsum li::before { content: ""; position: absolute; left: 0; top: .55em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
@@ -283,8 +283,7 @@
     .wizbody .anonpage { max-height: 45vh; }
     .wizlist { margin: .5rem 0; padding-left: 1.2rem; }
     .wizlist li { margin: .45rem 0; }
-    .wizacts { display: flex; flex-direction: column; gap: .5rem; }
-    .wizacts button, .btnlink { display: flex; align-items: center; justify-content: center; }
+    .btnlink { display: flex; align-items: center; justify-content: center; }
     .btnlink { min-height: 44px; border-radius: var(--r-m); background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; padding: .5rem 1rem; }
     .wizfoot { padding: .6rem 1.2rem calc(.8rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
     .wizfoot > p { margin: 0 0 .5rem; min-height: 1.2em; }
@@ -407,12 +406,7 @@
     body.demo #startBtn, body.demo .upcard { display: none; }
     body.demo .hero { margin-bottom: .6rem; padding-bottom: .6rem; }
     .hero { padding-bottom: .4rem; margin-bottom: 1.2rem; }
-    .trust { list-style: none; margin: 1.1rem 0 1rem; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
-    @media (min-width: 700px) { .trust { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-    .trust li { display: flex; gap: .6rem; align-items: flex-start; margin: 0; padding: .6rem .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); }
-    .trust .gi { flex: none; width: 1.35rem; height: 1.35rem; color: var(--accent-ink); margin-top: .1rem; }
-    .trust b { display: block; font-size: .9rem; line-height: 1.25; }
-    .trust span { display: block; font-size: .78rem; color: var(--muted); line-height: 1.3; }
+
     .upcard .safe { margin: .8rem 0 0; font-size: .85rem; }
     .chips { list-style: none; margin: 0 0 1.1rem; padding: 0; display: flex; flex-wrap: wrap; gap: .45rem; }
     .chips li { display: inline-flex; align-items: center; gap: .4rem; margin: 0; padding: .35rem .75rem .35rem .6rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .88rem; line-height: 1.2; }
@@ -428,7 +422,6 @@
     .mlegend i { width: .65rem; height: .65rem; border-radius: 2px; flex: none; }
     .chips { gap: .4rem; }
     .chips li { padding: .3rem .65rem .3rem .55rem; font-size: .85rem; }
-    .steps { margin-top: 1rem; }
     .mini { margin-top: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 1rem 1.1rem; }
     .minitag { font-size: .78rem; margin: .15rem 0 .6rem; line-height: 1.4; }
     .minihead { font-size: .95rem; }
@@ -444,29 +437,21 @@
     .mini .pietip { min-height: 1.6rem; margin-bottom: .3rem; }
     .mini table { margin: 0; }
     @media (prefers-reduced-motion: reduce) { .miniview.on { animation: none; } }
-    .chart { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; align-items: center; justify-content: center; margin: .5rem 0; }
     .donut { position: relative; width: 9rem; height: 9rem; flex: none; }
     .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     .donut circle { fill: none; stroke-width: 6; }
-    .donut .hole { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; line-height: 1.15; }
-    .donut .hole b { font-size: 1.3rem; }
-    .donut .hole small { color: var(--muted); font-size: .75rem; }
     .legend { list-style: none; margin: 0; padding: 0; flex: 1 1 12rem; max-width: 20rem; font-size: .9rem; }
     .legend li { display: flex; align-items: center; gap: .5rem; padding: .18rem 0; margin: 0; }
     .legend i { width: .75rem; height: .75rem; border-radius: 3px; flex: none; }
     .legend .num { margin-left: auto; font-variant-numeric: tabular-nums; }
     .mini > button { width: 100%; margin-top: .4rem; }
-    .steps { list-style: none; margin: 1rem 0 1rem; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
-    .steps li { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; margin: 0; padding: .7rem .8rem; background: var(--surface); border-radius: var(--r-m); font-size: .9rem; line-height: 1.3; }
-    .steps b { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: var(--active-text, #fff); font-size: var(--fs-s); }
-    @media (max-width: 420px) { .steps { grid-template-columns: 1fr; } .steps li { flex-direction: row; align-items: center; gap: .7rem; } }
-    @media print { .steps { display: none; } }
+
+
     #summary h3, .dyn h3 { font-size: 1.05rem; font-weight: 600; }
     .hero h1 { font-size: clamp(1.5rem, 4.6vw, 2.1rem); margin: .4rem 0 1.1rem; line-height: 1.2; }
     button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
     .gi { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .8rem; margin-bottom: 1.4rem; }
-    .hl { color: var(--accent); }
     .lede { margin: -.4rem 0 1.1rem; color: var(--muted); max-width: 34rem; }
     .brand { flex: 1 1 auto; font-size: .9rem; color: var(--muted); }
     .topact { display: flex; align-items: center; gap: .5rem; }
@@ -475,15 +460,9 @@
     .themesw .knob { position: absolute; top: 50%; left: .2rem; width: 2.15rem; height: 2.15rem; margin-top: -1.075rem; border-radius: 50%; background: var(--accent); transition: transform .2s; }
     .themesw[data-dark="true"] .knob { transform: translateX(2.3rem); }
     .themesw[data-dark="false"] .ic-sun, .themesw[data-dark="true"] .ic-moon { color: var(--on-accent); }
-    .themeseg { display: inline-flex; border: 1px solid var(--ctl-border); border-radius: 999px; overflow: hidden; background: var(--surface); }
-    .themeseg button { display: inline-flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.1rem; padding: 0; border: 0; border-radius: 0; background: none; color: var(--muted); }
-    .themeseg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-    .themeseg svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    .chipbtn { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding: 0 .9rem; font-size: .95rem; background: transparent; }
     .upcard { background: var(--surface); border: 1.5px dashed var(--line); border-radius: var(--r-l); padding: 1.4rem 1.2rem; text-align: center; }
     .upcard.drag { border-color: var(--accent); background: var(--surface-2); }
     .upicon { width: 2.4rem; height: 2.4rem; color: var(--accent); }
-    .upcap { margin: .5rem 0 1rem; }
     .upcard .cta { display: flex; flex-direction: column; gap: .6rem; max-width: 24rem; margin: 0 auto; }
     .upcard .cta button { width: 100%; margin: 0; }
     #demoBtn { background: transparent; color: var(--accent); border-color: var(--accent); font-weight: 600; }
@@ -626,7 +605,6 @@
     /* Доступность: цели нажатия не меньше 44 px на телефоне и сенсорных экранах */
     @media (pointer: coarse), (max-width: 768px) {
       button:not(.linklike), .tab, select { min-height: 44px; }
-      .chipbtn { min-height: 44px; }
       .viewswitch button { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
     }
     .fbbtn { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 .9rem; background: transparent; color: var(--accent-ink); border: 1px solid var(--line); border-radius: 999px; font: inherit; font-size: .92rem; cursor: pointer; transition: border-color .18s, color .18s; }
@@ -642,7 +620,7 @@
        Плоские карточки с тонкой рамкой вместо мягких теней, меньше скруглений, чёткие заголовки и крупные числа,
        меньше декоративных значков, плотнее таблицы. */
     :root { --r-m:8px; --r-l:10px; }
-    .hsum, .icard, #plan details, #subs .scard, .goalsdet > summary, .ovmore > summary, .rowcard, .morecard, .card, .mini, .steps li { box-shadow: none; border: 1px solid var(--line); }
+    .hsum, .icard, #plan details, #subs .scard, .goalsdet > summary, .ovmore > summary, .rowcard, .morecard, .card, .mini { box-shadow: none; border: 1px solid var(--line); }
     #demoBar { box-shadow: none; border-bottom: 1px solid var(--line); }
     /* Демо: тонкая полоса вместо целой карточки */
     #demoBar { padding: .25rem .8rem; font-size: var(--fs-s, .9rem); gap: .3rem .8rem; border-radius: 8px; }
@@ -655,7 +633,7 @@
     @media (max-width: 767px) { #demoBar #demoOwn, #demoBar #demoExit { min-height: 44px; } }
     h2, .sect > h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
     h3, #summary h3, .dyn h3, .morecard h3 { font-size: 1rem; font-weight: 650; letter-spacing: 0; }
-    .hsum .hbig, .ibig, #subs .sbig, #plan .pbig { font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .ibig, #subs .sbig, #plan .pbig { font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .hsum .hlabel, .ilabel, #plan .pcap { color: var(--muted); }
     .hsum li::before { background: var(--muted); width: .3rem; height: .3rem; }
     th { font-size: var(--fs-s); font-weight: 600; color: var(--muted); }
@@ -663,11 +641,9 @@
     td { line-height: 1.35; }
     td.num { font-variant-numeric: tabular-nums; }
     @media (min-width: 769px) { #tabbar .tabico { display: none; } }   /* на ПК вкладки без значков, на телефоне значки нужны в нижней панели */
-    .rowcard > .gi, .trust .gi { display: none; }
-    .trust li { padding: .55rem .75rem; }
+    .rowcard > .gi { display: none; }
     #plan input[type=text], #plan input[type=number] { border-radius: var(--r-s); }
     #plan .chip, .recur, .howtag, .bankchip { border-radius: var(--r-s); }
-    .steps b { border-radius: var(--r-s); }
     /* Находки аудита v4.77 (А1–А8 в HANDOFF.md) */
     details > summary { min-height: 36px; }   /* А1: пункты FAQ, «Подробнее» и т.п. были высотой 20–24 px */
     select { min-height: 36px; padding: .3rem .5rem; }   /* А2 */
@@ -711,7 +687,7 @@
       #landing, .modal, #tabbar, #demoBar, .filerow, #undoBar, #bottomTabs, #catCreator, #reviewTools, #ffilters, .ffilters, #shareBox, #resetRow,
       #exportBox, #helpBox, #dataRules, #printBtn, #clearBtn, footer .muted:not(#build), button, .nav, .howto, .cardbtns, input, select, textarea { display: none !important; }
       #report, #app, main { display: block !important; }
-      .sect, .morecard, .note, .warn, .ok, table tr, .pie, .goalrow, svg { break-inside: avoid; page-break-inside: avoid; }
+      .sect, .morecard, .note, .warn, .ok, table tr, .pie, svg { break-inside: avoid; page-break-inside: avoid; }
       h2, h3 { break-after: avoid; page-break-after: avoid; }
       table { width: 100%; }
       thead { display: table-header-group; }
@@ -731,7 +707,6 @@
     button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
     #demoBtn { color: var(--text); border-color: var(--line); }
     .upicon { color: var(--muted); }
-    .hl { color: inherit; background: linear-gradient(transparent 55%, var(--sig) 55%, var(--sig) 92%, transparent 92%); padding: 0 .1em; }
     .devcard { margin: .6rem 0 0; padding: .7rem .9rem; border: 1px solid var(--line, #d0d7de); border-radius: .7rem; text-align: left; }
     .devcard p { margin: .2rem 0; }
     .devkeep { display: flex; gap: .5rem; align-items: flex-start; margin: .3rem 0; }
@@ -739,8 +714,7 @@
     .upcard .restore { margin: .4rem 0 0; font-size: .85rem; }
     .upcard .howlink { margin: .2rem 0 .8rem; font-size: .9rem; }
     .upcard .howlink a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hl { background: none; color: var(--sig); } }
-    :root[data-theme="dark"] .hl { background: none; color: var(--sig); }
+
     .howinline { margin: 1.6rem 0 1rem; }
     @media (min-width: 1000px) {
       body:not(.demo) .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 2.4rem; align-items: start; grid-template-rows: auto auto auto auto 1fr; }
@@ -750,13 +724,13 @@
       body:not(.demo) .hero > .upcard { grid-column: 1; grid-row: 4; }
       body:not(.demo) .hero > .mini { grid-column: 2; grid-row: 2 / 6; margin-top: .4rem; }
     }
-    .steps b { background: var(--text); color: var(--bg); }
     .themesw .knob { background: var(--text); }
     .themesw[data-dark="false"] .ic-sun, .themesw[data-dark="true"] .ic-moon { color: var(--bg); }
     .wanted { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--accent); border-radius: 0; }
     .wanted h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
     .wantedlist { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: .4rem 0 .8rem; }
     .wantedlist li { padding: .25rem .7rem; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+    .wantedmore > summary { cursor: pointer; font-weight: 600; margin: .2rem 0 .4rem; }
     .wanted:target { outline: 2px solid var(--accent); outline-offset: 4px; }
     .about { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--sig); border-radius: 0; }
     .about h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
@@ -769,6 +743,8 @@
     .pie .lrow.catopen { min-height: 24px; }   /* плюс отступы = 32 px */
     @media (max-width: 767px) { .pie .lrow.catopen { min-height: 36px; } }
     @media (max-width: 767px) { #privRow, #importLand, #howRow, #wantedCopy, #fbOpen3, #app .linklike, .howtabs button { min-height: 44px; } }
+    /* Ссылки внутри текста на главной: на телефоне зона нажатия выше самой строки (отступы у строчного элемента строку не раздвигают) */
+    @media (pointer: coarse), (max-width: 767px) { #landing p a { padding: .7rem 0; } }
     /* Единый вид полей и кнопок везде (без «системных» кусков): окно «Написать автору» и все формы */
     :root { --ring-c: var(--accent); }
     select:focus-visible, textarea:focus-visible, input[type=text]:focus-visible, input[type=date]:focus-visible { outline: none; border-color: var(--ring-c); box-shadow: 0 0 0 2px var(--ring-c); }
@@ -834,7 +810,6 @@
     /* Демо, «Ещё»: вместо пустоты карточки видны, но неактивны (inert), с подписью */
     body.demo[data-view="more"] #app > section.morecard:not(#demoBar):not(#report):not([hidden]) { display: block !important; position: relative; opacity: .55; filter: grayscale(1); }
     body.demo[data-view="more"] #app > section.morecard:not([hidden])::before { content: "Доступно с вашей выпиской"; display: inline-block; margin: 0 0 .4rem; padding: .05rem .55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--text); font-size: var(--fs-xs); }
-    #subs .subsnote { margin: 0 0 .6rem; }
     #subs .sbig .syear { margin-left: .6rem; padding: .05rem .5rem; border-radius: 999px; background: var(--sig); color: var(--sig-ink); font-size: var(--fs-s); font-weight: 600; vertical-align: middle; white-space: nowrap; }
     /* Ряд вкладок на телефоне листается: правый край тает, пока есть что листать (сам себя не трогает, если ряд помещается) */
     @property --tabfade { syntax: "<length>"; inherits: false; initial-value: 0px; }
@@ -874,7 +849,7 @@
       </span>
     </div>
     <h1>Куда утекают ваши деньги</h1>
-    <p class="lede">Загрузите выписку из банка и за минуту увидите, куда ушли деньги, какие траты выросли и сколько могло остаться. Без ручного подсчёта, можно сразу несколько банков.</p>
+    <p class="lede">Загрузите выписку из банка и за минуту увидите, куда ушли деньги, какие траты выросли и сколько могло остаться. Без ручного подсчёта. Можно загрузить выписки сразу из нескольких банков.</p>
     <div id="dropzone" class="upcard">
       <svg class="gi upicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
       <p class="cta">
@@ -893,9 +868,9 @@
     </div>
     <aside class="mini" aria-label="Пример отчёта на выдуманных данных">
       <div class="minihead"><b>Что вы получите</b></div>
-      <p class="muted minitag">Загрузите выписку, и сайт сам покажет такой отчёт: сколько ушло, на что, что выросло против обычного. Ниже пример на выдуманных данных; кнопками «Итог», «Диаграмма» и «Таблица» можно переключать вид.</p>
+      <p class="muted minitag">Такой отчёт сайт покажет по вашей выписке. Пример на выдуманных данных, вид переключается кнопками ниже.</p>
       <div class="minislot" aria-hidden="true"></div>   <!-- пример строится скриптом ниже; старой статичной диаграммы в файле больше нет -->
-      <button id="miniDemoBtn" type="button">Посмотреть такой отчёт на демо</button>
+      <button id="miniDemoBtn" type="button">Открыть весь пример</button>
     </aside>
     <section id="howInline" class="howinline" aria-labelledby="howInH">
       <h2 id="howInH">Сначала нужна выписка. Вот где её взять</h2>
@@ -907,8 +882,7 @@
         <p><b>Android.</b> Скачанная выписка обычно попадает в папку «Загрузки» (Download). Нажмите «Выбрать выписку» и откройте эту папку.</p>
         <p>Выписка пришла на почту: откройте письмо и сохраните вложение, дальше так же. Если сайт открыт внутри Telegram или другого приложения и файл не выбирается, откройте сайт в обычном браузере: меню «⋯» → «Открыть в браузере».</p>
       </details>
-      <p class="muted">Нужен именно файл из банка, не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Другие банки и подробности</button></p>
-      <p class="muted">Вашего банка нет? <a href="#wanted">Напишите, добавим</a> · <a href="banks/">Все инструкции по банкам</a></p>
+      <p class="muted">Нужен именно файл из банка (PDF или CSV), не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Подробности</button> · <a href="banks/">Все инструкции по банкам</a> · <a href="#wanted">Вашего банка нет?</a></p>
     </section>
     <section id="about" class="about" aria-labelledby="aboutH">
       <h2 id="aboutH">Кто это делает</h2>
@@ -931,11 +905,13 @@
     <section id="wanted" class="wanted" aria-labelledby="wantedH">
       <h2 id="wantedH">Вашего банка нет в списке?</h2>
       <p>У каждого банка свой формат выписки, и научить сайт новому банку я могу только по настоящему образцу. Если хотите помочь, пришлите его мне письмом. Это по желанию, для вашего разбора не нужно.</p>
+      <details id="wantedMore" class="wantedmore"><summary>Какие банки нужны и как прислать образец</summary>
       <p><b>Нужны выписки этих банков:</b></p>
       <ul id="wantedList" class="wantedlist"></ul>
-      <p class="muted">Нужен именно файл из интернет-банка (PDF), не фото и не скан. Мастер прямо здесь закроет ФИО, номера карт и счетов, адреса и телефоны. Вы проверите результат и сами решите, отправлять ли. Образец приходит только мне на почту, нужен лишь чтобы научить сайт читать ваш банк; потом письмо удаляю, передумаете — удалю сразу.</p>
+      <p class="muted">Подойдёт PDF из интернет-банка. Мастер прямо здесь закроет ФИО, номера карт и счетов, адреса и телефоны. Вы проверите результат и сами решите, отправлять ли. Образец приходит только мне на почту, нужен лишь чтобы научить сайт читать ваш банк; потом письмо удаляю, передумаете — удалю сразу.</p>
       <p class="cta"><button id="wantedOpen" type="button" class="primary">Подготовить образец выписки</button></p>
       <p class="muted">Ссылкой на эту просьбу можно поделиться: <button id="wantedCopy" class="linklike" type="button">скопировать ссылку</button> <span id="wantedMsg" role="status"></span></p>
+      </details>
     </section>
   </header>
 
@@ -943,7 +919,7 @@
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="privTitle" tabindex="-1">
       <h2 id="privTitle" style="margin-top:0">Файл не покидает ваш браузер</h2>
       <h3>Что происходит с файлом?</h3>
-      <p>Файл не отправляется. Выписка читается прямо на вашем устройстве, на сервер ничего не загружается. Библиотека для чтения PDF встроена в саму страницу, поэтому ничего с чужих серверов не подгружается.</p>
+      <p>Файл не отправляется. Выписка читается прямо на вашем устройстве, на сервер ничего не загружается. Программа для чтения PDF загружается с этого же сайта, с чужих серверов ничего не подгружается.</p>
       <h3>Как это проверить?</h3>
       <p>Отключите интернет перед загрузкой выписки: всё продолжит работать. Страница также запрещает себе сетевые запросы (политика CSP), так что отправить данные выписки ей некуда. Разрешён только счётчик посещений: он узнаёт, что страницу открыли, без cookies и без чего-либо из выписки.</p>
       <h3>Что хранится на устройстве?</h3>
@@ -1103,7 +1079,7 @@
         <h3 style="margin-top:0">Нужно разобрать <span id="reviewCount"></span></h3>
         <div id="reviewOther" class="muted" style="margin-bottom:.6rem"></div>
         <div id="reviewTools" style="margin-bottom:.8rem"></div>
-        <p class="muted" style="margin:.2rem 0 .4rem">Выберите категорию для группы. Не знаете, кому платёж: найдите его в приложении банка по дате и сумме или нажмите «Пропустить»: операция останется «Не разобрано».</p>
+        <p class="muted" style="margin:.2rem 0 .4rem">Выберите категорию для группы. Не знаете, что это за платёж: нажмите «Пропустить», операция останется «Не разобрано».</p>
         <details class="howto"><summary>Как это работает</summary>
           <p class="muted">Похожие операции собраны в группы, крупные сверху: категория выбирается сразу для всей группы и запоминается для будущих выписок. ↻ — сумма повторялась в разные месяцы. Мелочь можно одним нажатием отправить в «Прочее», любую операцию потом можно поменять во вкладке «Все операции».</p>
         </details>
@@ -1296,8 +1272,9 @@
   <script src="anonymize.js"></script>
   <script src="pro.js"></script>
   <script>
-    // Чтение PDF: библиотека pdf.js встроена в страницу (build.py), из интернета ничего не подгружается.
-    // Читаем в отдельном потоке (Worker из встроенного кода); если браузер или «песочница» его не даёт, читаем в основном потоке.
+    // Чтение PDF: библиотека pdf.js лежит рядом со страницей (pdfjs/lib.js и pdfjs/worker.js, кладёт build.py),
+    // грузится только когда нужна (страница открывается быстрее), с того же сайта; после первого визита её держит sw.js.
+    // Читаем в отдельном потоке (Worker); если браузер или «песочница» его не даёт, читаем в основном потоке.
     // Дополнения для Safari/iOS: pdf.js перебирает потоки через `for await`, а в Safari у ReadableStream этого нет
     // («undefined is not a function (near '...of e...')»). Тот же код подкладываем и в Worker.
     function installPolyfills() {
@@ -1321,15 +1298,32 @@
     }
     installPolyfills();
 
+    const PDFJS_V = "__PDFV__";   // метка версии файлов pdf.js (подставляет build.py)
+    const loadedModules = {};
+    function loadModule(path) {
+      return loadedModules[path] || (loadedModules[path] = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.type = "module"; s.src = path + "?v=" + PDFJS_V;
+        s.onload = resolve;
+        s.onerror = () => { delete loadedModules[path]; s.remove(); reject(new Error("не удалось загрузить чтение PDF: проверьте интернет и попробуйте ещё раз")); };
+        document.head.appendChild(s);
+      }));
+    }
+    // Начать загрузку заранее (когда человек открывает выбор файла), чтобы к выбору выписки всё уже было готово
+    function preloadPdfjs() { if (!window.pdfjsLib && location.protocol !== "file:") loadModule("pdfjs/lib.js").catch(() => { /* повторим при чтении */ }); }
+    ["pointerdown", "keydown", "dragenter"].forEach(t => document.addEventListener(t, e => {
+      const el = e.target && e.target.closest ? e.target.closest('#startBtn, label[for="file"], label[for="anonFile"], #file, #anonFile, #upcard, .upcard') : null;
+      if (el || t === "dragenter") preloadPdfjs();
+    }, { passive: true, capture: true }));
     async function openPdf(bytes, password) {
+      if (!window.pdfjsLib) await loadModule("pdfjs/lib.js");
       const lib = window.pdfjsLib;
       if (!lib) throw new Error("не удалось запустить чтение PDF: обновите браузер");
       const opts = { isEvalSupported: false };
       if (password) opts.password = password;
       let port = null, task = null, timer = null;
       try {
-        const src = "(" + installPolyfills.toString() + ")();\n" + document.getElementById("pdfWorkerModule").textContent;
-        port = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })), { type: "module" });
+        port = new Worker("pdfjs/worker.js?v=" + PDFJS_V, { type: "module" });
         const dead = new Promise((_, reject) => port.addEventListener("error", () => reject({ workerFailed: true }), { once: true }));
         // На iPhone и в «песочницах» Worker иногда не запускается молча, без ошибки: через 6 с переходим на чтение в основном потоке.
         const slow = new Promise((_, reject) => { timer = setTimeout(() => reject({ workerFailed: true }), 6000); });
@@ -1340,6 +1334,7 @@
         try { if (task) task.destroy(); } catch (e) { /* уже закрыто */ }
         try { if (port) port.terminate(); } catch (e) { /* уже закрыт */ }
       } finally { clearTimeout(timer); }
+      await loadModule("pdfjs/worker.js");   // чтение без отдельного потока: pdf.js берёт globalThis.pdfjsWorker
       return lib.getDocument({ ...opts, data: bytes }).promise;
     }
 
@@ -1474,7 +1469,7 @@
     // Пример на главной = последний месяц постоянного демо (Demo.make без зерна). test_render.js сверяет эти числа с демо.
     const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 367.17], ["Кафе и рестораны", 285.64], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
     // «Итог месяца» в примере на главной: те же выводы, что в демо за этот месяц (сверяет test_render.js)
-    const LANDING_RECAP = { save: "+207 BYN", lines: [["grew", "Кафе и рестораны: 286 BYN, в 3,5 раза больше обычного"], ["total", "Всего потрачено 1 647 BYN: на 11% больше обычного"], ["subs", "Связь и подписки: 40,49 BYN в месяц, это 486 BYN в год (2 платежа)"], ["small", "Мелкие покупки до 10 BYN: 24 штуки на 144 BYN"]] };
+    const LANDING_RECAP = { save: "+207 BYN", lines: [["total", "Всего потрачено 1 647 BYN: на 11% больше обычного"], ["grew", "Кафе и рестораны: 286 BYN, в 3,5 раза больше обычного"], ["subs", "Связь и подписки: 40,49 BYN в месяц, это 486 BYN в год (2 платежа)"], ["small", "Мелкие покупки до 10 BYN: 24 штуки на 144 BYN"]] };
     // Счётчик посещений (GoatCounter): только «страницу открыли» и 3 события без данных выписки.
     // Работает лишь на настоящем сайте, без cookies; уважает «Не отслеживать». Сумм, имён, файлов здесь нет и быть не может.
     const STATS_URL = "https://bankanalyzer.goatcounter.com/count";
@@ -2361,7 +2356,7 @@
       if (!bottomOpen) $("catCreator").hidden = true;   // панель создания категории раскрывается кнопкой «＋ Своя категория»
       const rough = $("roughNote");
       rough.hidden = !(reviewOps > 0);
-      if (reviewOps > 0) rough.textContent = `Цифры ниже приблизительные: ещё не уточнено ${reviewOps} ${opsWord(reviewOps)}.`;
+      if (reviewOps > 0) rough.textContent = `Без категории ещё ${reviewOps} ${opsWord(reviewOps)}: в лимиты они не попадают. Уточнить их можно на вкладке «Уточнить», это необязательно.`;
       $("reviewSection").hidden = !bottomOpen || bottomTab !== "review";
       $("incomeSection").hidden = !bottomOpen || bottomTab !== "income";
       $("allPanel").hidden = !bottomOpen || bottomTab !== "all";
@@ -3329,7 +3324,7 @@
       if (!rows.length) { ul.append(h("li", {}, "Расходов в выписке не найдено.")); return; }
       const known = rows.filter(r => !isUnclear(r[0]));
       if (known.length) {
-        ul.append(icard(`${fmt(known[0][1])} BYN`, `Больше всего ушло на «${known[0][0]}» · ${Math.round(known[0][1] / total * 100)}% всех трат`));
+        ul.append(icard(`${fmt(known[0][1])} BYN`, `Больше всего ушло на категорию «${known[0][0]}» · ${Math.round(known[0][1] / total * 100)}% всех трат`));
       }
       const fees = rows.find(r => r[0] === Cat.FEES);
       if (fees) ul.append(icard(`${fmt(fees[1])} BYN`, "Комиссии банка", "Проверьте, какими платными опциями и услугами вы реально пользуетесь."));
@@ -3383,7 +3378,7 @@
         const shortDate = d => (/^\d{4}-(\d\d)-(\d\d)$/.test(d) ? d.slice(8, 10) + "." + d.slice(5, 7) : d);
         const fullDate = d => (/^\d{4}-(\d\d)-(\d\d)$/.test(d) ? shortDate(d) + "." + d.slice(0, 4) : d);
         if (big.length && big[0].amount >= 50) {
-          ul.append(icard(`${fmt(big[0].amount)} BYN`, big[0].dates.length > 1 ? `Самая крупная трата · ${big[0].dates.length} раза, ${big[0].cat}` : `Самая крупная трата · ${fullDate(big[0].dates[0])}, ${big[0].cat}`,
+          ul.append(icard(`${fmt(big[0].amount)} BYN`, big[0].dates.length > 1 ? `Самая крупная трата, была ${big[0].dates.length} ${[2, 3, 4].includes(big[0].dates.length % 10) && ![12, 13, 14].includes(big[0].dates.length % 100) ? "раза" : "раз"} · ${big[0].cat}` : `Самая крупная трата · ${fullDate(big[0].dates[0])}, ${big[0].cat}`,
             "Самые крупные траты: " + big.map(g => g.dates.length > 1
               ? `${fmt(g.amount)} BYN × ${g.dates.length} (${g.cat}; ${g.dates.sort().map(shortDate).join(", ")})`
               : `${fmt(g.amount)} BYN (${fullDate(g.dates[0])}, ${g.cat})`).join("; ") + "."));
@@ -3408,7 +3403,7 @@
         }
       }
       const unkSum = rows.filter(r => isUnclear(r[0])).reduce((a, r) => a + r[1], 0);
-      if (unkSum > 0) ul.append(icard(`${fmt(unkSum)} BYN`, `Пока без понятной категории · ${Math.round(unkSum / total * 100)}%`, "По выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Уточнить», и картина станет точнее."));
+      if (unkSum > 0) ul.append(icard(`${fmt(unkSum)} BYN`, `Не разобрано · ${Math.round(unkSum / total * 100)}%`, "По выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Уточнить», и картина станет точнее."));
     }
 
     // ---------- Планирование: регулярные платежи, прогноз, накопления, бюджеты, «сколько остаётся» ----------
@@ -3622,7 +3617,7 @@
       const cats = [...spentOf.keys()].filter(c => !NO_LIMIT_CATS.includes(c)).slice(0, 8);
       Object.keys(budgets).forEach(c => { if (!cats.includes(c)) cats.push(c); });
       const fixedCats = [...spentOf.keys()].filter(c => NO_LIMIT_CATS.includes(c) && !budgets[c]);
-      if (fixedCats.length) d.append(h("p", { class: "muted" }, `${fixedCats.join(", ")}: обязательные платежи, лимит для них не нужен.`));
+      if (fixedCats.length) d.append(h("p", { class: "muted" }, `${fixedCats.map(c => "«" + c + "»").join(", ")}: обязательные платежи, лимит для них не нужен.`));
       const autoCats = cats.filter(c => !(budgets[c] > 0) && (spentOf.get(c) || 0) >= 10);
       if (autoCats.length) d.append(h("p", {}, h("button", { type: "button", class: "primary", onclick: () => {
         autoCats.forEach(c => { budgets[c] = Math.ceil((spentOf.get(c) || 0) / 10) * 10; });
@@ -4010,7 +4005,7 @@
                 [Cat.OWN, Cat.LOAN, "Подарки"].map(c => qchip(chipLabel(c), () => setTxRule(tx, c))),
                 qchip("Пропустить", () => deferKey(txId(tx)), "Пока пропустить: останется «Не разобрано», вернуться можно внизу списка", "ghost")))),
             items.length > SPLIT_MAX ? h("div", { class: "muted", style: "margin-top:.4rem" }, `Ещё ${items.length - SPLIT_MAX} ${opsWord(items.length - SPLIT_MAX)}: появятся после этих.`) : "",
-            h("div", { style: "margin-top:.4rem" }, qchip("Пропустить все", () => deferKey(g.key), "Пока пропустить всю группу: останется «Не разобрано»", "ghost")),
+            h("div", { style: "margin-top:.4rem" }, qchip("Пропустить группу", () => deferKey(g.key), "Пока пропустить всю группу: останется «Не разобрано»", "ghost")),
             more);
         } else {
           const chips = h("div", { class: "chips" },
@@ -4873,6 +4868,9 @@
       { name: "Белагропромбанк" }, { name: "Белгазпромбанк" }, { name: "БНБ-Банк" }, { name: "БелВЭБ Банк" },
       { name: "Паритетбанк" }, { name: "Технобанк" }, { name: "Банк Дабрабыт" }, { name: "Банк «Решение»" },
       { name: "Банк Москва-Минск" }, { name: "Идея Банк" }, { name: "Другой банк" }];
+    // Ссылка на просьбу (#wanted) сразу раскрывает список банков
+    const openWanted = () => { if (typeof location !== "undefined" && location.hash === "#wanted") $("wantedMore").open = true; };
+    openWanted(); if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("hashchange", openWanted);
     $("wantedList").replaceChildren(...WANTED_BANKS.map(b => h("li", {}, b.name)));
     $("wantedOpen").addEventListener("click", () => showAnon(false));
     $("wantedCopy").addEventListener("click", async () => {
@@ -5075,7 +5073,7 @@
         const views = {};
         const build = () => {
           views.recap = h("div", { class: "miniview" }, h("div", { class: "recap minirecap" },
-            h("h3", {}, "Итог месяца"), h("div", { class: "muted" }, "Сравнение со средним за прошлые месяцы"),
+            h("h3", {}, "Итог октября"), h("div", { class: "muted" }, "Сравнение со средним за 2 прошлых месяца"),
             h("div", { class: "rsave" }, LANDING_RECAP.save, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")),
             h("ul", {}, LANDING_RECAP.lines.map(([k, t]) => h("li", { class: "k-" + k }, t))),
             (() => {
@@ -5109,6 +5107,5 @@
       }
     } catch (e) { try { console.warn("Пример на главной не построился"); const m = document.querySelector(".mini"); if (m) m.hidden = true; } catch (e2) { /* без примера */ } }
   </script>
-  <!--PDFJS-->
 </body>
 </html>
