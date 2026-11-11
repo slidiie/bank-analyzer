@@ -101,8 +101,8 @@ vm.runInContext(`
 // По умолчанию открыта вкладка «За весь период»: видны общие итоги и сравнение месяцев
 let s = summaryText();
 check("есть вкладки: весь период и три месяца",
-  ["За весь период", "Сен", "Окт", "Ноя"].every(t => s.includes(t)) && !s.includes("Октябрь 2026"));
-check("вкладка неполного месяца помечена звёздочкой", s.includes("Ноя *"));
+  ["За весь период", "Сентябрь 2026", "Октябрь 2026", "Ноябрь 2026"].every(t => s.includes(t)));
+check("вкладка неполного месяца помечена словом", s.includes("Ноябрь 2026 (неполный)") || /Ноябрь \d{4} \(неполный\)/.test(s));
 {
   const rc = textOf(byId["recap"]);
   check("«Итог месяца»: последний полный месяц — октябрь, неполный ноябрь не подводится", rc.includes("Итог октября") && !rc.includes("Итог ноября"));
@@ -129,8 +129,15 @@ check("выводы сменились на сентябрь", textOf(byId["insi
 check("нажатие на вкладку «Октябрь»", clickButton(byId["summary"], "Окт"));
 s = summaryText();
 check("октябрь без долга: итого 400", hasTotal(s, "400,00"));
+{
+  const ins = textOf(byId["insights"]);
+  check("крупная трата: одна карточка с «Что это было?» и «Показать операцию»", ins.includes("Самая крупная трата") && ins.includes("Что это было?") && ins.includes("Показать операцию") && !ins.includes("Необычно крупная трата"));
+  clickButton(byId["insights"], "Показать операцию");
+  check("«Показать операцию» открывает «Все операции» с поиском по дате и сумме", vm.runInContext(`bottomTab`, ctx) === "all" && /^\d\d\.\d\d\.\d{4} \d+,\d\d$/.test(vm.runInContext(`allFilt.query`, ctx)));
+  vm.runInContext(`allFilt = Filters.empty(); bottomTab = null;`, ctx);
+}
 
-check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноя *"));
+check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноябрь 2026"));
 s = summaryText();
 check("ноябрь: пометка о неполном месяце (с 1 по 2 число)", s.includes("неполный месяц: данные с 1 по 2 число"));
 check("ноябрь: итого 20", hasTotal(s, "20,00"));
@@ -521,8 +528,8 @@ vm.runInContext(`
   userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
 `, ctx);
 const rvQuick = textOf(byId["review"]);
-check("переводы: компактная панель «в пару нажатий», кнопки «Свой счёт» и «Человеку»", rvQuick.includes("Переводы: 1 группа") && rvQuick.includes("Свой счёт") && rvQuick.includes("Человеку") && rvQuick.includes("Запомнить для всех будущих"));
-clickButton(byId["review"], "Подробно");
+check("переводы: компактная панель «в пару нажатий», кнопки «Это мои деньги» и «Перевод человеку»", rvQuick.includes("Переводы: 1 группа") && rvQuick.includes("Это мои деньги") && rvQuick.includes("Перевод человеку") && rvQuick.includes("Запомнить для всех будущих"));
+clickButton(byId["review"], "Подробно"); clickButton(byId["review"], "Полная карточка");
 const rv = textOf(byId["review"]);
 check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
 check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50,00") && html.includes("в приложении банка"));
@@ -544,10 +551,10 @@ vm.runInContext(`
   header = { from: "2026-11-01", to: "2026-11-30" };
   userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
 `, ctx);
-clickButton(byId["review"], "Подробно");
+clickButton(byId["review"], "Подробно"); clickButton(byId["review"], "Полная карточка");
 const rv2 = textOf(byId["review"]);
-check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Свой счёт") && rv2.includes("Человеку") && rv2.includes("Оплата услуги или магазина") && !rv2.includes("Продукты"));
-clickButton(byId["review"], "Человеку");
+check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Это мои деньги") && rv2.includes("Перевод человеку") && rv2.includes("Оплата магазина или услуги") && !rv2.includes("Продукты"));
+clickButton(byId["review"], "Перевод человеку");
 check("счёт: «Другого человека» показывает варианты перевода", textOf(byId["review"]).includes("Дал в долг") && textOf(byId["review"]).includes("Подарки"));
 clickButton(byId["review"], "Подарки");
 check("счёт: выбор применяется ко всей группе", vm.runInContext(`Object.values(userRules).includes("Подарки")`, ctx));
@@ -565,13 +572,13 @@ vm.runInContext(`
   userRules = {}; txRules = {}; tailUndo.length = 0; trExpanded.clear(); activeTab = "all"; allCat = "all"; render();
 `, ctx);
 check("переводы: две группы по получателю в одной панели", textOf(byId["review"]).includes("Переводы: 2 группы"));
-clickButton(byId["review"], "Человеку");
+clickButton(byId["review"], "Перевод человеку");
 check("переводы: «Человеку» относит группу к «Переводы людям» и запоминает правило", vm.runInContext(`Object.values(userRules).filter(c => c === Cat.P2P).length === 1 && Object.keys(txRules).length === 0`, ctx));
 check("переводы: после нажатия осталась одна группа и есть «Отменить»", textOf(byId["review"]).includes("Переводы: 1 группа") && textOf(byId["undoBar"]).includes("Переводы людям") && textOf(byId["undoBar"]).includes("Запомнено для будущих"));
 clickButton(byId["undoBar"], "Отменить");
 check("переводы: отмена возвращает группу", vm.runInContext(`Object.keys(userRules).length === 0`, ctx) && textOf(byId["review"]).includes("Переводы: 2 группы"));
 vm.runInContext(`trRemember = false;`, ctx);
-clickButton(byId["review"], "Человеку");
+clickButton(byId["review"], "Перевод человеку");
 check("переводы: без «запомнить» правило ставится только на операции этой группы", vm.runInContext(`Object.keys(userRules).length === 0 && Object.keys(txRules).length >= 1 && Object.values(txRules).every(c => c === Cat.P2P)`, ctx));
 vm.runInContext(`trRemember = true;`, ctx);
 
@@ -590,7 +597,7 @@ vm.runInContext(`
 `, ctx);
 const rv3 = textOf(byId["review"]);
 check("вопрос: ЕРИП спрашивает «за что платите»", rv3.includes("За что вы платите через ЕРИП каждый месяц?"));
-check("вопрос: платёж по реквизитам спрашивает «кому или за что» и не предлагает случайные категории", rv3.includes("Кому или за что?") && rv3.includes("Человеку") && rv3.includes("Оплата услуги или магазина"));
+check("вопрос: платёж по реквизитам спрашивает «кому или за что» и не предлагает случайные категории", rv3.includes("Кому или за что?") && rv3.includes("Перевод человеку") && rv3.includes("Оплата магазина или услуги"));
 check("вопрос: у прочих групп общий понятный вопрос", rv3.includes("К какой категории это отнести?"));
 
 
