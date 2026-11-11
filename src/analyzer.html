@@ -3175,9 +3175,14 @@
       const wrap = (text, maxW) => { const out = []; let cur = ""; text.split(" ").forEach(w => { const t = cur ? cur + " " + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; }); if (cur) out.push(cur); return out; };
       g.fillStyle = "#111112"; g.fillRect(0, 0, W, H);
       // шапка: знак и название
-      g.fillStyle = "#16171A"; rrect(P, P, 52, 52, 13); g.fill();
-      g.strokeStyle = "#2A2B2F"; g.lineWidth = 2; g.stroke();
-      g.strokeStyle = "#B7E34A"; g.lineWidth = 7; g.beginPath(); g.arc(P + 26, P + 26, 12, 0.3, Math.PI * 2 - 0.5); g.stroke();
+      // тот же знак, что в шапке сайта (SVG из того же кода), чтобы картинка узнавалась
+      try {
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#16171A"/><g transform="rotate(-90 256 256)" fill="none" stroke-width="64"><circle cx="256" cy="256" r="124" pathLength="100" stroke="#C8EE4A" stroke-dasharray="44 56"/><circle cx="256" cy="256" r="124" pathLength="100" stroke="#FFFFFF" stroke-dasharray="28 72" stroke-dashoffset="-47"/><circle cx="256" cy="256" r="124" pathLength="100" stroke="#7C8494" stroke-dasharray="19 81" stroke-dashoffset="-78"/></g></svg>';
+        const img = new Image();
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); });
+        g.drawImage(img, P, P, 52, 52);
+        g.strokeStyle = "#2A2B2F"; g.lineWidth = 2; rrect(P, P, 52, 52, 13); g.stroke();
+      } catch (e) { g.fillStyle = "#16171A"; rrect(P, P, 52, 52, 13); g.fill(); }
       g.textBaseline = "middle"; g.fillStyle = "#F2F2F3"; g.font = "600 36px " + F; g.textAlign = "left"; g.fillText("Fernwood", P + 70, P + 27);
       g.fillStyle = "#8C8D93"; g.font = "400 30px " + F; g.textAlign = "right"; g.fillText(m.title, W - P, P + 27);
       g.textAlign = "left"; g.textBaseline = "alphabetic";
