@@ -47,9 +47,9 @@
     const a = Math.abs(n) % 100, b = a % 10;
     return a > 10 && a < 20 ? many : b === 1 ? one : b >= 2 && b <= 4 ? few : many;
   };
-  // «в 2 раза», «в 2,5 раза», «в 3 раза», «в 5 раз»
+  // «в 2 раза», «в 3,6 раза», «в 5 раз». Округляем до десятых: человек пересчитывает руками, полшага давали «3,5» вместо 3,64
   function times(r) {
-    const x = Math.round(r * 2) / 2;
+    const x = Math.round(r * 10) / 10;
     const s = Number.isInteger(x) ? String(x) : String(x).replace(".", ",");
     return `в ${s} ${Number.isInteger(x) ? plural(x, "раз", "раза", "раз") : "раза"}`;
   }

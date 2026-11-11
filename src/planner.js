@@ -31,17 +31,39 @@
     }
     const need = Math.max(2, Math.ceil(allMonths.length * 0.6));
     const out = [];
-    for (const [k, list] of groups) {
+    // Серия платежей: нужные месяцы, не чаще 1,5 раза в месяц. Возвращает запись или null
+    const series = (k, list) => {
       const months = new Set(list.map(t => t.date.slice(0, 7)));
-      if (months.size < need || list.length > months.size * 1.5) continue;
+      if (months.size < need || list.length > months.size * 1.5) return null;
       const days = list.map(t => parseInt(t.date.slice(8, 10), 10)).sort((a, b) => a - b);
-      out.push({
+      // По одному платежу в месяц и числа расходятся больше чем на неделю (с учётом перехода через конец месяца):
+      // это совпадение сумм у обычных покупок (кафе, магазин), а не подписка или аренда
+      if (list.length <= months.size) {
+        let gap = days[0] + 30 - days[days.length - 1];
+        for (let i = 1; i < days.length; i++) gap = Math.max(gap, days[i] - days[i - 1]);
+        if (30 - gap > 7) return null;
+      }
+      return {
         amount: Number(k), count: list.length, months: months.size,
         day: days[Math.floor(days.length / 2)],
         dates: [...new Set(list.map(t => t.date))].sort(),
         perMonth: Number(k) * list.length / months.size,
         name: top(list.map(t => t.name || "")), cat: top(list.map(t => t.cat)),
-      });
+      };
+    };
+    for (const [k, list] of groups) {
+      // Одна сумма у разных мест (кофейня и подписка по 11,71): серию ищем отдельно по каждому названию,
+      // иначе чужая покупка попадает в подписку и «в месяц» не сходится с ценой
+      const byName = new Map();
+      for (const t of list) { const n = (t.name || "").trim().toLowerCase(); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(t); }
+      const named = [...byName.entries()].filter(([n]) => n);
+      const used = new Set();
+      if (named.length > 1) for (const [, part] of named) { const s = series(k, part); if (s) { out.push(s); part.forEach(t => used.add(t)); } }
+      if (used.size) {
+        const rest = list.filter(t => !used.has(t));
+        const s = rest.length ? series(k, rest) : null;
+        if (s) out.push(s);
+      } else { const s = series(k, list); if (s) out.push(s); }
     }
     return out.sort((a, b) => b.perMonth - a.perMonth);
   }
