@@ -147,5 +147,22 @@ const resBad = Banks.fromUniversal(U.guess(U.gridFromPages([pageBad])));
 check("нечитаемая операция описана для пользователя", resBad.txs.length === 3 && resBad.header.unread && resBad.header.unread.length === 1 && /без суммы/.test(resBad.header.unread[0].details));
 check("банк «не из списка» находится по идентификатору", Banks.byId("other") === Banks.OTHER && Banks.byId("sber").id === "sber" && !Banks.BANKS.includes(Banks.OTHER));
 
+// ---------- Находки проверки на настоящих файлах и генераторе (12.11) ----------
+check("число: валюта внутри скобок", U.num("(45.50 BYN)") === -45.5 && U.num("(45.50) BYN") === -45.5);
+// Дата и текст в одном фрагменте («05.03.2026 SHOP MINSK»): колонка даты узнаётся, текст идёт в описание
+// Узкая выписка: дата и описание в одной колонке (заголовок «Дата Примечание»), у части строк текст начинается с даты
+const rowF = (y, d, text, amt) => [it(45, y, d, 50), it(91, y + 1, text), it(430 - amt.length * 5, y, amt)];
+const pageF = [it(40, 20, "Выписка"), it(45, 60, "Дата Примечание", 120), it(430, 60, "Сумма"),
+  ...rowF(90, "01.06.2026", "SHOP ONE MINSK", "-12.30"), ...rowF(130, "02.06.2026", "03.06.2026 Зачисление зарплаты", "900.00"),
+  ...rowF(170, "03.06.2026", "KAFE TWO", "-40.00"), ...rowF(210, "04.06.2026", "TAXI", "-5.00")];
+const rF = U.guess(U.gridFromPages([pageF]));
+check("дата вместе с текстом: операции найдены и описание не потеряно", rF && rF && rF.txs.length === 4 && rF.txs[0].amount === -12.3 && /SHOP ONE/.test(rF.txs[0].details) && rF.txs[0].date === "2026-06-01" && rF.txs[1].details === "Зачисление зарплаты");
+// «Проверено» нельзя ставить, если прочитана малая часть строк или шапка явно не сходится
+const rA2 = U.guess(U.gridFromPages([[...headA.map(x => x.text === "Поступило: 1 500,00" ? it(40, 82, "Поступило: 1 500,00") : x), ...pageA.slice(headA.length)]]));
+check("итоги и остатки сходятся: проверено", rA2.verified === true && rA2.proof === "totals");
+const pageAmis = [...headA.map(x => x.text.startsWith("Остаток на конец") ? it(40, 110, "Остаток на конец: 999,99") : x), ...pageA.slice(headA.length)];
+const rAm = U.guess(U.gridFromPages([pageAmis]));
+check("остаток на конец не сошёлся при верных поступлениях и списаниях: не проверено", rAm.verified === false && rAm.proof === "mismatch");
+
 console.log(failed ? `\nОШИБКА: не прошло проверок: ${failed}` : "\nВсе проверки пройдены");
 process.exit(failed ? 1 : 0);
