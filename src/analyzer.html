@@ -27,12 +27,12 @@
       setTimeout(on, 3000);
     })();
   </script>
-  <title>Fernwood: анализ выписки. Куда утекают ваши деньги</title>
+  <title>Fernwood: анализ выписки. Куда уходят ваши деньги</title>
   <meta name="description" content="Загрузите выписку белорусского банка и увидите траты по категориям, подписки и регулярные платежи. Считается прямо в браузере, файл никуда не загружается. Бесплатно, без регистрации.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
   <meta property="og:url" content="https://fernwood.by/">
-  <meta property="og:title" content="Fernwood: куда утекают ваши деньги">
+  <meta property="og:title" content="Fernwood: куда уходят ваши деньги">
   <meta property="og:description" content="Траты по категориям, подписки и регулярные платежи из выписки вашего банка. Файл не покидает ваше устройство. Бесплатно, без регистрации.">
   <meta property="og:image" content="https://fernwood.by/og.png">
   <meta property="og:image:width" content="1200">
@@ -512,8 +512,7 @@
     .minibody { margin: .3rem 0; }
     .miniview { min-width: 0; }
     .miniview:not(.on) { display: none; }   /* занимает место только открытая вкладка: раньше высоту задавала самая длинная («Таблица») */
-    .miniview.on { animation: minifade .3s ease; }
-    @keyframes minifade { from { opacity: 0; } to { opacity: 1; } }
+    /* без плавного появления: пока образец «проявлялся», на секунду был виден бледным и нечитаемым */
     .mini .viewswitch { margin: .3rem 0 .2rem; }
     .mini .pie { justify-content: center; gap: 1rem 1.5rem; }
     .mini .pieleft { width: 15rem; }
@@ -996,15 +995,15 @@
         <button id="themeToggle" class="themesw" type="button" role="switch" aria-checked="false" aria-label="Тёмная тема" title="Светлая / тёмная тема"><span class="knob" aria-hidden="true"></span><svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></button>
       </span>
     </div>
-    <h1>Куда утекают ваши деньги</h1>
-    <p class="lede">Загрузите выписку из банка и за минуту увидите, куда ушли деньги<span class="lede-long">, какие траты выросли и сколько могло остаться. Без ручного подсчёта. Можно загрузить выписки сразу из нескольких банков</span>.</p>
+    <h1>Куда уходят ваши деньги</h1>
+    <p class="lede">Загрузите выписку из банка и за минуту увидите, куда ушли деньги и что можно сделать иначе в следующем месяце<span class="lede-long">: какие траты выросли и сколько можно было сохранить. Без ручного подсчёта</span>.</p>
     <div id="dropzone" class="upcard">
       <svg class="gi upicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
       <p class="cta">
         <button id="startBtn" class="primary" type="button">Выбрать выписку</button>
         <button id="demoBtn" type="button">Посмотреть на примере</button>
       </p>
-      <p class="muted howlink">Нет выписки? <a href="#howInline">Как скачать её в своём банке</a></p>
+      <p class="muted howlink">Можно загрузить выписки сразу из нескольких банков. Нет выписки? <a href="#howInline">Как скачать её в своём банке</a></p>
       <div id="deviceCard" class="devcard" hidden>
         <p><b>С прошлого визита на этом устройстве:</b> <span id="deviceInfo"></span></p>
         <p class="cta"><button id="deviceOpen" class="primary" type="button">Открыть сохранённую выписку</button> <button id="deviceForget" type="button">Забыть</button></p>
@@ -1030,7 +1029,7 @@
         <p><b>Android.</b> Скачанная выписка обычно попадает в папку «Загрузки» (Download). Нажмите «Выбрать выписку» и откройте эту папку.</p>
         <p>Выписка пришла на почту: откройте письмо и сохраните вложение, дальше так же. Если сайт открыт внутри Telegram или другого приложения и файл не выбирается, откройте сайт в обычном браузере: меню «⋯» → «Открыть в браузере».</p>
       </details>
-      <p class="muted">Нужен именно файл из банка (PDF, CSV или Excel), не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Подробности</button> · <a href="banks/">Все инструкции по банкам</a> · <a href="#wanted">Вашего банка нет?</a></p>
+      <p class="muted">Нужен именно файл из банка (PDF, CSV или Excel), не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Подробности</button> · <a href="banks/">Все инструкции по банкам</a> · <a id="wantedLink" href="#wanted">Вашего банка нет?</a></p>
     </details>
     <h2 id="faq">Частые вопросы</h2>
     <details><summary>Куда уходит моя выписка?</summary>
@@ -1042,11 +1041,11 @@
     <details><summary>Какие банки читает?</summary>
       <p id="faqBanks"></p></details>
     <section id="wanted" class="wanted" aria-label="Вашего банка нет в списке?">
-      <details id="wantedMore" class="wantedmore"><summary>Вашего банка нет в списке? Можно помочь добавить его</summary>
-      <p>У каждого банка свой формат выписки, и научить сайт новому банку я могу только по настоящему образцу. Это по желанию, для вашего разбора не нужно.</p>
-      <p><b>Нужны выписки этих банков:</b></p>
+      <details id="wantedMore" class="wantedmore"><summary>Вашего банка нет в списке?</summary>
+      <p><b>Свою выписку всё равно загрузите.</b> Сайт сам найдёт в ней колонки и проверит, сошлись ли суммы с итогами выписки. Если не получится, он честно об этом скажет, а не покажет неверные цифры. Образец отправлять для этого не нужно.</p>
+      <p>Образец нужен мне только если банк читается плохо: так я научу сайт читать его точно. Особенно ищу выписки этих банков:</p>
       <ul id="wantedList" class="wantedlist"></ul>
-      <p class="muted">Подойдёт PDF из интернет-банка. Мастер прямо здесь закроет ФИО, номера карт и счетов, адреса и телефоны. Вы проверите результат и сами решите, отправлять ли. Образец приходит только мне на почту, нужен лишь чтобы научить сайт читать этот банк.</p>
+      <p class="muted"><b>Что уйдёт:</b> только PDF, который вы сами увидите и проверите на экране. Мастер закрывает чёрным ФИО, номера карт и счетов, адреса, телефоны и почту; под плашкой в файл ничего не попадает. Суммы, даты и названия магазинов остаются, по ним сайт и учится. Если что-то личное осталось, закройте его сами, а можно не отправлять совсем. Образец приходит только мне на почту.</p>
       <p class="cta"><button id="wantedOpen" type="button" class="primary">Подготовить образец выписки</button></p>
       <p class="muted">Ссылкой на эту просьбу можно поделиться: <button id="wantedCopy" class="linklike" type="button">скопировать ссылку</button> <span id="wantedMsg" role="status"></span></p>
       </details>
@@ -1245,7 +1244,7 @@
       <div class="tabs" id="bottomTabs"></div>
       <div class="note" id="catCreator" hidden></div>
       <div id="reviewSection">
-        <h3 style="margin-top:0">Нужно разобрать <span id="reviewCount"></span></h3>
+        <h3 style="margin-top:0">Уточнить <span id="reviewCount"></span></h3>
         <div id="reviewOther" class="muted" style="margin-bottom:.6rem"></div>
         <div id="reviewTools" style="margin-bottom:.8rem"></div>
         <details class="howto"><summary>Как это работает</summary>
@@ -1630,7 +1629,7 @@
     const BANK_ORDER = ["belarusbank", "mtbank", "mtb", "vtb", "prior", "sber", "alfa", "belinvest"];
     const bankRank = b => { const i = BANK_ORDER.indexOf(b.id); return i < 0 ? BANK_ORDER.length : i; };
     const bankNames = Banks.BANKS.slice().sort((a, b) => bankRank(a) - bankRank(b)).map(b => b.name).join(", ");
-    $("faqBanks").textContent = "Точно читаются: " + bankNames + ". Вашего банка нет в списке? Всё равно загрузите выписку (PDF, CSV или Excel): сайт сам найдёт колонки, покажет первые операции и спросит, верно ли прочитано.";
+    $("faqBanks").textContent = "Точно читаются: " + bankNames + ". Вашего банка нет в списке? Всё равно загрузите выписку (PDF, CSV или Excel): сайт сам найдёт колонки, покажет первые операции и проверит, сошлись ли суммы с итогами выписки. Если не получится, он скажет об этом, а не покажет неверные цифры.";
 
     // Пример на главной = последний месяц постоянного демо (Demo.make без зерна). test_render.js сверяет эти числа с демо.
     const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 367.17], ["Кафе и рестораны", 285.64], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
@@ -1726,8 +1725,10 @@
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
     const FB_VERSION = "v4.88";
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
+    // В письмо идут только названия банков из нашего списка; у банка не из списка лишь слово с «банк» (рядом в шапке бывает фамилия)
+    const FB_KNOWN_BANKS = Banks.BANKS.map(b => b.name).concat([Banks.OTHER.name, "Выписка"]);
     function fbInfo() {
-      return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
+      return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => Feedback.bankLabel(st.bankName, FB_KNOWN_BANKS)).filter(Boolean))], count: demoMode ? 0 : txs.length,
         unread: demoMode ? 0 : statements.reduce((a, st) => a + (st.unread ? st.unread.length : 0), 0), mismatch: !demoMode && statements.some(st => st.check && st.check.headerIncome != null && !st.check.ok),
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
         theme: document.documentElement.getAttribute("data-theme") === "dark" || (document.documentElement.getAttribute("data-theme") !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light" };
@@ -2559,7 +2560,7 @@
       } }, label);
       $("bottomTabs").replaceChildren(
         tab("all", `Все операции (${allCount})`),
-        hasReview ? tab("review", `Разобрать (${reviewOps})`) : "",
+        hasReview ? tab("review", `Уточнить (${reviewOps})`) : "",
         incomeGroups ? tab("income", `Поступления (${incomeGroups})`) : "",
         h("button", { class: "tab", type: "button", onclick: focusCreator }, "＋ Своя категория"));
       // Плашка наверху: чтобы неразобранное не потерялось
@@ -2570,7 +2571,7 @@
         const pct = periodSpend > 0 ? Math.max(0, Math.min(100, Math.round((1 - periodUnclear / periodSpend) * 100))) : 100;
         banner.replaceChildren(
           // Одна строка: человек сначала должен увидеть итоги ниже, а не задание
-          reviewOps ? h("div", {}, h("b", {}, `Определено ${pct}% трат. `),
+          reviewOps ? h("div", {}, h("b", {}, `Разобрано ${pct}% трат${period === "all" ? "" : " за " + monthTitle(period)}. `),
             // Переводы это понятная часть «неразобранного»: говорим о ней сразу, чтобы низкий процент не пугал
             periodSpend > 0 && reviewTrSum / periodSpend >= 0.1 ? `Ещё ${Math.round(reviewTrSum / periodSpend * 100)}% это переводы: отметьте свои. ` : "",
             `Можно уточнить ${reviewOps} ${opsWord(reviewOps)}${more}, это необязательно. `,
@@ -2586,7 +2587,7 @@
       const link = (href, label, action) => h("a", { href, onclick: e => { e.preventDefault(); action(); } }, label);
       $("nav").replaceChildren(
         link("#secSummary", "Траты", () => $("secSummary").scrollIntoView({ behavior: "smooth", block: "start" })),
-        reviewOps || reviewOther ? link("#bottom", `Нужно разобрать (${reviewOps})`, () => openBottom("review")) : "",
+        reviewOps || reviewOther ? link("#bottom", `Уточнить (${reviewOps})`, () => openBottom("review")) : "",
         link("#bottom", "Все операции", () => openBottom("all")));
       if (typeof renderTabbar === "function") renderTabbar();
     }
@@ -2876,7 +2877,7 @@
         const sw = h("span", { class: sl.review ? "sw review" : "sw" });
         if (!sl.review) sw.style.background = sl.color;
         const head = sl.group
-          ? h("div", {}, sw, h("b", {}, sl.review ? "Нужно разобрать" : "Мелкие категории"), ` · ${fmt(sl.sum)} BYN · ${pct}%`)
+          ? h("div", {}, sw, h("b", {}, sl.review ? "Не разобрано" : "Мелкие категории"), ` · ${fmt(sl.sum)} BYN · ${pct}%`)
           : h("div", {}, sw, iconEl(iconKey(sl.cats[0][0])), h("b", {}, sl.cats[0][0]), ` · ${fmt(sl.sum)} BYN · ${pct}%`);
         const nodes = [head];
         if (sl.group) nodes.push(h("div", { class: "muted" }, sl.cats.map(([c, v]) => `${c}: ${fmt(v)}`).join("; ")));
@@ -3043,6 +3044,10 @@
         " ", h("button", { type: "button", class: "linklike", onclick: () => openCatOps(TR_BUCKET) }, "Уточнить переводы ›")));
       { const cash = st.rows.find(r => /^Наличные/.test(r[0])); if (cash && st.total && cash[1] / st.total >= 0.05) notes.push(h("li", {}, `Наличные (${fmt(cash[1])} BYN): по выписке не видно, на что они потрачены.`)); }
       if (st.rows.some(r => r[0] !== TR_BUCKET && Cat.BUCKETS.includes(r[0]))) notes.push(h("li", {}, "ЕРИП и интернет-банк: в выписке виден только способ оплаты, а не покупка. Их можно уточнить в разделе «Уточнить»."));
+      { // Одно число «не разобрано»: строка «Не разобрано» в списке это только операции совсем без категории, а ЕРИП, интернет-банк и переводы по карте идут отдельными строками
+        const un = st.rows.find(r => r[0] === "Не разобрано"), allUnclear = st.rows.filter(r => isUnclear(r[0])).reduce((a, r) => a + r[1], 0);
+        if (un && st.total && allUnclear - un[1] >= 1) notes.push(h("li", {}, `Строка «Не разобрано» это операции совсем без категории. Вместе с ЕРИП, интернет-банком и переводами на карты не разобрано ${Math.round(allUnclear / st.total * 100)}% трат.`));
+      }
       const extra = [];
       if (st.own) { const pc = Merge.pairCount(txs); extra.push(`переводы между своими: ${fmt(st.own)}` + (pc ? ` (${pc} ${plur(pc, "пара", "пары", "пар")} «пришло и сразу ушло» найдены сами, в «Все операции» они с пометкой ⇄)` : "")); }
       if (st.loan > 0) extra.push(`дал в долг: ${fmt(st.loan)}`);
@@ -3217,7 +3222,7 @@
       if (days >= 2) facts.push(`В среднем ${fmt(st.total / days)} BYN в день`);
       const fullIdx = months.map((m, i) => i).filter(i => !coverageNote(months[i]));
       if (ctx.current === undefined && fullIdx.length >= 2) {
-        facts.push(`В среднем ${fmt(fullIdx.reduce((a, i) => a + ctx.per[i].total, 0) / fullIdx.length)} BYN в полный месяц`);
+        facts.push(`В среднем ${fmt(fullIdx.reduce((a, i) => a + ctx.per[i].total, 0) / fullIdx.length)} BYN в полный месяц` + (statements.length > 1 ? ` (по ${fullIdx.length} ${plur(fullIdx.length, "месяцу", "месяцам", "месяцам")}; добавили карту или банк, и среднее меняется)` : ""));
         const [p, c] = fullIdx.slice(-2);
         if (c - p === 1) { const t = cmp(c, p, `${monthTitle(months[c])}: `); if (t) facts.push(t); }
       } else if (ctx.current > 0 && !coverageNote(months[ctx.current]) && !coverageNote(months[ctx.current - 1])) {
@@ -3246,11 +3251,11 @@
         const cs = statements.map(x => x.check).filter(c => c && c.headerIncome != null);
         if (cs.length && cs.length === statements.length) {
           const bal = Math.round(cs.reduce((a, c) => a + c.headerIncome - c.headerExpense, 0) * 100) / 100;
-          if (Math.abs(bal) >= 1 && (bal >= 0) !== (diff >= 0)) balNote = `На счетах по выпискам денег ${bal >= 0 ? "стало больше" : "стало меньше"} на ${fmt(Math.abs(bal))} BYN: в «Пришло» не входят переводы между своими и возвраты.`;
+          if (Math.abs(bal) >= 1 && (bal >= 0) !== (diff >= 0)) balNote = `Почему «Разница» ${diff >= 0 ? "плюс" : "минус"}, а на счетах денег ${bal >= 0 ? "стало больше" : "стало меньше"} на ${fmt(Math.abs(bal))} BYN: в «Пришло» не входят переводы между своими счетами и возвраты, поэтому выписки и «Разница» считают немного по-разному.`;
         }
       }
       const tiles = income > 0
-        ? [tile("Пришло", fmt(income)), tile("Потрачено", big, "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), (diff >= 0 ? "pos" : "neg") + " wide", diff >= 0 ? (st.saved > 0 ? "осталось до накоплений" : "осталось") : "ушло больше, чем пришло")]
+        ? [tile("Пришло", fmt(income)), tile("Потрачено", big, "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), (diff >= 0 ? "pos" : "neg") + " wide", diff >= 0 ? (st.saved > 0 ? "за период: пришло минус потрачено, до накоплений" : "за период: пришло минус потрачено") : "за период: ушло больше, чем пришло")]
         : [tile("Потрачено", big, "spent")];
       if (balNote) facts.unshift(balNote);
       return h("div", { class: "hsum" + (fresh ? " anim" : "") },
@@ -3435,7 +3440,7 @@
       return h("section", { class: "ocard recap", "aria-label": r.title },
         h("h3", {}, r.title), h("div", { class: "muted" }, sub),
         r.note ? h("p", { class: "rnote" + (weak ? " rweak" : " muted") }, r.note, " ", goReview) : "",
-        r.save && !weak ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")) : "",
+        r.save && !weak ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "можно было бы сохранить, если бы выросшие траты были на обычном уровне")) : "",
         h("ul", {}, r.lines.filter(l => l.kind !== "save" || !r.save).map(l => h("li", { class: "k-" + l.kind }, l.text))),
         shareData && shareData.bar.length && !readProblems().length && !guessed().length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");
     }
@@ -3755,8 +3760,8 @@
         }
       }
       const unkSum = rows.filter(r => isUnclear(r[0])).reduce((a, r) => a + r[1], 0);
-      if (unkSum > 0) ul.append(icard(`${fmt(unkSum)} BYN`, `Не разобрано · ${Math.round(unkSum / total * 100)}%`, "По выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Уточнить», и картина станет точнее.",
-        h("p", {}, qchip("Разобрать", () => openCatOps("Не разобрано"), "Открыть «Уточнить»", "ghost"))));
+      if (unkSum > 0) ul.append(icard(`${fmt(unkSum)} BYN`, `Не разобрано · ${Math.round(unkSum / total * 100)}% трат`, "По выписке видно только способ оплаты. Подпишите самых крупных получателей в разделе «Уточнить», и картина станет точнее.",
+        h("p", {}, qchip("Уточнить", () => openCatOps("Не разобрано"), "Открыть «Уточнить»", "ghost"))));
     }
 
     // ---------- Планирование: регулярные платежи, прогноз, накопления, бюджеты, «сколько остаётся» ----------
@@ -3825,14 +3830,14 @@
       const subsSum = sumOf("subs"), mustSum = sumOf("must"), otherSum = sumOf("other");
       const nSubs = regular.filter(r => kindOf(r) === "subs").length;
       box.append(h("div", { class: "scard" },
-        h("div", { class: "muted" }, "Подписки и сервисы"),
+        h("div", { class: "muted" }, "Связь, подписки и сервисы"),
         h("div", { class: "sbig" }, `≈ ${money(subsSum * 12)} BYN в год`, h("span", { class: "syear" }, `${money(subsSum)} BYN в месяц`)),
-        h("div", { class: "muted" }, nSubs ? `Найдено: ${nSubs}. Проверьте, всеми ли вы пользуетесь.` : "Подписок среди регулярных платежей не нашлось."),
+        h("div", { class: "muted" }, nSubs ? `Найдено: ${nSubs}. Сюда входят и связь (пополнение телефона, интернет), и онлайн-сервисы. Проверьте, всем ли вы пользуетесь.` : "Подписок среди регулярных платежей не нашлось."),
         h("div", { class: "muted" }, `Обязательные (аренда, коммуналка, ЕРИП): ≈ ${money(mustSum * 12)} BYN в год` + (otherSum ? ` · другие регулярные: ≈ ${money(otherSum * 12)} BYN` : "") + (share != null ? ` · всего около ${share}% трат` : "")),
         h("div", { class: "muted" }, `Год посчитан так: если платить, как в последние ${full.length} ${plur(full.length, "полный месяц", "полных месяца", "полных месяцев")} (${monthRange(full[0], full[full.length - 1])}), умножено на 12. Найдены по одинаковым суммам: проверьте список сами.`)));
       const when = d => {
         const n = Planner.daysBetween(today, d);
-        return n < 0 ? `по выписке (она до ${dmy(dataEnd)})` : n === 0 ? "сегодня" : n === 1 ? "завтра" : `через ${n} дн.`;
+        return n < 0 ? `по выписке (она до ${dmy(dataEnd)})` : n === 0 ? "сегодня" : n === 1 ? "завтра" : demoMode ? `через ${n} дн. после конца выписки` : `через ${n} дн.`;
       };
       const upcoming = rows.filter(x => x.s.next && !x.s.skipped).sort((a, b) => a.s.next < b.s.next ? -1 : a.s.next > b.s.next ? 1 : b.r.amount - a.r.amount).slice(0, 5);
       box.append(h("h3", {}, "Ближайшие списания"));
@@ -3849,7 +3854,7 @@
         h("span", { class: "samount" }, `${money(x.r.amount)} BYN`, h("small", { class: "syr muted" }, `≈ ${money(x.r.perMonth * 12)} в год`)));
       const solid = rows.filter(x => x.s.kind === "month" || x.s.kind === "days"), loose = rows.filter(x => !(x.s.kind === "month" || x.s.kind === "days"));
       // Платёж без ровного срока не называем «обязательным» или «подпиской»: это скорее частая покупка на одну сумму
-      [["subs", "Подписки и сервисы"], ["must", "Обязательные"], ["other", "Другие регулярные"]].forEach(([k, title]) => {
+      [["subs", "Связь, подписки и сервисы"], ["must", "Обязательные"], ["other", "Другие регулярные"]].forEach(([k, title]) => {
         const part = solid.filter(x => kindOf(x.r) === k);
         if (part.length) box.append(h("h4", { class: "skind" }, `${title} · ${part.length}`), h("ul", { class: "slist" }, part.map(liOf)));
       });
@@ -4096,7 +4101,7 @@
         h("span", { class: "muted" }, rent >= 50 ? `BYN (сейчас около ${money(rent)})` : "BYN")));   // 18 BYN «за жильё» бывает, когда аренда идёт переводами: не подсказываем бессмыслицу
       const rentNew = calc.rentNew != null ? calc.rentNew : NaN;
       const r = Planner.leftover({ income: x.income, savings: x.plan.amount, obligations: x.obligations, other: x.other, rentNow: rent, rentNew });
-      d.append(h("div", { class: "result" }, `Остаётся на жизнь: ${r.base < 0 ? "−" : ""}${money(Math.abs(r.base))} BYN в месяц`));
+      d.append(h("div", { class: "result" }, `В обычный месяц после накоплений и всех трат остаётся: ${r.base < 0 ? "−" : ""}${money(Math.abs(r.base))} BYN`));
       if (r.scenario != null) d.append(h("div", { class: "result" }, `Если жильё будет стоить ${money(rentNew)} BYN: ${r.scenario < 0 ? "−" : ""}${money(Math.abs(r.scenario))} BYN в месяц (${r.delta >= 0 ? "+" : "−"}${money(Math.abs(r.delta))}).`));
       const CALC_KEYS = ["income", "obligations", "other", "rentNew"];
       if (CALC_KEYS.some(k => calc[k] != null)) {
@@ -4284,7 +4289,7 @@
       const otherBox = $("reviewOther");
       otherBox.replaceChildren();
       if (other.size) {
-        otherBox.append(list.length ? "Ещё ждут разбора в других месяцах: " : "В этом месяце всё разобрано. Ещё ждут разбора: ");
+        otherBox.append(list.length ? "Ещё ждут уточнения в других месяцах: " : "В этом месяце всё уточнено. Ещё ждут уточнения: ");
         [...other.entries()].sort().forEach(([ym, n]) => {
           otherBox.append(h("button", { type: "button", onclick: () => { activeTab = ym; refreshTop(); renderReview(); renderNav(); renderAll(); renderBottom(); } }, `${ym ? monthTitle(ym) : "без даты"}: ${n}`), " ");
         });
@@ -4305,7 +4310,7 @@
       if (list.length > 1) {
         const allOps = list.reduce((a, g) => a + g.items.length, 0);
         const skipBox = h("div", { class: "skipall" });
-        const skipIntro = () => skipBox.replaceChildren(qchip("Всё оставшееся в «Прочее»", skipAsk, "Все оставшиеся группы попадут в «Прочее», это можно отменить", "ghost"));
+        const skipIntro = () => skipBox.replaceChildren(qchip("Остальное не уточнять (в «Прочее»)", skipAsk, "Все оставшиеся группы попадут в категорию «Прочее», это можно отменить", "ghost"));
         const skipAsk = () => skipBox.replaceChildren(h("b", {}, "Отправить всё оставшееся в «Прочее»? "),
           `${list.length} групп, ${allOps} ${opsWord(allOps)}, ${fmt(reviewSum)} BYN. Это можно отменить.`,
           h("div", { class: "chips" },
@@ -4475,7 +4480,7 @@
             h("div", { class: "muted" }, "Скорее всего, мелочь. Можно не разбирать: тогда она попадёт в «Прочее»."),
             h("div", { class: "chips" },
               qchip("Показать эти группы", () => { tailShown = true; reviewLimit = Math.max(reviewLimit, REVIEW_GROUPS); renderReview(); }),
-              qchip("Всё в «Прочее»", confirmTail, "Все эти группы попадут в «Прочее»", "ghost")));
+              qchip("Не уточнять (в «Прочее»)", confirmTail, "Все эти группы попадут в категорию «Прочее»", "ghost")));
         };
         const confirmTail = () => {
           tbox.replaceChildren(
@@ -5389,6 +5394,12 @@
     // Ссылка на просьбу (#wanted) сразу раскрывает список банков
     const openWanted = () => { if (typeof location !== "undefined" && location.hash === "#wanted") $("wantedMore").open = true; };
     openWanted(); if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("hashchange", openWanted);
+    // Ссылка «Вашего банка нет?» всегда раскрывает блок и показывает его (повторное нажатие его не закрывает)
+    $("wantedLink").addEventListener("click", e => {
+      e.preventDefault();
+      $("wantedMore").open = true;
+      const w = $("wanted"); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     $("wantedList").replaceChildren(...WANTED_BANKS.map(b => h("li", {}, b.name)));
     $("wantedOpen").addEventListener("click", () => showAnon(false));
     $("wantedCopy").addEventListener("click", async () => {
@@ -5599,7 +5610,7 @@
         const build = () => {
           views.recap = h("div", { class: "miniview" }, h("div", { class: "recap minirecap" },
             h("h3", {}, "Итог октября"), h("div", { class: "muted" }, "Сравнение со средним за 2 прошлых месяца"),
-            h("div", { class: "rsave" }, LANDING_RECAP.save, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")),
+            h("div", { class: "rsave" }, LANDING_RECAP.save, h("small", {}, "можно было бы сохранить, если бы выросшие траты были на обычном уровне")),
             h("ul", {}, LANDING_RECAP.lines.map(([k, t]) => h("li", { class: "k-" + k }, t))),
             (() => {
               // Полоса «куда ушли деньги»: 4 крупнейшие категории и «остальное»
