@@ -733,6 +733,35 @@ check("валюты: в операции виден оригинал и курс
   check("валюты: у валюты подпись, основная строка, одна строка даты и кнопка добавления", kids.length === 4);
 }
 vm.runInContext(`rates = {}; ratesSig = ""; applyRates(); txs = []; render();`, ctx);
+{
+  // Счёт в одной валюте без курса: итог в валюте счёта, «BYN» нигде не подписано, выдуманного курса нет
+  const usd = `[{ date: "2026-03-02", time: "09:00", amount: 500, orig: 500, cur: "USD", details: "ЗАРПЛАТА ООО РОМАШКА" }, { date: "2026-03-05", time: "10:00", amount: -10, orig: -10, cur: "USD", details: "ЗЮЗЯ МАРКЕТ Минск" }, { date: "2026-03-09", time: "11:00", amount: -30.5, orig: -30.5, cur: "USD", details: "ЗЮЗЯ МАРКЕТ Минск" }]`;
+  const byn = `[{ date: "2026-03-03", time: "12:00", amount: -100, details: "ЛЕСНАЯ АПТЕКА Минск" }, { date: "2026-03-04", time: "12:00", amount: 1200, details: "ЗАРПЛАТА ООО РОМАШКА" }]`;
+  vm.runInContext(`txs = ${usd}; header = { from: "2026-03-01", to: "2026-03-10", currency: "USD" }; rates = {}; ratesSig = ""; splits = {}; txRules = {}; demoMode = false; applyRates(); render();`, ctx);
+  const over = () => ["curBox", "recap", "summary", "insights"].map(id => (byId[id] ? textOf(byId[id]) : "")).join(" ");
+  check("валютный счёт без курса: единица показа это валюта счёта", vm.runInContext(`CUR === "USD" && curUnits.length === 1 && parked.length === 0`, ctx));
+  check("валютный счёт без курса: итог подписан USD, а не BYN", /40,50\s+USD/.test(over()) && !/BYN/.test(textOf(byId["summary"]) + textOf(byId["recap"])));
+  check("валютный счёт без курса: одна строка «курс недоступен»", !byId["curBox"].hidden && textOf(byId["curBox"]).includes("Курс на эту дату недоступен, итог в рублях не посчитан"));
+  check("валютный счёт без курса: суммы не пересчитаны и нет нулей", vm.runInContext(`txs.every(t => t.amount === t.orig && !t.rate) && statsFor(txs).total === 40.5`, ctx));
+  // Курс известен: пересчёт в рубли и рядом точный итог в валюте счёта
+  vm.runInContext(`rates = Rates.clean({ USD: 3 }); ratesSig = ""; applyRates(); render();`, ctx);
+  check("валютный счёт с курсом: показ в BYN", vm.runInContext(`CUR === "BYN" && statsFor(txs).total === 121.5`, ctx));
+  check("валютный счёт с курсом: рядом итог в валюте счёта", /потрачено 40,50\s+USD/.test(textOf(byId["curBox"])) && /пришло 500,00\s+USD/.test(textOf(byId["curBox"])) && !textOf(byId["curBox"]).includes("недоступен"));
+  // Смесь валют без курса: итоги по каждой валюте отдельно, ничего не складывается
+  vm.runInContext(`rates = {}; ratesSig = ""; applyRates(); txs = txs.concat(${byn}); render();`, ctx);
+  const box = () => textOf(byId["curBox"]);
+  check("смесь валют: две валюты, показана одна, вторая ждёт", vm.runInContext(`curUnits.join() === "BYN,USD" && CUR === "USD" && txs.length === 3 && parked.length === 2 && txs.every(t => t.cur === "USD")`, ctx));
+  check("смесь валют: итог по каждой валюте отдельно", /потрачено 40,50\s+USD/.test(box()) && /потрачено 100,00\s+BYN/.test(box()) && /пришло 1\s200,00\s+BYN/.test(box()));
+  check("смесь валют: суммы разных валют не сложены", vm.runInContext(`statsFor(txs).total === 40.5`, ctx) && !/140,50/.test(over()) && !/1\s700,00/.test(over()));
+  check("смесь валют: строка про курс есть", box().includes("Курс на эту дату недоступен, итог в рублях не посчитан"));
+  check("смесь валют: в файл разбора и в выгрузку идут все операции", vm.runInContext(`backupData().txs.length === 5`, ctx));
+  check("смесь валют: переключение на BYN", clickButton(byId["curBox"], "BYN") && vm.runInContext(`CUR === "BYN" && txs.length === 2 && parked.length === 3 && statsFor(txs).total === 100`, ctx) && !/USD/.test(textOf(byId["summary"])));
+  // Курс задан: смеси больше нет, всё в рублях одним итогом
+  vm.runInContext(`rates = Rates.clean({ USD: 3 }); ratesSig = ""; applyRates(); render();`, ctx);
+  check("смесь валют с курсом: всё в BYN одним итогом", vm.runInContext(`CUR === "BYN" && curUnits.length === 1 && parked.length === 0 && txs.length === 5 && statsFor(txs).total === 221.5`, ctx) && byId["curBox"].hidden);
+  vm.runInContext(`rates = {}; ratesSig = ""; applyRates(); txs = []; header = {}; render();`, ctx);
+  check("после очистки единица снова BYN", vm.runInContext(`CUR === "BYN" && parked.length === 0`, ctx));
+}
 check("валюты: без валютных операций карточки нет", vm.runInContext(`$("ratesBox").hidden`, ctx));
 // Передача на телефон: без операций в файле нет ни операций, ни выписок; правила и заметки остаются
 vm.runInContext(`txs = [{ date: "2026-03-05", amount: -10, balance: 1, details: "X" }]; txNotes = { a: "заметка" }; statements = [{ bank: "mtb" }]; header = { from: "2026-03-01" };`, ctx);

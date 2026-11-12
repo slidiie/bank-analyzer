@@ -214,5 +214,14 @@ check("«в N раз»", R.times(2) === "в 2 раза" && R.times(2.4) === "в 
   check("А5 кафе 4 BYN вместо 1000: «на 99% меньше», а не «на 100%»", fell && /4 BYN, на 99% меньше/.test(fell.text));
 }
 
+// Счёт в валюте без курса: суммы подписаны валютой счёта, «BYN» в тексте нет
+{
+  const items = [t("2026-09-05", -1000, "Продукты"), t("2026-10-05", -1000, "Продукты"), t("2026-10-07", -800, "Одежда")];
+  const r = R.monthRecap(Object.assign({ items, fullMonths: ["2026-09", "2026-10"], unit: "USD" }, base));
+  const all = r.lines.map(l => l.text).join(" | ");
+  check("единица USD: в выводах USD и нет BYN", /USD/.test(all) && !/BYN/.test(all));
+  const bad = R.monthRecap(Object.assign({ items, fullMonths: ["2026-09", "2026-10"], unit: "<b>" }, base));
+  check("мусор вместо единицы: остаётся BYN", /BYN/.test(bad.lines.map(l => l.text).join(" ")));
+}
 console.log(failed ? `\nОШИБКА: не прошло ${failed}` : "\nВсе проверки прошли");
 process.exit(failed ? 1 : 0);

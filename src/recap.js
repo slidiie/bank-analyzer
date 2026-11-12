@@ -77,6 +77,7 @@
 
   function monthRecap(opts) {
     const o = opts || {};
+    const U = typeof o.unit === "string" && /^[A-Z]{3}$/.test(o.unit) ? o.unit : "BYN";   // единица сумм в текстах: валюта счёта, если он не в рублях и курс не задан
     const items = (o.items || []).filter(t => t && t.date && Number.isFinite(t.amount));
     const full = (o.fullMonths || []).slice().sort();
     const unsorted = new Set(o.unsorted || ["Не разобрано"]);
@@ -125,7 +126,7 @@
     // Месяц почти без трат (отпуск, карта лежала без дела, выписка за часть месяца): сравнивать с обычным нечестно, «траты упали на 97%» было бы ложью
     let thinNote = "";
     if (month && base.length && usualTotal > 0 && total < usualTotal * THIN) {
-      thinNote = `В этом месяце трат всего ${money(total)} BYN при обычных около ${money(usualTotal)} BYN: возможно, карта почти не использовалась, поэтому с обычным месяцем не сравниваем.`;
+      thinNote = `В этом месяце трат всего ${money(total)} ${U} при обычных около ${money(usualTotal)} ${U}: возможно, карта почти не использовалась, поэтому с обычным месяцем не сравниваем.`;
       base.length = 0; baseYms.length = 0; usual.clear();
     }
     const usualWord = base.length === 1 ? `, чем в ${monthNom(baseYms[0]).replace(/ь$/, "е").replace(/й$/, "е").replace(/т$/, "те")}` : " обычного";
@@ -135,11 +136,11 @@
     if (month && base.length && usualTotal > 0) {
       const d = (total - usualTotal) / usualTotal;
       const how = Math.abs(d) < 0.03 ? "почти как обычно" : `на ${Math.round(Math.abs(d) * 100)}% ${d > 0 ? "больше" : "меньше"}${usualWord}`;
-      lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} BYN: ${how}`, short: `Траты: ${how}` });
+      lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} ${U}: ${how}`, short: `Траты: ${how}` });
     } else if (month) {
-      lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} BYN, в среднем ${money(total / days)} BYN в день` });
+      lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} ${U}, в среднем ${money(total / days)} ${U} в день` });
     } else {
-      lines.push({ kind: "total", value: total, text: `За ${days} ${plural(days, "день", "дня", "дней")} потрачено ${money(total)} BYN, в среднем ${money(total / days)} BYN в день` });
+      lines.push({ kind: "total", value: total, text: `За ${days} ${plural(days, "день", "дня", "дней")} потрачено ${money(total)} ${U}, в среднем ${money(total / days)} ${U} в день` });
     }
 
     // 1б. Доход и траты: прибавка к доходу уходит в траты? (без советов, только арифметика по выписке)
@@ -157,12 +158,12 @@
       const extraPay = bigN(month) > Math.max(...baseYms.map(bigN));
       if (incUsual >= INC_MIN && dInc >= INC_DIFF && dInc / incUsual >= INC_GROW && !extraPay) {
         const pi = Math.round(dInc / incUsual * 100), share = Math.max(0, dSpend) / dInc;
-        const head = `Доход вырос на ${pi}% (+${money(dInc)} BYN)`;
+        const head = `Доход вырос на ${pi}% (+${money(dInc)} ${U})`;
         let tail;
-        if (dSpend / usualTotal < 0.03) tail = dSpend < 0 ? `, а траты снизились на ${money(-dSpend)} BYN: вся прибавка осталась` : ", а траты почти не изменились: вся прибавка осталась";
-        else if (share > 1.05) tail = `, а траты выросли сильнее: на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN), это больше всей прибавки`;
-        else if (share >= 0.9) tail = `, траты выросли почти на столько же (+${money(dSpend)} BYN): почти вся прибавка ушла в расходы`;
-        else tail = `, траты выросли на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} BYN): на расходы ушло ${Math.round(share * 100)}% прибавки`;
+        if (dSpend / usualTotal < 0.03) tail = dSpend < 0 ? `, а траты снизились на ${money(-dSpend)} ${U}: вся прибавка осталась` : ", а траты почти не изменились: вся прибавка осталась";
+        else if (share > 1.05) tail = `, а траты выросли сильнее: на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} ${U}), это больше всей прибавки`;
+        else if (share >= 0.9) tail = `, траты выросли почти на столько же (+${money(dSpend)} ${U}): почти вся прибавка ушла в расходы`;
+        else tail = `, траты выросли на ${Math.round(dSpend / usualTotal * 100)}% (+${money(dSpend)} ${U}): на расходы ушло ${Math.round(share * 100)}% прибавки`;
         lines.push({ kind: "income", value: dInc, text: head + tail, short: `Доход вырос на ${pi}%` });
       }
     }
@@ -180,7 +181,7 @@
       for (const g of grew.slice(0, 2)) {
         const how = g.ratio == null ? (base.length === 1 ? `${usualWord.replace(/^, чем в /, "в ")} почти не было` : "обычно таких трат почти нет")
           : g.ratio >= 1.9 ? `${times(g.ratio)} больше${usualWord}` : `на ${Math.round((g.ratio - 1) * 100)}% больше${usualWord}`;
-        lines.push({ kind: "grew", cat: g.cat, value: g.cur, text: `${g.cat}: ${money(g.cur)} BYN, ${how}`, short: `${g.cat}: ${how}` });
+        lines.push({ kind: "grew", cat: g.cat, value: g.cur, text: `${g.cat}: ${money(g.cur)} ${U}, ${how}`, short: `${g.cat}: ${how}` });
       }
     }
 
@@ -190,14 +191,14 @@
     const subs = (o.regular || []).filter(r => r && subsCats.has(r.cat) && r.perMonth > 0 && alive(r));
     if (subs.length) {
       const s = subs.reduce((a, r) => a + r.perMonth, 0);
-      lines.push({ kind: "subs", value: s, text: `Связь и подписки: ${money(s)} BYN в месяц, это ${money(s * 12)} BYN в год (${subs.length} ${plural(subs.length, "платёж", "платежа", "платежей")})`, short: `Связь и подписки: ${subs.length} регулярных ${plural(subs.length, "платёж", "платежа", "платежей")}` });
+      lines.push({ kind: "subs", value: s, text: `Связь и подписки: ${money(s)} ${U} в месяц, это ${money(s * 12)} ${U} в год (${subs.length} ${plural(subs.length, "платёж", "платежа", "платежей")})`, short: `Связь и подписки: ${subs.length} регулярных ${plural(subs.length, "платёж", "платежа", "платежей")}` });
     }
 
     // 4. Мелкие покупки: много мелочи незаметно складывается в заметную сумму
     const small = list.filter(t => t.amount < 0 && -t.amount <= SMALL && !unsorted.has(t.cat || "Не разобрано") && t.cat !== "Комиссии банка");
     const smallSum = small.reduce((a, t) => a - t.amount, 0);
     if (small.length >= SMALL_MIN_N && smallSum >= SMALL_MIN_SUM) {
-      lines.push({ kind: "small", value: smallSum, text: `Мелкие покупки до ${SMALL} BYN: ${small.length} ${plural(small.length, "штука", "штуки", "штук")} на ${money(smallSum)} BYN`, short: `Мелкие покупки до ${SMALL} BYN: ${small.length} ${plural(small.length, "штука", "штуки", "штук")}` });
+      lines.push({ kind: "small", value: smallSum, text: `Мелкие покупки до ${SMALL} ${U}: ${small.length} ${plural(small.length, "штука", "штуки", "штук")} на ${money(smallSum)} ${U}`, short: `Мелкие покупки до ${SMALL} ${U}: ${small.length} ${plural(small.length, "штука", "штуки", "штук")}` });
     }
 
     // 5. Сколько осталось бы, если вернуть выросшие гибкие траты к обычному уровню
@@ -206,14 +207,14 @@
     if (save >= MIN_DIFF) {
       const q = flex.map(g => `«${g.cat}»`), more = flex.length - 2;
       const names = flex.length <= 2 ? q.join(" и ") : `${q[0]}, ${q[1]} и ещё ${more} ${plural(more, "категорию", "категории", "категорий")}`;
-      lines.push({ kind: "save", value: save, text: `Если вернуть ${names} к обычному уровню, останется +${money(save)} BYN за месяц` });
+      lines.push({ kind: "save", value: save, text: `Если вернуть ${names} к обычному уровню, останется +${money(save)} ${U} за месяц` });
     }
 
     // Что заметно уменьшилось: тоже полезно знать (без оценок «хорошо/плохо»)
     if (base.length && lines.length < 4) {
       const fell = [...usual].filter(([c, u]) => !unsorted.has(c) && !fixed.has(c) && u >= MIN_USUAL && (cur.get(c) || 0) <= u / GROW && (cur.get(c) || 0) > 0 && u - (cur.get(c) || 0) >= MIN_DIFF)
         .map(([c, u]) => ({ cat: c, cur: cur.get(c) || 0, usual: u })).sort((a, b) => (b.usual - b.cur) - (a.usual - a.cur))[0];
-      if (fell) lines.push({ kind: "fell", cat: fell.cat, value: fell.cur, text: `${fell.cat}: ${money(fell.cur)} BYN, на ${Math.min(99, Math.round((1 - fell.cur / fell.usual) * 100))}% меньше${usualWord}`, short: `${fell.cat}: на ${Math.min(99, Math.round((1 - fell.cur / fell.usual) * 100))}% меньше${usualWord}` });
+      if (fell) lines.push({ kind: "fell", cat: fell.cat, value: fell.cur, text: `${fell.cat}: ${money(fell.cur)} ${U}, на ${Math.min(99, Math.round((1 - fell.cur / fell.usual) * 100))}% меньше${usualWord}`, short: `${fell.cat}: на ${Math.min(99, Math.round((1 - fell.cur / fell.usual) * 100))}% меньше${usualWord}` });
     }
 
     // Запасные выводы, если строк мало (например, в выписке один месяц): где чаще всего платили и самая крупная категория
@@ -221,7 +222,7 @@
       // Жильё и комиссии почти не зависят от выбора, поэтому называем крупнейшую из остальных
       const named = new Set(lines.map(l => l.cat).filter(Boolean));
       const top = [...cur].filter(([c]) => !unsorted.has(c) && !fixed.has(c) && !named.has(c)).sort((a, b) => b[1] - a[1])[0];
-      if (top) lines.push({ kind: "top", cat: top[0], value: top[1], text: `Больше всего из повседневных трат ушло на «${top[0]}»: ${money(top[1])} BYN, ${Math.round(top[1] / total * 100)}% всех трат` });
+      if (top) lines.push({ kind: "top", cat: top[0], value: top[1], text: `Больше всего из повседневных трат ушло на «${top[0]}»: ${money(top[1])} ${U}, ${Math.round(top[1] / total * 100)}% всех трат` });
     }
     if (lines.length < 3) {
       const freq = new Map();
@@ -229,7 +230,7 @@
         const f = freq.get(t.name) || { n: 0, s: 0 }; f.n++; f.s -= t.amount; freq.set(t.name, f);
       });
       const often = [...freq].sort((a, b) => b[1].n - a[1].n || b[1].s - a[1].s)[0];
-      if (often && often[1].n >= 4) lines.push({ kind: "often", value: often[1].s, text: `Чаще всего платили в «${nice(often[0])}»: ${often[1].n} ${plural(often[1].n, "раз", "раза", "раз")} на ${money(often[1].s)} BYN` });
+      if (often && often[1].n >= 4) lines.push({ kind: "often", value: often[1].s, text: `Чаще всего платили в «${nice(often[0])}»: ${often[1].n} ${plural(often[1].n, "раз", "раза", "раз")} на ${money(often[1].s)} ${U}` });
     }
 
     // Доля дохода, которая не потрачена (в процентах от дохода: так понятнее, чем в рублях). Без «норм» и советов, только факт и сравнение со своим обычным
@@ -240,10 +241,10 @@
       if (incCur >= INC_MIN) {
         const left = incCur - total, pct = Math.round(Math.abs(left) / incCur * 100);
         let text;
-        if (left < 0 && pct === 0) text = `Потрачено почти столько же, сколько пришло: на ${money(-left)} BYN больше дохода`;
-        else if (left < 0) text = `Потрачено на ${pct}% больше, чем пришло: ${money(-left)} BYN сверх дохода`;
+        if (left < 0 && pct === 0) text = `Потрачено почти столько же, сколько пришло: на ${money(-left)} ${U} больше дохода`;
+        else if (left < 0) text = `Потрачено на ${pct}% больше, чем пришло: ${money(-left)} ${U} сверх дохода`;
         else if (pct === 0) text = "Почти весь доход ушёл в траты: не потрачено меньше 1%";
-        else text = `Не потрачено ${pct}% дохода (${money(left)} BYN)`;
+        else text = `Не потрачено ${pct}% дохода (${money(left)} ${U})`;
         if (month && base.length) {
           const incU = baseYms.reduce((a, ym) => a + incIn(ym), 0) / base.length;
           if (incU >= INC_MIN) {
