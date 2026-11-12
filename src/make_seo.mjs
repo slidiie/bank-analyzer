@@ -62,7 +62,8 @@ const shell = ({ title, desc, url, body }) => `<!doctype html>
 <meta property="og:url" content="${SITE}${url}">
 <meta property="og:image" content="${SITE}/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <style>${CSS}</style>
 </head>
 <body>

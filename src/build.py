@@ -37,7 +37,7 @@ assert '/*FONTS*/' in s
 s = s.replace('/*FONTS*/', fonts, 1)
 
 # PWA: манифест и иконки подключаются только в сборке (в src/analyzer.html их нет: файлов рядом нет)
-pwa = chr(10).join('  ' + t if i else t for i, t in enumerate(['<link rel="manifest" href="manifest.webmanifest">', '<link rel="icon" type="image/png" href="icons/icon-192.png">', '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">',
+pwa = chr(10).join('  ' + t if i else t for i, t in enumerate(['<link rel="manifest" href="manifest.webmanifest">', '<link rel="icon" href="favicon.ico" sizes="any">', '<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">', '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">',
        '<meta name="mobile-web-app-capable" content="yes">', '<meta name="apple-mobile-web-app-capable" content="yes">',
        '<meta name="apple-mobile-web-app-title" content="Fernwood">']))
 assert '<!--PWA-->' in s

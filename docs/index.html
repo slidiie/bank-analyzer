@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-Xonxl0vq7YXKTysDzHOnSGg38uwTHXiWAK8BiXEU6ZQ=' 'sha256-orUzatCPZva68+qXYuB997GqzqcI34vQGhSuvTJ7b5k=' 'sha256-N0sEuaZMKIb425V/FqF3bCP6fQfRCFToEIiUCgSgKlQ=' 'sha256-XnUWKV1vGqFz36iBOUKYvhEF7b5OWbz5+R/M7gKs/10=' 'sha256-YBs7nLpi6YM/hh54eNHFvvoiqGBtUG6z2gpmFPC63vc=' 'sha256-ILGzCYWWsFQtnDUt9+QHjQMzH+v43N9dgdQtGb2Ni5Q=' 'sha256-I68KL/bmWLKzJL9/hqtCdntOJuRXPSnrZqcu2zDCUp0=' 'sha256-aTlkI2tdguLtZ2xxfbe7IyAjmKO7KhaqxNNR3qO+NYU=' 'sha256-mr/OJwS9h8Ym5ErwFk15T8vK/392caQC1C3CHcE3umI=' 'sha256-MKrdgZNp60dRS876VWaSeSKqdi3u/RPA8mcRBmmX5do=' 'sha256-hSe1pkViJB2HZSdXAWsFAO/Yn+Wp4HNmOn/Ce/qPUbA=' 'sha256-IlPIYyBwQQV9G+B3AVjhVErO0QdFdf3H32tIF0HVfKw=' 'sha256-zEJ6p8H400yZigL3faRHU+/lskDvad0xF63VxTC+fKs=' 'sha256-wlWH/r8Qchw/xG89Fl4shRQnv6MUb+SNe0GQ9YFgKiM=' 'sha256-alAsJpY36FGj0vUpBOaAEeXAjswVolje1RUdnKEqntg=' 'sha256-NYG1gsMZF9vBDQ9yLk3Dstkqy7+S1+azSX0QMOkms9s=' 'sha256-k/zgv4LeFXP0KYKZNZm+lC2M8h9r9xxilXQFNxb3Slo=' 'sha256-+IDt37LNBVMhvgXGLmin83CKpiMvpCYCu1l4990AyxQ=' 'sha256-OG5rgUZzSRtpB/PCsnQoskCLdmHzdYBkiosQuFv8EGc=' 'sha256-bchOgipyrbDngSf73UelAe1s/ZxBqARAxiku5N6Fqug=' 'sha256-mDDk8/rH4uBRy2rff7u9gek2JPQVVVJXmz6bftdB4Yo=' 'sha256-N7go/Xkst1t+zzifsNwDJwWtskIGUumnF/XrtAkIBsw=' 'sha256-azHbAHrurlDmoqmNITbFVyyEkPnCKxW6Zcnj0MBrVLc=' 'sha256-GIUaWNvrAyXjCKWjI8JAQa7wongKU0B6vAvav59XPPo=' 'sha256-PJh5YuxVy8wEs+pK0V4wIWASFK7C+R2eOnF2QMhKtUA=' 'sha256-9C4VJwLyfscztXszevFM3+KyUr72DqcHvQIdXZDqYMo=' 'sha256-HegLQXOuwfTRLLhW28y8/t4oAwCJMfDHMXm1Zw5NlDE=' 'sha256-sykYnFTDHYn10QKTP5Lzr/EC1doMWmeevlL8idJ90Go=' 'sha256-m3bbBXKrlOOrx81F3gzD69LUEVQpQwppAiMEYi7TW5s=' 'sha256-kr/9GLAXongJSNHwnf1noaxsxcZtFBd7u8cLvug+jh4=' 'sha256-JRMMaFztfeSNMI5ZeNn7sav5VJukWuyi/6VTIE01940=' 'sha256-AXS4I6U8Jo4CyHAGuIIqB7MgRWylxTLvO9mHiVSf+9Y=' 'sha256-hWZqgkjd2382wud2lWbaaIRrSRMg+/zecG0aIBzgAh8=' 'sha256-8hG73LqReGiQvuKLmylXM8nDk2ZiZ0x/swY1QjQeB0k=' 'sha256-T5RSuBgnBzcounur15Ym0By3fx7Yw/NAHj34GQWMIzA='; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: https://bankanalyzer.goatcounter.com; manifest-src 'self'; worker-src blob: 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -669,6 +670,23 @@
       .suggest { max-width: calc(100vw - 2rem); }
       .modalcard { padding: 1rem; }
       input[type=text], select { max-width: 100%; }
+      /* «Все операции» на телефоне: каждая операция карточкой на всю ширину (раньше четыре колонки сжимали описание до узкой полоски и кнопки ломались по буквам) */
+      #all { overflow-x: visible; }
+      #all table, #all tbody { display: block; width: 100%; }
+      #all thead { display: block; }
+      #all thead tr { display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: center; border-bottom: 1px solid var(--line); padding: .2rem 0; }
+      #all thead th { border: 0; padding: 0; display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+      #all thead th:last-child { display: none; }
+      #all tbody tr[data-tx] { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .3rem .75rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+      #all tbody tr[data-tx] > td { border: 0; padding: 0; min-width: 0; }
+      #all tbody tr[data-tx] > td:nth-child(1) { grid-column: 1; grid-row: 1; color: var(--muted); }
+      #all tbody tr[data-tx] > td:nth-child(2) { grid-column: 2; grid-row: 1; text-align: right; font-weight: 600; white-space: nowrap; }
+      #all tbody tr[data-tx] > td:nth-child(3), #all tbody tr[data-tx] > td:nth-child(4) { grid-column: 1 / -1; }
+      #all tbody tr[data-tx] > td:nth-child(4) { overflow-wrap: anywhere; }
+      #all tbody tr:not([data-tx]) { display: block; padding: .6rem 0; }
+      #all tbody tr:not([data-tx]) > td { display: block; border: 0; padding: 0; }
+      #all .opnote, #all .opsplit .frow { width: 100%; }
+      #all .opnote .qchip, #all .opsplit > .qchip { white-space: nowrap; }
     }
     /* На самых узких экранах (320 px) полоска в таблице трат отнимает место у названия категории: прячем её, цифры остаются */
     @media (max-width: 359px) { #summary td:nth-child(4), #summary th:nth-child(4) { display: none; } }

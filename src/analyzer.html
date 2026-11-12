@@ -663,6 +663,23 @@
       .suggest { max-width: calc(100vw - 2rem); }
       .modalcard { padding: 1rem; }
       input[type=text], select { max-width: 100%; }
+      /* «Все операции» на телефоне: каждая операция карточкой на всю ширину (раньше четыре колонки сжимали описание до узкой полоски и кнопки ломались по буквам) */
+      #all { overflow-x: visible; }
+      #all table, #all tbody { display: block; width: 100%; }
+      #all thead { display: block; }
+      #all thead tr { display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: center; border-bottom: 1px solid var(--line); padding: .2rem 0; }
+      #all thead th { border: 0; padding: 0; display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+      #all thead th:last-child { display: none; }
+      #all tbody tr[data-tx] { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .3rem .75rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+      #all tbody tr[data-tx] > td { border: 0; padding: 0; min-width: 0; }
+      #all tbody tr[data-tx] > td:nth-child(1) { grid-column: 1; grid-row: 1; color: var(--muted); }
+      #all tbody tr[data-tx] > td:nth-child(2) { grid-column: 2; grid-row: 1; text-align: right; font-weight: 600; white-space: nowrap; }
+      #all tbody tr[data-tx] > td:nth-child(3), #all tbody tr[data-tx] > td:nth-child(4) { grid-column: 1 / -1; }
+      #all tbody tr[data-tx] > td:nth-child(4) { overflow-wrap: anywhere; }
+      #all tbody tr:not([data-tx]) { display: block; padding: .6rem 0; }
+      #all tbody tr:not([data-tx]) > td { display: block; border: 0; padding: 0; }
+      #all .opnote, #all .opsplit .frow { width: 100%; }
+      #all .opnote .qchip, #all .opsplit > .qchip { white-space: nowrap; }
     }
     /* На самых узких экранах (320 px) полоска в таблице трат отнимает место у названия категории: прячем её, цифры остаются */
     @media (max-width: 359px) { #summary td:nth-child(4), #summary th:nth-child(4) { display: none; } }
