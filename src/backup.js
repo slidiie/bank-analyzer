@@ -68,6 +68,8 @@
     for (const k of ["from", "to"]) o[k] = typeof s[k] === "string" && DATE.test(s[k]) ? s[k] : null;
     for (const k of ["count", "added", "skipped"]) o[k] = num(s[k]) || 0;
     if (typeof s.currency === "string" && /^[A-Z]{3}$/.test(s.currency)) o.currency = s.currency;
+    // Банк не из списка: как проверено чтение (итоги, остатки, не сошлось, проверить нечем)
+    if (s.universal === true) { o.universal = true; if (typeof s.proof === "string" && /^(totals|balance|mismatch|none)$/.test(s.proof)) o.proof = s.proof; }
     if (isObj(s.check)) {
       const c = {};
       for (const k of Object.keys(s.check)) {

@@ -18,6 +18,7 @@
   const AL = need("AlfaParser", "./alfa.js");
   const SB = need("SberParser", "./sber.js");
   const BI = need("BelinvestParser", "./belinvest.js");
+  const UN = need("Universal", "./universal.js");
 
   const MTB = {
     id: "mtb",
@@ -111,6 +112,10 @@
   // Порядок важен: сначала более узкие признаки (у МТБ признак «Период выписки» есть и у Приорбанка)
   const BANKS = [ALFA, SBER, VTBANK, BELARUSBANK, BELINVEST, PRIOR, MTB];
 
+  // Банк не из списка: выписку читает universal.js (колонки находятся сами, результат проверяется сверкой).
+  // В BANKS его нет: это не «поддерживаемый банк», а запасной путь.
+  const OTHER = { id: "other", name: "Банк не из списка", validate: (txs, header) => UN.validate(txs, header) };
+
   // CSV-выписки (кроме PDF): пока только Приорбанк. text: уже расшифрованный текст файла.
   const CSV_BANKS = [{ bank: PRIOR, detect: PRCSV.detect, parse: PRCSV.parse }];
 
@@ -152,7 +157,14 @@
   }
 
   const api = {
-    BANKS, realDate, balanceGap,
+    BANKS, OTHER, realDate, balanceGap,
+    // Банк по идентификатору из шапки выписки (в том числе «не из списка»); null, если такого нет
+    byId: id => id === OTHER.id ? OTHER : BANKS.find(b => b.id === id) || null,
+    // Результат универсального чтения (Universal.guess) → та же форма, что у parse(): { bank, header, txs }
+    fromUniversal(g) {
+      const name = g.header.bankName ? g.header.bankName.slice(0, 40) : OTHER.name;
+      return { bank: Object.assign({}, OTHER, { name }), header: g.header, txs: sieve(g.header, g.txs) };
+    },
     // Найти банк по выписке; null, если ни один не подошёл
     detect: pages => BANKS.find(b => b.detect(pages)) || null,
     // CSV-выписка: { bank, header, txs } или null, если формат не узнан
