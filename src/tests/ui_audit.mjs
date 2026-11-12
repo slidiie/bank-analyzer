@@ -187,8 +187,13 @@ for (const w of WIDTHS) for (const theme of THEMES) {
     await check('демо: «Все операции» с поиском', tag); await shot('все-операции-поиск', tag);
     await ev(`(() => { const q = document.querySelector(".fq"); if (q) { q.value = ""; q.dispatchEvent(new Event("input", { bubbles: true })); } })()`);
   } else note('демо', 'сценарий', 'нет кнопки «Все операции»', tag);
-  if (await ev(clickText('button', '/Своя категория/'))) { await wait(500); await check('демо: «Своя категория»', tag); await shot('своя-категория', tag); }
-  else note('демо', 'сценарий', 'нет кнопки «Своя категория»', tag);
+  // Выбор категории (плитки и поиск) и «Новая категория» (полный экран на телефоне, окно на ПК)
+  if (await ev(`(() => { const b = document.querySelector("#all .catbtn"); if (!b) return false; b.click(); return true; })()`)) {
+    await wait(500); await check('демо: выбор категории', tag); await shot('выбор-категории', tag);
+    if (await ev(clickText('button', '/Создать/'))) { await wait(500); await check('демо: «Новая категория»', tag); await shot('новая-категория', tag); }
+    else note('демо', 'сценарий', 'нет плитки «Создать»', tag);
+    await ev(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); ["catSheet", "newCatSheet"].forEach(id => { document.getElementById(id).hidden = true; })`); await wait(200);
+  } else note('демо', 'сценарий', 'нет кнопки выбора категории', tag);
   // Печать: обе темы печатаются светлыми
   await send('Emulation.setEmulatedMedia', { media: 'print', features: [{ name: 'prefers-color-scheme', value: theme }] }); await wait(400);
   const bgL = await ev(`(() => { const c = document.createElement("canvas").getContext("2d"); c.fillStyle = getComputedStyle(document.body).backgroundColor; c.fillRect(0, 0, 1, 1); const d = c.getImageData(0, 0, 1, 1).data; return d[3] ? (d[0] + d[1] + d[2]) / 3 : 255; })()`);

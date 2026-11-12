@@ -551,7 +551,7 @@ check("мастер: снятая операция осталась в груп�
 clickButton(byId["review"], "Оставить без категории");
 const rvE = textOf(byId["review"]);
 check("мастер: «Оставить без категории» ведёт к следующей группе и ничего не назначает", rvE.includes("ЕРИП") && rvE.includes("Пропущено: 1 операция") && vm.runInContext(`Object.keys(txRules).length === 1 && Object.keys(userRules).length === 0`, ctx));
-check("мастер: у ЕРИП подсказанные категории и «Ещё категории» с поиском", rvE.includes("Связь и подписки") && rvE.includes("Аренда и жильё") && rvE.includes("Ещё категории") && rvE.includes("Своя категория"));
+check("мастер: у ЕРИП подсказанные категории и «Ещё категории» с поиском", rvE.includes("Связь и подписки") && rvE.includes("Аренда и жильё") && rvE.includes("Ещё категории") && rvE.includes("Создать"));
 check("мастер: группа запоминается для будущих выписок", rvE.includes("к будущим выпискам"));
 clickButton(byId["review"], "Связь и подписки");
 clickButton(byId["review"], "Подтвердить выбор");
@@ -646,7 +646,7 @@ vm.runInContext(`
 check("много групп: на экране одна, прогресс «1 из 12»", textOf(byId["review"]).includes("1 из 12") && textOf(byId["review"]).includes("Все группы (12)"));
 vm.runInContext(`wizKey = [...txs].sort((a, b) => b.amount - a.amount)[0] && Cat.merchantKey(txs[11]); renderReview();`, ctx);
 check("мелкая группа: подсказка, что её можно оставить без категории", textOf(byId["review"]).includes("Меньше 1% трат"));
-clickButton(byId["reviewFoot"], "Остальное не уточнять");
+clickButton(byId["reviewFoot"], "Всё остальное в «Прочее»");
 check("остальное: перед применением просит подтверждение", textOf(byId["reviewFoot"]).includes("Отправить всё оставшееся в «Прочее»?"));
 clickButton(byId["reviewFoot"], "Да, в «Прочее»");
 check("остальное: группы ушли в «Прочее», есть плашка отмены", vm.runInContext(`Object.values(userRules).filter(v => v === "Прочее").length === 12`, ctx) && textOf(byId["undoBar"]).includes("отправлены в «Прочее»"));
@@ -878,6 +878,19 @@ check("азарт: нейтральная строка и никаких «по�
     render();`, ctx);
   check("аудит: «обычно» для категории из 2 месяцев из 5 не выдумывается, для ежемесячной 500", vm.runInContext(`usualMonthly("Одежда и покупки") === null && usualMonthly("Продукты") === 500`, ctx));
   vm.runInContext(reset + `header = {}; txs = []; render();`, ctx);
+}
+// ---- Единый стиль (13.11): один выбор категории, создание из разбора, поступления плитками ----
+{
+  const reset = `userRules = {}; txRules = {}; budgets = {}; statements = []; activeTab = "all"; allCat = "all"; summaryView = "table";`;
+  vm.runInContext(reset + `header = { from: "2026-10-01", to: "2026-10-31" }; customCats = []; customColors = {};
+    txs = [{ date: "2026-10-05", time: "10:00:00", amount: -40, mcc: null, details: "Загадочный магазин MCC 5999", balance: 1 }]; render();`, ctx);
+  check("стиль: код MCC не показывается в описании операции", vm.runInContext(`cleanDetails("Оплата MCC 5411 Минск") === "Оплата Минск" && cleanDetails("Просто текст") === "Просто текст"`, ctx));
+  vm.runInContext(`var __made = null; openNewCat("Спорт", c => { __made = c; }, null); document.getElementById("ncCreate").onclick();`, ctx);
+  check("стиль: «Новая категория» создаёт категорию, значок подбирается по названию, цвет запоминается", vm.runInContext(`__made === "Спорт" && customCats.includes("Спорт") && customIcons["Спорт"] === "dumbbell" && CUSTOM_KEYS.includes(customColors["Спорт"]) && catVar("Спорт") === "--cat-" + customColors["Спорт"]`, ctx));
+  vm.runInContext(`var __dup = null; openNewCat("спорт", c => { __dup = c; }, null); document.getElementById("ncCreate").onclick();`, ctx);
+  check("стиль: дубль названия выбирает существующую категорию, а не создаёт вторую", vm.runInContext(`__dup === "Спорт" && customCats.filter(c => c === "Спорт").length === 1`, ctx));
+  vm.runInContext(`openCatPicker({ title: "Тест", current: "", onPick: c => {} });`, ctx);
+  check("стиль: окно выбора категории: плитки и «＋ Создать»", /Продукты/.test(textOf(byId["cpBody"])) && /Создать/.test(textOf(byId["cpBody"])));
 }
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
