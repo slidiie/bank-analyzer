@@ -329,7 +329,7 @@ vm.runInContext(`
   header = { from: "2026-09-01", to: "2026-10-31" };
   activeTab = "all"; allCat = "all"; render();
 `, ctx);
-check("разбор: на вкладке «За весь период» видны оба месяца", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
+check("разбор: на вкладке «За весь период» видны оба месяца", textOf(byId["review"]).toLowerCase().includes("сентябрь неизвестно") && textOf(byId["review"]).toLowerCase().includes("октябрь неизвестно"));
 clickButton(byId["summary"], "Сен");
 check("разбор: на вкладке «Сентябрь» только сентябрьские", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && !textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("разбор: есть ссылка на неразобранные в октябре", textOf(byId["reviewOther"]).includes("Октябрь 2026: 1"));
@@ -338,7 +338,7 @@ check("разбор: в навигации счётчик по выбранно�
 clickButton(byId["reviewOther"], "Октябрь");
 check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("плашка разбора стоит под итогами, вкладки внизу", html.indexOf('id="summary"') < html.indexOf('id="reviewBanner"') && html.indexOf('id="reviewBanner"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
-check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Можно уточнить") && textOf(byId["reviewBanner"]).length < 200 && textOf(byId["reviewBanner"]).includes("Уточнить"));
+check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Осталось уточнить") && textOf(byId["reviewBanner"]).length < 200 && textOf(byId["reviewBanner"]).includes("Уточнить"));
 check("есть нижние вкладки «Все операции» и «Разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Уточнить ("));
 vm.runInContext(`bottomTab = null; render();`, ctx);
 check("если есть неразобранное, открыта вкладка «Нужно разобрать»", byId["reviewSection"].hidden === false && byId["allPanel"].hidden === true);
@@ -516,7 +516,14 @@ byId["clearBtn"].listeners.click[0]();
 check("«Убрать выписки»: операции и отчёт убраны, разбор остался", vm.runInContext(`txs.length === 0 && statements.length === 0`, ctx) && byId["report"].hidden === true);
 
 
-// ---- «Нужно разобрать»: быстрые категории, подсказки, ключи памяти, разбор по одной ----
+// ---- Мастер «Уточнить»: одна группа на экране, плитки категорий, «Подтвердить выбор» ----
+// Находит галочки операций в мастере
+function findAll(root, pred) {
+  const out = [], stack = [root];
+  while (stack.length) { const n = stack.pop(); if (typeof n === "string") continue; if (pred(n)) out.push(n); stack.push(...n.children); }
+  return out;
+}
+const wizChecks = () => findAll(byId["review"], n => n.tag === "input" && n.attrs.type === "checkbox");
 vm.runInContext(`
   txs = [
     { date: "2026-09-07", time: "10:00:00", amount: -50, mcc: null, details: "Оплата услуг ЕРИП", balance: 1 },
@@ -525,22 +532,47 @@ vm.runInContext(`
     { date: "2026-10-12", time: "12:00:00", amount: -75, mcc: null, details: "Перевод P2P SBERBANK", balance: 4 },
   ];
   header = { from: "2026-09-01", to: "2026-10-31" };
-  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+  userRules = {}; txRules = {}; tailUndo.length = 0; deferred.clear(); activeTab = "all"; allCat = "all"; render();
 `, ctx);
-const rvQuick = textOf(byId["review"]);
-check("переводы: компактная панель «в пару нажатий», кнопки «Это мои деньги» и «Перевод человеку»", rvQuick.includes("Переводы: 1 группа") && rvQuick.includes("Это мои деньги") && rvQuick.includes("Перевод человеку") && rvQuick.includes("Запомнить счета для будущих"));
-clickButton(byId["review"], "Подробно"); clickButton(byId["review"], "Полная карточка");
 const rv = textOf(byId["review"]);
-check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
-check("разбор: на карточке видны последние операции и совет про приложение банка", rv.includes("Последние:") && rv.includes("07.10 · 50,00") && html.includes("в приложении банка"));
-check("разбор: есть быстрые категории и «Пропустить»", rv.includes("Связь и подписки") && rv.includes("Пропустить") && rv.includes("Ещё…"));
-check("разбор: переводы без получателя с разными суммами идут по одной", rv.includes("отметьте каждую операцию") && rv.includes("12.10") && rv.includes("09.10"));
-check("разбор: пояснение короткое, подробности под «Как это работает»", html.includes("Как это работает") && !html.includes("Непонятное и мелкое отправляйте"));
-clickButton(byId["review"], "Подарки");
-check("разбор: клик по быстрой категории в режиме «по одной» применяется только к этой операции", vm.runInContext(`Object.keys(txRules).length === 1 && Object.values(txRules)[0] === "Подарки"`, ctx));
+check("мастер: на экране одна группа с прогрессом и двумя главными кнопками", rv.includes("1 из 2") && rv.includes("Подтвердить выбор") && rv.includes("Оставить без категории") && rv.includes("Все группы (2)"));
+check("мастер: у перевода плитки «Мои деньги», «Человеку», «Магазин или услуга»", rv.includes("Мои деньги") && rv.includes("Человеку") && rv.includes("Магазин или услуга"));
+check("мастер: перевод без получателя не запоминается на будущее, операции видны с датами", rv.includes("Получатель в выписке не указан") && rv.includes("12.10") && rv.includes("09.10") && wizChecks().length === 2);
+check("мастер: старых слов «Подробно», «Полная карточка», «Запомнить счета» нет", !rv.includes("Подробно") && !rv.includes("Полная карточка") && !rv.includes("Запомнить счета") && !rv.includes("Пропустить"));
+check("мастер: пояснение под «Как это работает»", html.includes("Как это работает") && html.includes("Оставить без категории") && !html.includes("Непонятное и мелкое отправляйте"));
+clickButton(byId["review"], "Подтвердить выбор");
+check("мастер: без выбранной категории «Подтвердить выбор» ничего не делает", vm.runInContext(`Object.keys(txRules).length === 0 && Object.keys(userRules).length === 0`, ctx));
+{ const cb = wizChecks()[0]; cb.checked = false; cb.listeners.change[0](); }
+check("мастер: снятая галочка видна в счётчике «1 из 2 операций»", textOf(byId["review"]).includes("1 из 2 операций"));
+clickButton(byId["review"], "Человеку");
+clickButton(byId["review"], "Подтвердить выбор");
+check("мастер: выбор применён только к отмеченной операции, правила на будущее нет", vm.runInContext(`Object.keys(txRules).length === 1 && Object.values(txRules)[0] === Cat.P2P && Object.keys(userRules).length === 0`, ctx));
+check("мастер: снятая операция осталась в группе, есть «Отменить»", textOf(byId["review"]).includes("1 операция") && textOf(byId["undoBar"]).includes("Отменить"));
+clickButton(byId["review"], "Оставить без категории");
+const rvE = textOf(byId["review"]);
+check("мастер: «Оставить без категории» ведёт к следующей группе и ничего не назначает", rvE.includes("ЕРИП") && rvE.includes("Пропущено: 1 операция") && vm.runInContext(`Object.keys(txRules).length === 1 && Object.keys(userRules).length === 0`, ctx));
+check("мастер: у ЕРИП подсказанные категории и «Ещё категории» с поиском", rvE.includes("Связь и подписки") && rvE.includes("Аренда и жильё") && rvE.includes("Ещё категории") && rvE.includes("Своя категория"));
+check("мастер: группа запоминается для будущих выписок", rvE.includes("к будущим выпискам"));
+clickButton(byId["review"], "Связь и подписки");
+clickButton(byId["review"], "Подтвердить выбор");
+check("мастер: категория для всей группы стала правилом", vm.runInContext(`Object.values(userRules).includes("Связь и подписки")`, ctx));
 
 
-// ---- Перевод на конкретный счёт: один вопрос «чей он» вместо общих категорий ----
+// Перевод человеку с именем в описании: имя входит в ключ группы, поэтому выбор запоминается
+vm.runInContext(`
+  txs = [
+    { date: "2026-10-09", time: "11:00:00", amount: -30, mcc: null, details: "Перевод с карты на карту, Иванов И.И.", balance: 3 },
+    { date: "2026-10-12", time: "12:00:00", amount: -75, mcc: null, details: "Перевод с карты на карту, Иванов И.И.", balance: 4 },
+  ];
+  header = { from: "2026-10-01", to: "2026-10-31" };
+  userRules = {}; txRules = {}; tailUndo.length = 0; deferred.clear(); activeTab = "all"; allCat = "all"; render();
+`, ctx);
+check("перевод с именем: не «получатель не указан», выбор на будущее", !textOf(byId["review"]).includes("Получатель в выписке не указан") && textOf(byId["review"]).includes("к будущим выпискам"));
+clickButton(byId["review"], "Человеку"); clickButton(byId["review"], "Подтвердить выбор");
+check("перевод с именем: правило на получателя, а не на отдельные операции", vm.runInContext(`Object.values(userRules).includes(Cat.P2P) && Object.keys(txRules).length === 0`, ctx));
+
+
+// ---- Перевод на конкретный счёт: «Мои деньги», «Человеку» или любая категория из сетки ----
 vm.runInContext(`
   const D = n => "MTB MOBILE BANK MINSK BY MP2B 140103 Оплата в Интернет-банке, Наименование операции: Пополнение карточки, номер счета BY00TEST000000000000000007933 3, номер устройства 5M100016, 0" + n + ".11.2026";
   txs = [
@@ -549,18 +581,16 @@ vm.runInContext(`
     { date: "2026-11-04", time: "10:00:00", amount: -30, mcc: "5399", details: D(4), balance: 3 },
   ];
   header = { from: "2026-11-01", to: "2026-11-30" };
-  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+  userRules = {}; txRules = {}; deferred.clear(); activeTab = "all"; allCat = "all"; render();
 `, ctx);
-clickButton(byId["review"], "Подробно"); clickButton(byId["review"], "Полная карточка");
 const rv2 = textOf(byId["review"]);
-check("счёт: вместо общих категорий задан вопрос «чей он»", rv2.includes("Чей этот счёт или карта?") && rv2.includes("Это мои деньги") && rv2.includes("Перевод человеку") && rv2.includes("Оплата магазина или услуги") && !rv2.includes("Продукты"));
-clickButton(byId["review"], "Перевод человеку");
-check("счёт: «Другого человека» показывает варианты перевода", textOf(byId["review"]).includes("Дал в долг") && textOf(byId["review"]).includes("Подарки"));
+check("счёт: плитки перевода и номер счёта, выбор для всех трёх операций", rv2.includes("Мои деньги") && rv2.includes("Человеку") && rv2.includes("Магазин или услуга") && rv2.includes("счёт …") && rv2.includes("3 операции"));
 clickButton(byId["review"], "Подарки");
-check("счёт: выбор применяется ко всей группе", vm.runInContext(`Object.values(userRules).includes("Подарки")`, ctx));
+clickButton(byId["review"], "Подтвердить выбор");
+check("счёт: категория из сетки применяется ко всей группе", vm.runInContext(`Object.values(userRules).includes("Подарки") && Object.keys(txRules).length === 0`, ctx));
 
 
-// ---- Переводы в пару нажатий: одна кнопка на группу, запоминание для будущих, отмена ----
+// ---- Переводы по получателям: запоминание для будущих, отмена, «Мои деньги» ----
 vm.runInContext(`
   const D2 = (acct, n) => "MTB MOBILE BANK MINSK BY MP2B 140103 Оплата в Интернет-банке, Наименование операции: Пополнение карточки, номер счета BY00TEST00" + acct + ", номер устройства 5M100016, 0" + n + ".11.2026";
   txs = [
@@ -569,21 +599,22 @@ vm.runInContext(`
     { date: "2026-11-04", time: "10:00:00", amount: -30, mcc: "5399", details: D2("2222", 4), balance: 3 },
   ];
   header = { from: "2026-11-01", to: "2026-11-30" };
-  userRules = {}; txRules = {}; tailUndo.length = 0; trExpanded.clear(); activeTab = "all"; allCat = "all"; render();
+  userRules = {}; txRules = {}; tailUndo.length = 0; ownUndo.length = 0; deferred.clear(); activeTab = "all"; allCat = "all"; render();
 `, ctx);
-check("переводы: две группы по получателю в одной панели", textOf(byId["review"]).includes("Переводы: 2 группы"));
-clickButton(byId["review"], "Перевод человеку");
+check("переводы: две группы по получателю, на экране первая", textOf(byId["review"]).includes("1 из 2") && textOf(byId["review"]).includes("Все группы (2)"));
+clickButton(byId["review"], "Человеку");
+clickButton(byId["review"], "Подтвердить выбор");
 check("переводы: «Человеку» относит группу к «Переводы людям» и запоминает правило", vm.runInContext(`Object.values(userRules).filter(c => c === Cat.P2P).length === 1 && Object.keys(txRules).length === 0`, ctx));
-check("переводы: после нажатия осталась одна группа и есть «Отменить»", textOf(byId["review"]).includes("Переводы: 1 группа") && textOf(byId["undoBar"]).includes("Переводы людям") && textOf(byId["undoBar"]).includes("Запомнено для этого счёта"));
+check("переводы: после подтверждения открыта вторая группа и есть «Отменить»", textOf(byId["review"]).includes("2 из 2") && textOf(byId["undoBar"]).includes("Переводы людям"));
 clickButton(byId["undoBar"], "Отменить");
-check("переводы: отмена возвращает группу", vm.runInContext(`Object.keys(userRules).length === 0`, ctx) && textOf(byId["review"]).includes("Переводы: 2 группы"));
-vm.runInContext(`trRemember = false; trLock = 0;`, ctx);
-clickButton(byId["review"], "Перевод человеку");
-check("переводы: без «запомнить» правило ставится только на операции этой группы", vm.runInContext(`Object.keys(userRules).length === 0 && Object.keys(txRules).length >= 1 && Object.values(txRules).every(c => c === Cat.P2P)`, ctx));
-vm.runInContext(`trRemember = true;`, ctx);
+check("переводы: отмена возвращает группу", vm.runInContext(`Object.keys(userRules).length === 0`, ctx) && textOf(byId["review"]).includes("1 из 2"));
+clickButton(byId["review"], "Мои деньги");
+clickButton(byId["review"], "Подтвердить выбор");
+check("переводы: «Мои деньги» отмечает счёт своим, с отменой", vm.runInContext(`Object.values(userRules).filter(c => c === Cat.OWN).length >= 1`, ctx) && textOf(byId["undoBar"]).includes("отмечено как ваш счёт"));
+vm.runInContext(`ownUndo.length = 0;`, ctx);
 
 
-// ---- Остальные группы тоже начинаются с понятного вопроса ----
+// ---- Разные группы: платёж по реквизитам как перевод, магазин с общими категориями, переход по списку ----
 vm.runInContext(`
   txs = [
     { date: "2026-10-05", time: "10:00:00", amount: -50, mcc: null, details: "Оплата услуг ЕРИП", balance: 1 },
@@ -593,29 +624,34 @@ vm.runInContext(`
     { date: "2026-10-09", time: "10:00:00", amount: -12, mcc: null, details: "НЕИЗВЕСТНЫЙ МАГАЗИН", balance: 5 },
   ];
   header = { from: "2026-09-01", to: "2026-10-31" };
-  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+  userRules = {}; txRules = {}; tailUndo.length = 0; deferred.clear(); activeTab = "all"; allCat = "all"; render();
 `, ctx);
 const rv3 = textOf(byId["review"]);
-check("вопрос: ЕРИП спрашивает «за что платите»", rv3.includes("За что вы платите через ЕРИП каждый месяц?"));
-check("вопрос: платёж по реквизитам спрашивает «кому или за что» и не предлагает случайные категории", rv3.includes("Кому или за что?") && rv3.includes("Перевод человеку") && rv3.includes("Оплата магазина или услуги"));
-check("вопрос: у прочих групп общий понятный вопрос", rv3.includes("К какой категории это отнести?"));
+check("реквизиты: самая крупная группа первой, плитки перевода и доля от трат", rv3.includes("1 из 3") && rv3.includes("Мои деньги") && rv3.includes("Магазин или услуга") && rv3.includes("% трат"));
+check("список «Все группы» показывает остальные", rv3.includes("Все группы (3)") && rv3.toLowerCase().includes("неизвестный магазин") && rv3.includes("ЕРИП"));
+clickButton(byId["review"], "еизвестный магазин") || clickButton(byId["review"], "ЕИЗВЕСТНЫЙ МАГАЗИН");
+const rv3b = textOf(byId["review"]);
+check("переход по списку открывает выбранную группу: общие категории и «Ещё категории»", rv3b.includes("09.10") && rv3b.includes("Ещё категории") && rv3b.includes("Продукты") && !rv3b.includes("Магазин или услуга"));
+check("плашка в «Обзоре»: «Осталось уточнить: 3 группы»", textOf(byId["reviewBanner"]).includes("Осталось уточнить: 3 группы (5 операций)"));
 
 
-// ---- Хвост: мелкие группы свёрнуты и уходят в «Прочее» одним нажатием, с отменой ----
+// ---- Остальное одним нажатием в «Прочее», с подтверждением и отменой ----
 vm.runInContext(`
   txs = [];
   const sums = [900, 700, 500, 300, 200, 9, 8, 7, 6, 5, 4, 3];
   sums.forEach((a, i) => txs.push({ date: "2026-10-" + String(i + 1).padStart(2, "0"), time: "10:00:00", amount: -a, mcc: null, details: "ЛАВКА " + ["АЛЬФА","БЕТА","ГАММА","ДЕЛЬТА","ЭПСИЛОН","ДЗЕТА","ЭТА","ТЕТА","ЙОТА","КАППА","ЛЯМБДА","МЮ"][i], balance: i }));
   header = { from: "2026-10-01", to: "2026-10-31" };
-  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+  userRules = {}; txRules = {}; tailUndo.length = 0; deferred.clear(); activeTab = "all"; allCat = "all"; render();
 `, ctx);
-check("хвост: мелкие группы свёрнуты в одну строку", textOf(byId["review"]).includes("Ещё 7 групп") && !textOf(byId["review"]).includes("ЛАВКА МЮ"));
-clickButton(byId["review"], "Не уточнять (в «Прочее»)");
-check("хвост: перед применением просит подтверждение", textOf(byId["review"]).includes("Отправить все эти группы в «Прочее»?"));
-clickButton(byId["review"], "Да, в «Прочее»");
-check("хвост: группы ушли в «Прочее», есть плашка отмены", vm.runInContext(`Object.values(userRules).filter(v => v === "Прочее").length === 7`, ctx) && textOf(byId["undoBar"]).includes("отправлены в «Прочее»"));
+check("много групп: на экране одна, прогресс «1 из 12»", textOf(byId["review"]).includes("1 из 12") && textOf(byId["review"]).includes("Все группы (12)"));
+vm.runInContext(`wizKey = [...txs].sort((a, b) => b.amount - a.amount)[0] && Cat.merchantKey(txs[11]); renderReview();`, ctx);
+check("мелкая группа: подсказка, что её можно оставить без категории", textOf(byId["review"]).includes("Меньше 1% трат"));
+clickButton(byId["reviewFoot"], "Остальное не уточнять");
+check("остальное: перед применением просит подтверждение", textOf(byId["reviewFoot"]).includes("Отправить всё оставшееся в «Прочее»?"));
+clickButton(byId["reviewFoot"], "Да, в «Прочее»");
+check("остальное: группы ушли в «Прочее», есть плашка отмены", vm.runInContext(`Object.values(userRules).filter(v => v === "Прочее").length === 12`, ctx) && textOf(byId["undoBar"]).includes("отправлены в «Прочее»"));
 clickButton(byId["undoBar"], "Отменить");
-check("хвост: отмена возвращает прежнее состояние", vm.runInContext(`Object.keys(userRules).length === 0`, ctx));
+check("остальное: отмена возвращает прежнее состояние", vm.runInContext(`Object.keys(userRules).length === 0`, ctx));
 
 // История между выписками: сравнение с прошлым месяцем, которого нет в текущей выписке
 vm.runInContext(`demoMode = false; statements = []; activeTab = "all"; userRules = {}; txRules = {};
