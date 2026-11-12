@@ -1034,6 +1034,10 @@
     .sw-update > span { flex: 1 1 auto; white-space: nowrap; }
     .sw-update button { min-height: 40px; padding: .3rem .9rem; background: var(--sig); color: var(--sig-ink); border: 0; font-weight: 600; white-space: nowrap; flex: none; }
     .sw-update .sw-x { background: transparent; color: var(--bg); min-width: 40px; padding: 0; font-size: 1.2rem; }
+    /* Тёмная тема: --text светлый, поэтому плашка была белой; делаем тёмную плашку с рамкой */
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sw-update { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); } :root:not([data-theme="light"]) .sw-update .sw-x { color: var(--text); } }
+    :root[data-theme="dark"] .sw-update { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+    :root[data-theme="dark"] .sw-update .sw-x { color: var(--text); }
     @media (max-width: 768px) { .sw-update { bottom: calc(5rem + env(safe-area-inset-bottom)); } }
     /* Единый вид полей (10 ноября): выбор файла в мастере образца, галочки и поля текста больше не «браузерные» */
     .filepick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; width: 100%; box-sizing: border-box; min-height: 96px; padding: 1rem; border: 1.5px dashed var(--ctl-border); border-radius: var(--r-m); background: var(--surface-2); color: var(--text); text-align: center; cursor: pointer; }
