@@ -105,13 +105,19 @@
     const sortedShare = sortedSum / total;
 
     // «Обычно»: среднее по предыдущим полным месяцам (до трёх), только идущим подряд перед этим месяцем
-    const base = [];
+    let base = [], baseYms = [];
     if (month) {
       for (let i = 1; i <= BASE_MONTHS; i++) {
         const ym = addMonths(month, -i);
         if (!full.includes(ym)) break;
+        baseYms.push(ym);
         base.push(byCat(items.filter(t => t.date.startsWith(ym))));
       }
+      // Прошлый месяц почти без трат (отпуск, карта лежала без дела) в «обычно» не входит: иначе обычный уровень занижен
+      // и нормальный месяц выглядит как «на 100% больше обычного»
+      const tot = base.map(sum), top = Math.max(0, ...tot);
+      const ok = tot.map(v => v > 0 && v >= top * THIN);
+      base = base.filter((_, i) => ok[i]); baseYms = baseYms.filter((_, i) => ok[i]);
     }
     const usual = new Map();
     base.forEach(m => m.forEach((v, c) => usual.set(c, (usual.get(c) || 0) + v / base.length)));
@@ -120,9 +126,9 @@
     let thinNote = "";
     if (month && base.length && usualTotal > 0 && total < usualTotal * THIN) {
       thinNote = `В этом месяце трат всего ${money(total)} BYN при обычных около ${money(usualTotal)} BYN: возможно, карта почти не использовалась, поэтому с обычным месяцем не сравниваем.`;
-      base.length = 0; usual.clear();
+      base.length = 0; baseYms.length = 0; usual.clear();
     }
-    const usualWord = base.length === 1 ? `, чем в ${monthNom(addMonths(month, -1)).replace(/ь$/, "е").replace(/й$/, "е").replace(/т$/, "те")}` : " обычного";
+    const usualWord = base.length === 1 ? `, чем в ${monthNom(baseYms[0]).replace(/ь$/, "е").replace(/й$/, "е").replace(/т$/, "те")}` : " обычного";
 
     const lines = [];
     // 1. Всего за месяц и к обычному уровню
@@ -140,12 +146,16 @@
     const inc = (o.income || []).filter(t => t && t.date && t.amount > 0);
     const incIn = ym => inc.filter(t => t.date.startsWith(ym)).reduce((a, t) => a + t.amount, 0);
     // Зарплата, пришедшая то раньше, то позже, даёт «рост дохода» на ровном месте: если в прошлых месяцах доход скачет вдвое, строку не пишем
-    const incSteady = !base.length || (() => { const v = base.map((_, i) => incIn(addMonths(month, -(i + 1)))); return Math.min(...v) >= 0.5 * Math.max(...v); })();
+    const incSteady = !base.length || (() => { const v = baseYms.map(incIn); return Math.min(...v) >= 0.5 * Math.max(...v); })();
     if (month && base.length && usualTotal > 0 && inc.length && incSteady) {
       const incCur = incIn(month);
-      const incUsual = [...Array(base.length).keys()].reduce((a, i) => a + incIn(addMonths(month, -(i + 1))), 0) / base.length;
+      const incUsual = baseYms.reduce((a, ym) => a + incIn(ym), 0) / base.length;
       const dInc = incCur - incUsual, dSpend = total - usualTotal;
-      if (incUsual >= INC_MIN && dInc >= INC_DIFF && dInc / incUsual >= INC_GROW) {
+      // Лишняя крупная выплата в месяце (зарплата пришла 1-го и 31-го, аванс сдвинулся через границу месяца) это сдвиг даты, а не рост дохода:
+      // если крупных поступлений (от четверти обычного дохода) больше, чем в любом из прошлых месяцев, строку не пишем
+      const bigN = ym => inc.filter(t => t.date.startsWith(ym) && t.amount >= 0.25 * incUsual).length;
+      const extraPay = bigN(month) > Math.max(...baseYms.map(bigN));
+      if (incUsual >= INC_MIN && dInc >= INC_DIFF && dInc / incUsual >= INC_GROW && !extraPay) {
         const pi = Math.round(dInc / incUsual * 100), share = Math.max(0, dSpend) / dInc;
         const head = `Доход вырос на ${pi}% (+${money(dInc)} BYN)`;
         let tail;
@@ -175,7 +185,9 @@
     }
 
     // 3. Подписки: регулярные платежи из категорий подписок
-    const subs = (o.regular || []).filter(r => r && subsCats.has(r.cat) && r.perMonth > 0);
+    // Подписка, которой не было ни в подводимом месяце, ни в предыдущем, скорее всего отменена: в «в месяц» и «в год» её не считаем
+    const alive = r => !month || !Array.isArray(r.dates) || !r.dates.length || r.dates.some(d => String(d).slice(0, 7) >= addMonths(month, -1));
+    const subs = (o.regular || []).filter(r => r && subsCats.has(r.cat) && r.perMonth > 0 && alive(r));
     if (subs.length) {
       const s = subs.reduce((a, r) => a + r.perMonth, 0);
       lines.push({ kind: "subs", value: s, text: `Связь и подписки: ${money(s)} BYN в месяц, это ${money(s * 12)} BYN в год (${subs.length} ${plural(subs.length, "платёж", "платежа", "платежей")})`, short: `Связь и подписки: ${subs.length} регулярных ${plural(subs.length, "платёж", "платежа", "платежей")}` });
@@ -201,7 +213,7 @@
     if (base.length && lines.length < 4) {
       const fell = [...usual].filter(([c, u]) => !unsorted.has(c) && !fixed.has(c) && u >= MIN_USUAL && (cur.get(c) || 0) <= u / GROW && (cur.get(c) || 0) > 0 && u - (cur.get(c) || 0) >= MIN_DIFF)
         .map(([c, u]) => ({ cat: c, cur: cur.get(c) || 0, usual: u })).sort((a, b) => (b.usual - b.cur) - (a.usual - a.cur))[0];
-      if (fell) lines.push({ kind: "fell", cat: fell.cat, value: fell.cur, text: `${fell.cat}: ${money(fell.cur)} BYN, на ${Math.round((1 - fell.cur / fell.usual) * 100)}% меньше${usualWord}`, short: `${fell.cat}: на ${Math.round((1 - fell.cur / fell.usual) * 100)}% меньше${usualWord}` });
+      if (fell) lines.push({ kind: "fell", cat: fell.cat, value: fell.cur, text: `${fell.cat}: ${money(fell.cur)} BYN, на ${Math.min(99, Math.round((1 - fell.cur / fell.usual) * 100))}% меньше${usualWord}`, short: `${fell.cat}: на ${Math.min(99, Math.round((1 - fell.cur / fell.usual) * 100))}% меньше${usualWord}` });
     }
 
     // Запасные выводы, если строк мало (например, в выписке один месяц): где чаще всего платили и самая крупная категория
@@ -233,11 +245,12 @@
         else if (pct === 0) text = "Почти весь доход ушёл в траты: не потрачено меньше 1%";
         else text = `Не потрачено ${pct}% дохода (${money(left)} BYN)`;
         if (month && base.length) {
-          const incU = [...Array(base.length).keys()].reduce((a, i) => a + incIn(addMonths(month, -(i + 1))), 0) / base.length;
+          const incU = baseYms.reduce((a, ym) => a + incIn(ym), 0) / base.length;
           if (incU >= INC_MIN) {
             const uPct = Math.round((incU - usualTotal) / incU * 100);
             usualPct = uPct;
-            if (uPct >= 0 && Math.abs(uPct - Math.round(left / incCur * 100)) >= 3) text += `; обычно ${uPct}%`;
+            // После «потрачено на N% больше» голое «обычно 15%» читается как «обычно на 15% больше»: называем словами
+            if (uPct >= 0 && Math.abs(uPct - Math.round(left / incCur * 100)) >= 3) text += left < 0 ? `; обычно остаётся ${uPct}% дохода` : `; обычно ${uPct}%`;
           }
         }
         if (save >= MIN_DIFF && left >= 0) text += `; без выросших трат было бы ${Math.round((left + save) / incCur * 100)}%`;

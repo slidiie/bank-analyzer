@@ -244,5 +244,34 @@ check("мусор в валюте: предупреждения нет", M.curre
   check("возврат не из перевода парой не считается", !c.pair && !d.pair);
 }
 
+// ---- Аудит цифр 12.11 ----
+// Холд и потом списание с другой суммой (покупка в валюте: банк пересчитал по курсу дня списания). До исправления оставались обе: 201,37
+{
+  const bank = { id: "mtb", name: "МТБанк" };
+  const st = M.newState();
+  M.addStatement(st, { bank, header: { from: "2026-10-01", to: "2026-10-10" }, txs: [{ date: "2026-10-09", regDate: "2026-10-09", time: "12:30:00", amount: -100, pending: true, details: "Покупка HOTEL" }] });
+  M.addStatement(st, { bank, header: { from: "2026-10-01", to: "2026-10-31" }, txs: [{ date: "2026-10-11", regDate: "2026-10-09", time: "12:30:00", amount: -101.37, balance: 500, details: "Покупка HOTEL" }] });
+  check("холд 100 и списание 101,37 в ту же секунду: остаётся одна операция на 101,37", st.txs.length === 1 && st.txs[0].amount === -101.37 && !st.txs[0].pending);
+  const st2 = M.newState();
+  M.addStatement(st2, { bank, header: {}, txs: [{ date: "2026-10-09", regDate: "2026-10-09", time: "12:30:00", amount: -100, pending: true, details: "Покупка A" }] });
+  M.addStatement(st2, { bank, header: {}, txs: [{ date: "2026-10-11", regDate: "2026-10-09", time: "12:30:00", amount: -300, balance: 500, details: "Покупка B" }, { date: "2026-10-11", regDate: "2026-10-09", time: "12:30:00", amount: 100, balance: 600, details: "Пополнение" }] });
+  check("та же секунда, но сумма совсем другая или другой знак: холд не трогаем", st2.txs.length === 3);
+  const st3 = M.newState();
+  M.addStatement(st3, { bank, header: {}, txs: [{ date: "2026-10-09", regDate: "2026-10-09", amount: -100, pending: true, details: "Покупка A" }] });
+  M.addStatement(st3, { bank, header: {}, txs: [{ date: "2026-10-11", regDate: "2026-10-09", amount: -101, balance: 500, details: "Покупка B" }] });
+  check("времени нет: по одной дате похожие суммы не склеиваем", st3.txs.length === 2);
+}
+// Зарплата в одном банке и перевод на ту же сумму из другого (аренда): это не «перевод между своими»
+{
+  const st = M.newState();
+  M.addStatement(st, { bank: { id: "mtb", name: "МТБанк" }, header: {}, txs: [{ date: "2026-10-09", amount: -1000, balance: 1, details: "Перевод с карты на карту" }] });
+  M.addStatement(st, { bank: { id: "prior", name: "Приорбанк" }, header: {}, txs: [{ date: "2026-10-10", amount: 1000, balance: 2, details: "Зачисление заработной платы" }] });
+  check("зарплата не становится парой к чужому переводу", M.markCrossPairs(st.txs, () => false) === 0);
+  const s2 = M.newState();
+  M.addStatement(s2, { bank: { id: "mtb", name: "МТБанк" }, header: {}, txs: [{ date: "2026-10-09", amount: -1000, balance: 1, details: "Перевод с карты на карту" }] });
+  M.addStatement(s2, { bank: { id: "prior", name: "Приорбанк" }, header: {}, txs: [{ date: "2026-10-10", amount: 1000, balance: 2, details: "Пополнение счёта" }] });
+  check("обычное пополнение по-прежнему находит пару", M.markCrossPairs(s2.txs, () => false) === 1);
+}
+
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

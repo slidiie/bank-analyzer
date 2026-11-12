@@ -30,9 +30,10 @@
       m.total += v; m.days[d] = (m.days[d] || 0) + v; m.cats[t.cat || "Прочее"] = (m.cats[t.cat || "Прочее"] || 0) + v;
     });
     Object.values(out).forEach(m => {
-      m.total = Math.max(0, r2(m.total));                       // возвратов больше, чем трат: месяц без трат, не в минус
       Object.keys(m.days).forEach(k => { m.days[k] = Math.max(0, r2(m.days[k])); });
       Object.keys(m.cats).forEach(k => { const v = r2(m.cats[k]); if (v > 0) m.cats[k] = v; else delete m.cats[k]; });
+      // Итог месяца = сумма категорий, как «Потрачено» на странице: возврат больше покупок обнуляет свою категорию, а чужие не уменьшает
+      m.total = r2(Object.values(m.cats).reduce((a, v) => a + v, 0));
     });
     return out;
   }
