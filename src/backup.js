@@ -92,6 +92,7 @@
       condRules: (typeof require !== "undefined" ? require("./condrules.js") : root.CondRules).cleanList(data.condRules),
       splits: (typeof require !== "undefined" ? require("./splits.js") : root.Splits).cleanMap(data.splits),
       icons: cleanStrMap(data.icons, 30),
+      colors: cleanStrMap(data.colors, 12),
       acctNames: cleanStrMap(data.acctNames, 40),
       budgets: cleanBudgets(data.budgets),
       calc: cleanCalc(data.calc),
