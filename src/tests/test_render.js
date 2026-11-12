@@ -455,7 +455,7 @@ check("пара остаётся в списке операций", allAfter.inc
 check("у пары заметная пометка «между своими»", (allAfter.match(/между своими/g) || []).length >= 2);
 check("пара в тратах не учитывается: итого 40", hasTotal(summaryText(), "40,00"));
 const infoLine = textOf(byId["allFilter"]);
-check("в строке итогов расходы 40, поступления 100 (без пары)", infoLine.includes("расходы: 40,00") && infoLine.includes("поступления: 100,00"));
+check("в строке итогов расходы 40, поступления 100 (без пары)", infoLine.includes("потрачено: 40,00") && infoLine.includes("поступления: 100,00"));
 check("в строке итогов отдельно показаны переводы между своими", infoLine.includes("между своими (не в счёт): 2"));
 vm.runInContext(`setTxRule(txs[1], "Прочее"); renderAll();`, ctx);
 check("выбор пользователя для операции сильнее пометки пары", vm.runInContext(`categoryOf(txs[1]) === "Прочее"`, ctx));
@@ -528,7 +528,7 @@ vm.runInContext(`
   userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
 `, ctx);
 const rvQuick = textOf(byId["review"]);
-check("переводы: компактная панель «в пару нажатий», кнопки «Это мои деньги» и «Перевод человеку»", rvQuick.includes("Переводы: 1 группа") && rvQuick.includes("Это мои деньги") && rvQuick.includes("Перевод человеку") && rvQuick.includes("Запомнить для всех будущих"));
+check("переводы: компактная панель «в пару нажатий», кнопки «Это мои деньги» и «Перевод человеку»", rvQuick.includes("Переводы: 1 группа") && rvQuick.includes("Это мои деньги") && rvQuick.includes("Перевод человеку") && rvQuick.includes("Запомнить счета для будущих"));
 clickButton(byId["review"], "Подробно"); clickButton(byId["review"], "Полная карточка");
 const rv = textOf(byId["review"]);
 check("разбор: подсказка по признакам помечена как предположение", rv.includes("Предположение") && rv.includes("ЕРИП"));
@@ -574,10 +574,10 @@ vm.runInContext(`
 check("переводы: две группы по получателю в одной панели", textOf(byId["review"]).includes("Переводы: 2 группы"));
 clickButton(byId["review"], "Перевод человеку");
 check("переводы: «Человеку» относит группу к «Переводы людям» и запоминает правило", vm.runInContext(`Object.values(userRules).filter(c => c === Cat.P2P).length === 1 && Object.keys(txRules).length === 0`, ctx));
-check("переводы: после нажатия осталась одна группа и есть «Отменить»", textOf(byId["review"]).includes("Переводы: 1 группа") && textOf(byId["undoBar"]).includes("Переводы людям") && textOf(byId["undoBar"]).includes("Запомнено для будущих"));
+check("переводы: после нажатия осталась одна группа и есть «Отменить»", textOf(byId["review"]).includes("Переводы: 1 группа") && textOf(byId["undoBar"]).includes("Переводы людям") && textOf(byId["undoBar"]).includes("Запомнено для этого счёта"));
 clickButton(byId["undoBar"], "Отменить");
 check("переводы: отмена возвращает группу", vm.runInContext(`Object.keys(userRules).length === 0`, ctx) && textOf(byId["review"]).includes("Переводы: 2 группы"));
-vm.runInContext(`trRemember = false;`, ctx);
+vm.runInContext(`trRemember = false; trLock = 0;`, ctx);
 clickButton(byId["review"], "Перевод человеку");
 check("переводы: без «запомнить» правило ставится только на операции этой группы", vm.runInContext(`Object.keys(userRules).length === 0 && Object.keys(txRules).length >= 1 && Object.values(txRules).every(c => c === Cat.P2P)`, ctx));
 vm.runInContext(`trRemember = true;`, ctx);
@@ -761,5 +761,17 @@ vm.runInContext(`leaveDemo();`, ctx);
   check("в демо один выход (в полосе сверху), второй кнопки нет", !html.includes('id="demoMoreExit"'));
   check("«ещё не уточнено» только в «Бюджете», в «Обзоре» его нет", /id="roughNote" data-sec="plan"/.test(html));
 }
+
+// ---- Азартные игры: вывод сайт не угадывает, итог показывает только отмеченное ----
+vm.runInContext(`
+  txs = [
+    { date: "2026-10-02", time: "10:00:00", amount: -100, mcc: "7995", details: "ARENA PLAY MINSK BY Оплата", balance: 1 },
+    { date: "2026-10-05", time: "10:00:00", amount: 60, mcc: null, details: "ARENA PLAY MINSK BY Перевод на БПК МТБ в системе Р2Р", balance: 2 },
+  ];
+  header = { from: "2026-10-01", to: "2026-10-31" };
+  userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
+`, ctx);
+check("азарт: поступление с названием площадки само не становится «выводом»", vm.runInContext(`categoryOf(txs[1]) !== Cat.GAMBLING`, ctx));
+check("азарт: нейтральная строка и никаких «похоже на вывод»", !textOf(byId["insights"]).includes("похож") && textOf(byId["insights"]).includes("отметьте эти поступления сами"));
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

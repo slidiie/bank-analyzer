@@ -252,7 +252,7 @@
       compared: base.length,
       title: month ? `Итог ${monthGen(month)}` : `Итог за ${days} ${plural(days, "день", "дня", "дней")}`,
       thin: !!thinNote,
-      note: (thinNote ? thinNote + " " : "") + (sortedShare < SORTED_OK ? `Выводы по разобранным ${Math.floor(sortedShare * 100)}% трат. Остальное можно уточнить, и итог станет точнее.` : ""),
+      note: (thinNote ? thinNote + " " : "") + (sortedShare < SORTED_OK ? `Выводы по разобранным ${Math.round(sortedShare * 100)}% трат. Остальное можно уточнить, и итог станет точнее.` : ""),
       lines: lines.slice(0, 5),
     };
   }
