@@ -29,9 +29,7 @@
     const items = (g && g.items) || [];
     const tx = (g && g.tx) || items[0];
     if (!tx) return null;
-    if (C.maybeGamblingPayout(tx)) {
-      return { key: g.key, kind: "gambling", cat: C.GAMBLING, text: "Похоже на вывод с игровой площадки?" };
-    }
+    // Вывод с игровой площадки не угадываем: по выписке не видно, откуда деньги, а ошибка здесь обидна человеку
     const s = tot && tot.get(bare(g.key));
     const inSum = s ? s.in : items.reduce((a, t) => a + (t.amount > 0 ? t.amount : 0), 0);
     const outSum = s ? s.out : items.reduce((a, t) => a + (t.amount < 0 ? -t.amount : 0), 0);

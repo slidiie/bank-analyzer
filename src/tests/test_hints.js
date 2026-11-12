@@ -18,11 +18,11 @@ const smallBack = grp("s", [tx("Некто Некто", 100), tx("Некто Н�
 const r = H.transferHints([gamb, back, person, plain]);
 const by = Object.fromEntries(r.map(h => [h.key, h]));
 
-check("игровая площадка: подсказка с категорией", by.g && by.g.kind === "gambling" && by.g.cat === Cat.GAMBLING);
+check("игровая площадка: подсказки нет, сайт не угадывает вывод", !by.g);
 check("пришло и ушло почти поровну: свои счета", by.r && by.r.kind === "roundtrip" && by.r.cat === Cat.OWN);
 check("перевод человеку: подсказка без категории", by.p && by.p.kind === "person" && by.p.cat === null);
 check("обычная покупка: подсказки нет", !by.x);
-check("не больше одной подсказки на группу", r.length === 3);
+check("не больше одной подсказки на группу", r.length === 2);
 check("сильно разные суммы туда и обратно: не свои", !H.transferHints([smallBack]).some(h => h.kind === "roundtrip"));
 check("пустой список и пустые группы не падают", H.transferHints([]).length === 0 && H.transferHints([{ key: "e", items: [] }]).length === 0 && H.transferHints(null).length === 0);
 check("тексты подсказок не пустые", r.every(h => h.text && h.text.length > 10));
@@ -36,6 +36,7 @@ check("тексты подсказок не пустые", r.every(h => h.text &
   const far = { details: "SVOI SCHET TEST", amount: -10, date: "2026-10-06" };
   check("встречный расход сильно меньше: не свои", !H.transferHints([g], Cat, [inn, far]).some(h => h.kind === "roundtrip"));
 }
+
 
 console.log(failed ? `\nОшибок: ${failed}` : "\nВсе проверки пройдены");
 process.exit(failed ? 1 : 0);

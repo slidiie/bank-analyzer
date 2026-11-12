@@ -125,7 +125,7 @@
     return m ? m[3] + "-" + m[2] + "-" + m[1] : t.date;
   };
 
-  function markCrossPairs(txs, isRetail) {
+  function markCrossPairs(txs, isRetail, allowSame) {
     let next = txs.reduce((m, t) => Math.max(m, t.pair || 0), 0) + 1;
     const eligible = t => !t.pair && !NOT_TRANSFER.test(t.details || "") && !(isRetail && isRetail(t));
     const free = txs.filter(eligible);
@@ -135,8 +135,9 @@
       if (c.pair) continue;
       let best = null, bestGap = Infinity;
       for (const d of free) {
-        if (d.pair || d.amount >= 0 || d.src === c.src || cents(-d.amount) !== cents(c.amount)) continue;
+        if (d.pair || d.amount >= 0 || (d.src === c.src && !allowSame) || cents(-d.amount) !== cents(c.amount)) continue;
         if (!TRANSFERISH.test(c.details || "") && !TRANSFERISH.test(d.details || "")) continue;
+        if (allowSame && d.src === c.src && !(TRANSFERISH.test(c.details || "") && TRANSFERISH.test(d.details || ""))) continue;   // внутри одной выписки: перевод туда и обратно, обе стороны похожи на перевод
         // МТБ пишет в пополнении «за ДД.ММ.ГГГГ»: настоящая дата перевода (зачисление бывает позже, например через выходные)
         const gap = Math.min(
           Math.abs(Date.parse(c.date) - Date.parse(d.date)),
@@ -166,7 +167,10 @@
 
   const pairCount = txs => new Set(txs.filter(t => t.pair).map(t => t.pair)).size;
 
-  const api = { newState, addStatement, addSaved, mergedHeader, currencyNote, markCrossPairs, pairCount, txId, TRANSFERISH };
+  // Перевод туда и обратно на тот же счёт в пределах суток: деньги вернулись, это не трата и не доход
+  const markRoundTrips = (txs, isRetail) => markCrossPairs(txs, isRetail, true);
+
+  const api = { markRoundTrips, newState, addStatement, addSaved, mergedHeader, currencyNote, markCrossPairs, pairCount, txId, TRANSFERISH };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Merge = api;
 })(typeof self !== "undefined" ? self : this);
