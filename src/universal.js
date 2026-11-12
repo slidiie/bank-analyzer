@@ -27,6 +27,7 @@
   }
   const timeOf = s => { const m = String(s || "").match(/(^|\D)(\d{1,2}):(\d{2})(?::(\d{2}))?(?!\d)/); return m ? m[2].padStart(2, "0") + ":" + m[3] + ":" + (m[4] || "00") : null; };
 
+  const DATE_LEAD = /^(\d{2}[./]\d{2}[./](?:\d{4}|\d{2})|\d{4}-\d{2}-\d{2})(?:\s*г\.?)?(?:[ T]+\d{1,2}:\d{2}(?::\d{2})?)?\s+(?=\S)/;   // «05.03.2026 Магазин…»: дата и текст в одном фрагменте
   const CUR_TAIL = /(BYN|BYR|USD|EUR|RUB|RUR|[A-Z]{3}|руб\.?|р\.)$/;
   // «1 300,50», «-230.38 BYN», «(5.00)», «5.00-» → число; иначе NaN
   function num(s) {
@@ -34,7 +35,7 @@
     if (!t) return NaN;
     t = t.replace(CUR_TAIL, "");
     let neg = false;
-    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
+    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1).replace(CUR_TAIL, ""); }
     if (/^\d.*[-+]$/.test(t)) { if (t.endsWith("-")) neg = true; t = t.slice(0, -1); }
     if (!/^[-+]?\d[\d.,]*$/.test(t)) return NaN;
     if (/[.,]\d*[.,]/.test(t) && !/^[-+]?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?$/.test(t)) return NaN;     // «01.02.2026» не число
@@ -228,7 +229,7 @@
       const moneyTitle = /сумм|amount|приход|расход|дебет|кредит|остаток|оборот|баланс|списан|зачислен|поступлен/i.test(t);
       const signVals = new Set(ne.filter(c => c.length === 1 && (POS_W.test(c[0]) || NEG_W.test(c[0]))).map(c => POS_W.test(c[0]) ? 1 : -1));
       const p = { j, title: t, fill: ne.length / n, moneyFill: nb.length / n,
-        date: share(c => c.some(s => DATE_TOKEN.test(s) || (dateOf(s) && s.length <= 22))),
+        date: share(c => c.some(s => DATE_TOKEN.test(s) || (dateOf(s) && s.length <= 22) || DATE_LEAD.test(s))),
         money: loose >= 0.85 && (strict >= 0.5 || (moneyTitle && grid.source === "table")) && nb.length >= Math.max(1, n * 0.02),
         cur: share(c => c.length === 1 && CURS.test(c[0])),
         sign: share(c => c.length === 1 && (POS_W.test(c[0]) || NEG_W.test(c[0]))), signKinds: signVals.size,
@@ -286,7 +287,12 @@
     const N = {}; moneyCols.forEach(j => { N[j] = numsOf(j); });
     const signCols = fixed ? roleCols("sign") : prof.filter(p => p.kind === "sign" && p.signKinds >= 2).map(p => p.j);
     const textCols = fixed ? roleCols("desc") : prof.filter(p => p.kind === "text").map(p => p.j);
-    const text = grid.rows.map(r => textCols.map(j => (r[j] || []).join(" ")).join(" "));
+    // Если в колонке даты рядом с датой стоит текст (узкая выписка: дата и описание в одной колонке, или «05.03.2026 Магазин…» одним куском),
+    // этот текст тоже часть описания. Колонки с одними датами и короткими пометками («T», «A») описания не получают.
+    const wordy = s => !DATE_TOKEN.test(s) && !/^\d{1,2}:\d{2}(:\d{2})?$/.test(s) && /[A-Za-zА-Яа-яЁё]{3}/.test(s);
+    const mixedCol = {}; dateCols.forEach(j => { const rows = grid.rows.filter(r => (r[j] || []).length); mixedCol[j] = rows.length && rows.filter(r => r[j].some(s => wordy(s) || DATE_LEAD.test(s))).length >= 0.3 * rows.length; });
+    const leadText = r => dateCols.filter(j => mixedCol[j]).map(j => (r[j] || []).filter(wordy).map(s => { while (DATE_LEAD.test(s)) s = s.replace(DATE_LEAD, ""); return s; }).join(" ")).join(" ");
+    const text = grid.rows.map(r => textCols.map(j => (r[j] || []).join(" ")).join(" ") + " " + leadText(r));
     // Остаток: колонка, которая от строки к строке меняется на сумму из другой колонки
     let balCol = -1;
     if (fixed) balCol = roleCols("balance")[0] ?? -1;
@@ -363,7 +369,11 @@
     const totalsOk = (best.incomeOk === true && best.expenseOk === true) || best.balanceOk === true || (best.incomeOk === true && best.expenseOk == null) || (best.expenseOk === true && best.incomeOk == null);
     const totalsBad = best.incomeOk === false || best.expenseOk === false || best.balanceOk === false;
     const chainOk = !!best.chain && best.chain.pairs >= 2 && best.chain.share >= 0.98;
-    const verified = totalsOk || (chainOk && !totalsBad);
+    // «Проверено» только если прочитана почти вся таблица: когда у многих строк суммы не нашлись, цепочка из двух-трёх строк ничего не доказывает
+    const coverOk = best.count >= 0.85 * n;
+    // Любое явное несовпадение с шапкой (даже одно из нескольких) отменяет «проверено»
+    const proof = totalsBad ? "mismatch" : !(totalsOk || chainOk) ? "none" : !coverOk ? "partial" : totalsOk ? "totals" : "balance";
+    const verified = proof === "totals" || proof === "balance";
 
     // Роли колонок (для окна «Так читаем?»)
     const roles = fixed ? fixed.slice() : prof.map(p => p.kind === "text" ? "desc" : "skip");
@@ -405,7 +415,7 @@
     header.currency = currency;
     const how = best.mode === "pair" ? "расход и приход стоят в разных колонках" : best.mode === "asis" ? "расход записан с минусом" : best.mode === "col" ? "приход или расход подписан словом или знаком" : best.mode === "bal" ? "приход или расход виден по остатку" : "приход или расход определён по словам в описании";
     return { roles, header, txs, verified, how,
-      proof: totalsOk ? "totals" : chainOk && !totalsBad ? "balance" : totalsBad ? "mismatch" : "none",
+      proof,
       check: { count: best.count, income: best.inc / 100, expense: best.exp / 100, incomeOk: best.incomeOk, expenseOk: best.expenseOk, balanceOk: best.balanceOk, chain: best.chain ? best.chain.share : null },
       titles: grid.cols.map(c => c.title), kinds: prof.map(p => p.kind) };
   }
