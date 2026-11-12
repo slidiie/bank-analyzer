@@ -2617,6 +2617,7 @@
         } else if (st.universal && st.proof === "balance") t += "Суммы сходятся с остатком после каждой операции ✓.";
         else if (st.universal && st.proof === "totals") t += "Остаток на начало, операции и остаток на конец сходятся ✓.";
         else if (st.universal && st.proof === "mismatch") { ok = false; t += "Остатки на начало и конец не сходятся с операциями ✗."; }
+        else if (st.universal && st.proof === "accounts") { ok = false; t += "В файле несколько счетов, их операции сложены вместе ✗."; }
         else { unchecked.push(st.bankName); t += st.universal ? "Этого банка нет в списке: прочитано по догадке, сверить не с чем." : "Итоговых сумм в этой выписке нет, сверить не с чем."; }
         if (st.unread && st.unread.length) ok = false;
         return h("div", {}, t);
@@ -2669,12 +2670,14 @@
         }
         if (st.universal && st.proof === "mismatch" && !(c && c.headerIncome != null))
           items.push(h("div", {}, "Остаток на начало и на конец выписки не сходится с прочитанными операциями: часть операций пропущена или сумма взята не из той колонки."));
+        if (st.universal && st.proof === "accounts")
+          items.push(h("div", {}, "В этом файле несколько счетов (остаток несколько раз начинается заново), и их операции сложены вместе. Если счета в разных валютах, итоги неверны. Надёжнее загрузить выписку по каждому счёту отдельным файлом."));
         if (items.length) out.push(h("div", { class: "rwbank" }, statements.length > 1 ? h("b", {}, st.bankName + ". ") : "", ...items));
       });
       return out;
     }
     // Выписки банков не из списка, которые нечем проверить (нет итогов и остатков): «прочитано по догадке»
-    const guessed = () => demoMode ? [] : statements.filter(st => st.universal && st.proof !== "totals" && st.proof !== "balance" && st.proof !== "mismatch");
+    const guessed = () => demoMode ? [] : statements.filter(st => st.universal && st.proof !== "totals" && st.proof !== "balance" && st.proof !== "mismatch" && st.proof !== "accounts");
     function renderReadWarn() {
       const box = $("readWarn");
       if (!box) return;
@@ -4871,10 +4874,11 @@
         const UNIQUE = ["date", "amount", "expense", "income", "balance", "currency", "sign"];
         const draw = () => {
           const p = cur.proof;
-          $("uniProof").className = "uniproof" + (stuck || p === "mismatch" ? " bad" : p === "totals" || p === "balance" ? " ok" : "");
+          $("uniProof").className = "uniproof" + (stuck || p === "mismatch" || p === "accounts" ? " bad" : p === "totals" || p === "balance" ? " ok" : "");
           $("uniProof").textContent = stuck ? "Так прочитать не получается: нужна колонка с датой и колонка с суммой (или «Расход» и «Приход»)."
             : p === "totals" ? "Проверено: суммы сошлись с итогами в самой выписке ✓"
             : p === "balance" ? "Проверено: суммы сходятся с остатком после каждой операции ✓"
+            : p === "accounts" ? "Похоже, в файле несколько счетов: остаток несколько раз начинается заново. Операции всех счетов будут сложены вместе; если счета в разных валютах, итог получится неверным. Надёжнее загрузить выписку по каждому счёту отдельно."
             : p === "mismatch" ? "Суммы не сошлись с итогами выписки ✗. Посмотрите колонки ниже: возможно, сумма взята не из той."
             : "Прочитано по догадке: в выписке нет итогов и остатков, проверить суммы нечем. Сверьте операции ниже со своей выпиской.";
           const c = cur.header.currency || "BYN";
@@ -4926,7 +4930,7 @@
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null || res.header.expense == null ? null :
         { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
-      res.uni = { proof: res.check && !res.check.ok ? "mismatch" : g.proof };
+      res.uni = { proof: g.proof === "accounts" ? "accounts" : res.check && !res.check.ok ? "mismatch" : g.proof };
       addGap(res);
       statsPing("другой-банк");
       return res;
@@ -5023,7 +5027,7 @@
           const r = Merge.addStatement(st, res);
           loaded++;
           if (res.uni) Object.assign(statements[r.index], { universal: true, proof: res.uni.proof });
-          notes.push(`${f.name}: ${res.bank.name}${res.uni ? (res.bank.name === Banks.OTHER.name ? "" : " (банка нет в списке)") + (res.uni.proof === "totals" || res.uni.proof === "balance" ? ", суммы проверены" : res.uni.proof === "mismatch" ? ", суммы не сошлись" : ", прочитано по догадке") : ""}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
+          notes.push(`${f.name}: ${res.bank.name}${res.uni ? (res.bank.name === Banks.OTHER.name ? "" : " (банка нет в списке)") + (res.uni.proof === "totals" || res.uni.proof === "balance" ? ", суммы проверены" : res.uni.proof === "mismatch" ? ", суммы не сошлись" : res.uni.proof === "accounts" ? ", в файле несколько счетов" : ", прочитано по догадке") : ""}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
           const curNote = Merge.currencyNote(res.header, rates); if (curNote) notes.push(curNote);
         } catch (err) {
           notes.push(`${f.name}: ${String(err.message).replace(/\.$/, "")}.`);
