@@ -3801,7 +3801,7 @@
             "Самые крупные траты: " + big.map(g => g.dates.length > 1
               ? `${fmt(g.amount)} ${CUR} × ${g.dates.length} (${g.cat}; ${g.dates.sort().map(shortDate).join(", ")})`
               : `${fmt(g.amount)} ${CUR} (${fullDate(g.dates[0])}, ${g.cat})`).join("; ") + "." + unusual,
-            h("div", {}, catKnown ? null : whatWasIt(big[0].list, big[0].cat), h("p", {}, qchip("Показать операцию", () => showTx(big[0].list[0]), "Открыть её в таблице «Все операции»", "ghost"))));
+            h("div", {}, ...(catKnown ? [] : [whatWasIt(big[0].list, big[0].cat)]), h("p", {}, qchip("Показать операцию", () => showTx(big[0].list[0]), "Открыть её в таблице «Все операции»", "ghost"))));
           ul.append(card);
         }
       }
@@ -3819,7 +3819,7 @@
           const tx0 = findTx(anBig[0]);
           ul.append(icard(`${fmt(anBig[0].amount)} ${CUR}`, `Необычно крупная трата · ${anBig[0].cat}`,
             "Проверьте в приложении банка. Минимум в 4 раза больше обычного в своей категории: " + anBig.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} ${CUR} (${fd(d.date)}, обычно около ${fmt(d.usual)} ${CUR})`).join("; ") + ".",
-            tx0 ? h("div", {}, isUnclear(anBig[0].cat) ? whatWasIt([tx0], anBig[0].cat) : null, h("p", {}, qchip("Показать операцию", () => showTx(tx0), "Открыть её в таблице «Все операции»", "ghost"))) : null));
+            tx0 ? h("div", {}, ...(isUnclear(anBig[0].cat) ? [whatWasIt([tx0], anBig[0].cat)] : []), h("p", {}, qchip("Показать операцию", () => showTx(tx0), "Открыть её в таблице «Все операции»", "ghost"))) : null));
         }
       }
       // Азартные игры: внесено (расходы) и выведено (поступления с этой категорией): итог за период
