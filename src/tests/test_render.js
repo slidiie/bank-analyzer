@@ -107,7 +107,7 @@ check("вкладка неполного месяца помечена слов�
   const rc = textOf(byId["recap"]);
   check("«Итог месяца»: последний полный месяц — октябрь, неполный ноябрь не подводится", rc.includes("Итог октября") && !rc.includes("Итог ноября"));
   check("«Итог месяца»: всего за октябрь 900 и сравнение с сентябрём", /Всего потрачено 900 BYN/.test(rc) && /чем в сентябре/.test(rc));
-  check("«Итог месяца»: оговорка про неразобранное (500 из 900 не разобрано)", /по разобранным 44/.test(rc));
+  check("«Итог месяца»: оговорка про неразобранное (500 из 900 не разобрано)", /Разобрано 44% трат/.test(rc));
 }
 check("по умолчанию показан весь период: итого 1170 (долг ещё в тратах)", hasTotal(s, "1\u00A0170,00"));
 check("на вкладке «весь период» нет отдельного «Сравнения месяцев» (его заменяет «Динамика трат»)", !s.includes("Сравнение месяцев"));
@@ -166,13 +166,13 @@ check("клик по «За весь период»: внизу снова вс�
 // ---- Кнопки быстрого перехода ----
 let nav = textOf(byId["nav"]);
 check("кнопки перехода: траты и все операции", nav.includes("Траты") && nav.includes("Все операции"));
-check("пока всё разобрано, кнопки «Нужно разобрать» нет", !nav.includes("Нужно разобрать"));
+check("пока всё разобрано, кнопки «Нужно разобрать» нет", !nav.includes("Уточнить ("));
 vm.runInContext(`
   txs.push({ date: "2026-10-28", time: "11:00:00", amount: -70, mcc: null, details: "Неизвестный платёж", balance: 9 });
   render();
 `, ctx);
 nav = textOf(byId["nav"]);
-check("появилась неопознанная операция: кнопка «Нужно разобрать (1)»", nav.includes("Нужно разобрать (1)"));
+check("появилась неопознанная операция: кнопка «Уточнить (1)»", nav.includes("Уточнить (1)"));
 check("неопознанная операция попала в блок «Нужно разобрать»", textOf(byId["review"]).includes("Неизвестный платёж"));
 
 // ---- Выписка на один месяц: вкладок быть не должно ----
@@ -185,7 +185,7 @@ vm.runInContext(`
 s = summaryText();
 check("один месяц: нет вкладок и сравнения", !s.includes("За весь период") && !s.includes("Сравнение месяцев"));
 check("один месяц: есть таблица с категориями", s.includes("Продукты") && s.includes("Кафе и рестораны"));
-check("один месяц: нет кнопки «Нужно разобрать», когда разбирать нечего", !textOf(byId["nav"]).includes("Нужно разобрать"));
+check("один месяц: нет кнопки «Нужно разобрать», когда разбирать нечего", !textOf(byId["nav"]).includes("Уточнить ("));
 
 // ---- Мастер «образец выписки» ----
 vm.runInContext(`showAnon(false)`, ctx);
@@ -334,12 +334,12 @@ clickButton(byId["summary"], "Сен");
 check("разбор: на вкладке «Сентябрь» только сентябрьские", textOf(byId["review"]).includes("СЕНТЯБРЬ-НЕИЗВЕСТНО") && !textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("разбор: есть ссылка на неразобранные в октябре", textOf(byId["reviewOther"]).includes("Октябрь 2026: 1"));
 check("разбор: в заголовке указан месяц", textOf(byId["reviewCount"]).includes("Сентябрь"));
-check("разбор: в навигации счётчик по выбранному месяцу", textOf(byId["nav"]).includes("Нужно разобрать (1)"));
+check("разбор: в навигации счётчик по выбранному месяцу", textOf(byId["nav"]).includes("Уточнить (1)"));
 clickButton(byId["reviewOther"], "Октябрь");
 check("клик по ссылке открывает октябрь", vm.runInContext(`activeTab`, ctx) === "2026-10" && textOf(byId["review"]).includes("ОКТЯБРЬ-НЕИЗВЕСТНО"));
 check("плашка разбора стоит под итогами, вкладки внизу", html.indexOf('id="summary"') < html.indexOf('id="reviewBanner"') && html.indexOf('id="reviewBanner"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="summary"') < html.indexOf('id="bottomTabs"') && html.indexOf('id="bottomTabs"') < html.indexOf('id="insightsTitle"'));   // с v4.28 неразобранное стоит сразу под диаграммой, до «Выводов» и «Планирования»
 check("плашка показывает число и кнопку", !byId["reviewBanner"].hidden && textOf(byId["reviewBanner"]).includes("Можно уточнить") && textOf(byId["reviewBanner"]).length < 200 && textOf(byId["reviewBanner"]).includes("Уточнить"));
-check("есть нижние вкладки «Все операции» и «Разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Разобрать ("));
+check("есть нижние вкладки «Все операции» и «Разобрать»", textOf(byId["bottomTabs"]).includes("Все операции") && textOf(byId["bottomTabs"]).includes("Уточнить ("));
 vm.runInContext(`bottomTab = null; render();`, ctx);
 check("если есть неразобранное, открыта вкладка «Нужно разобрать»", byId["reviewSection"].hidden === false && byId["allPanel"].hidden === true);
 clickButton(byId["bottomTabs"], "Все операции");
@@ -348,7 +348,7 @@ clickButton(byId["reviewBanner"], "Уточнить");
 check("кнопка на плашке открывает «Нужно разобрать»", byId["reviewSection"].hidden === false);
 // Разбираем всё: операция уходит из «Нужно разобрать» и попадает в «Все операции»
 vm.runInContext(`txs.filter(t => !categoryOf(t)).forEach(t => setTxRule(t, "Прочее"));`, ctx);
-check("всё разобрано: плашки и вкладки «Нужно разобрать» нет", byId["reviewBanner"].hidden === true && !textOf(byId["bottomTabs"]).includes("Нужно разобрать"));
+check("всё разобрано: плашки и вкладки «Нужно разобрать» нет", byId["reviewBanner"].hidden === true && !textOf(byId["bottomTabs"]).includes("Уточнить ("));
 check("всё разобрано: в разделе «Разобрать» открыты «Все операции», «Нужно разобрать» нет", byId["allPanel"].hidden === false && byId["reviewSection"].hidden === true && textOf(byId["bottomTabs"]).includes("Все операции"));
 
 // ---- Список в разделе «Разобрать» всегда развёрнут: клик по вкладке только переключает ----
@@ -610,7 +610,7 @@ vm.runInContext(`
   userRules = {}; txRules = {}; activeTab = "all"; allCat = "all"; render();
 `, ctx);
 check("хвост: мелкие группы свёрнуты в одну строку", textOf(byId["review"]).includes("Ещё 7 групп") && !textOf(byId["review"]).includes("ЛАВКА МЮ"));
-clickButton(byId["review"], "Всё в «Прочее»");
+clickButton(byId["review"], "Не уточнять (в «Прочее»)");
 check("хвост: перед применением просит подтверждение", textOf(byId["review"]).includes("Отправить все эти группы в «Прочее»?"));
 clickButton(byId["review"], "Да, в «Прочее»");
 check("хвост: группы ушли в «Прочее», есть плашка отмены", vm.runInContext(`Object.values(userRules).filter(v => v === "Прочее").length === 7`, ctx) && textOf(byId["undoBar"]).includes("отправлены в «Прочее»"));
