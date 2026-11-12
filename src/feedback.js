@@ -30,6 +30,17 @@
     };
   }
 
+  // Название банка для письма. Банк из нашего списка пишется как есть. У банка не из списка название угадано
+  // из шапки выписки, и рядом с ним могли оказаться чужие слова, например фамилия и имя владельца счёта
+  // («Сидоров Пётр Белагропромбанк»). В письмо берём только само слово с «банк» или «bank», без соседних слов.
+  function bankLabel(name, known) {
+    const n = clean(name, 80);
+    if (!n) return "";
+    if ((known || []).indexOf(n) >= 0) return n;
+    const word = n.split(/[^A-Za-zА-Яа-яЁё-]+/).find(w => /банк|bank/i.test(w) && w.length > 5);
+    return "нет в списке" + (word ? " (" + word + ")" : "");
+  }
+
   function topicLabel(id) { const t = TOPICS.find(x => x.id === id); return t ? t.label : TOPICS[TOPICS.length - 1].label; }
 
   // Тело письма (видно человеку в окне до отправки)
@@ -53,7 +64,7 @@
     return { to: MAIL, subject: s, body: b, href: "mailto:" + MAIL + "?subject=" + encodeURIComponent(s) + "&body=" + encodeURIComponent(b) };
   }
 
-  const api = { MAIL, TOPICS, MAX_TEXT, info, body, subject, buildMail, topicLabel };
+  const api = { MAIL, TOPICS, MAX_TEXT, info, body, subject, buildMail, topicLabel, bankLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Feedback = api;
 })(typeof self !== "undefined" ? self : this);

@@ -1726,8 +1726,10 @@
     // «Что не так?»: письмо без данных выписки (версия, банки, число операций, размер экрана) и текст самого человека
     const FB_VERSION = "v4.88";
     { const vs = document.getElementById("verStamp"); if (vs) vs.textContent = FB_VERSION; }
+    // В письмо идут только названия банков из нашего списка; у банка не из списка лишь слово с «банк» (рядом в шапке бывает фамилия)
+    const FB_KNOWN_BANKS = Banks.BANKS.map(b => b.name).concat([Banks.OTHER.name, "Выписка"]);
     function fbInfo() {
-      return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => st.bankName).filter(Boolean))], count: demoMode ? 0 : txs.length,
+      return { version: FB_VERSION, banks: demoMode ? [] : [...new Set(statements.map(st => Feedback.bankLabel(st.bankName, FB_KNOWN_BANKS)).filter(Boolean))], count: demoMode ? 0 : txs.length,
         unread: demoMode ? 0 : statements.reduce((a, st) => a + (st.unread ? st.unread.length : 0), 0), mismatch: !demoMode && statements.some(st => st.check && st.check.headerIncome != null && !st.check.ok),
         section: document.body.getAttribute("data-view") || "none", width: window.innerWidth, height: window.innerHeight,
         theme: document.documentElement.getAttribute("data-theme") === "dark" || (document.documentElement.getAttribute("data-theme") !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light" };
