@@ -3456,7 +3456,7 @@
           }
         }
       }
-      const an = Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP);
+      const an = Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP, ESSENTIAL_CATS);
       if (an.double.length) lines.push(["Возможное двойное списание: ", chip(`${fmt(an.double[0].amount)} ${CUR} × ${an.double[0].count}`), ` · ${softCase(an.double[0].name)}, ${dmy(an.double[0].date)}`]);
       else if (an.big.length) lines.push(["Необычно крупная трата: ", chip(`${fmt(an.big[0].amount)} ${CUR}`), ` · ${an.big[0].cat}, ${dmy(an.big[0].date)}`]);
       const { regular } = regularCtx();
@@ -3790,20 +3790,24 @@
         const fullDate = d => (/^\d{4}-(\d\d)-(\d\d)$/.test(d) ? shortDate(d) + "." + d.slice(0, 4) : d);
         if (big.length && big[0].amount >= 50) {
           bigShown = big[0];
-          const anSame = ctx.list && Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP).big
-            .find(d => Math.abs(d.amount - big[0].amount) < 0.005 && big[0].dates.includes(d.date));
-          const unusual = anSame ? ` Необычно много для этой категории: обычно около ${fmt(anSame.usual)} ${CUR}.` : "";
+          const anAll = ctx.list && Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP, ESSENTIAL_CATS);
+          const anSame = anAll && anAll.big.find(d => Math.abs(d.amount - big[0].amount) < 0.005 && big[0].dates.includes(d.date));
+          const usualCat = anAll && anAll.usual[big[0].cat];
+          // «Необычно» только для необязательных категорий; для продуктов, транспорта, жилья и связи просто «крупная покупка»
+          const unusual = anSame ? ` Необычно много для этой категории: обычно около ${fmt(anSame.usual)} ${CUR}.`
+            : (usualCat && big[0].amount >= 2 * usualCat ? ` Крупная покупка · обычно ~${fmt(usualCat)} ${CUR}.` : "");
+          const catKnown = big[0].cat && !isUnclear(big[0].cat) && big[0].cat !== "не разобрано" && big[0].cat !== "Не разобрано";
           const card = icard(`${fmt(big[0].amount)} ${CUR}`, big[0].dates.length > 1 ? `Самая крупная трата, была ${big[0].dates.length} ${[2, 3, 4].includes(big[0].dates.length % 10) && ![12, 13, 14].includes(big[0].dates.length % 100) ? "раза" : "раз"} · ${big[0].cat}` : `Самая крупная трата · ${fullDate(big[0].dates[0])}, ${big[0].cat}`,
             "Самые крупные траты: " + big.map(g => g.dates.length > 1
               ? `${fmt(g.amount)} ${CUR} × ${g.dates.length} (${g.cat}; ${g.dates.sort().map(shortDate).join(", ")})`
               : `${fmt(g.amount)} ${CUR} (${fullDate(g.dates[0])}, ${g.cat})`).join("; ") + "." + unusual,
-            h("div", {}, whatWasIt(big[0].list, big[0].cat), h("p", {}, qchip("Показать операцию", () => showTx(big[0].list[0]), "Открыть её в таблице «Все операции»", "ghost"))));
+            h("div", {}, catKnown ? null : whatWasIt(big[0].list, big[0].cat), h("p", {}, qchip("Показать операцию", () => showTx(big[0].list[0]), "Открыть её в таблице «Все операции»", "ghost"))));
           ul.append(card);
         }
       }
       // Аномалии: только подозрения, проверьте сами
       if (ctx && ctx.list) {
-        const an = Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP);
+        const an = Planner.findAnomalies(ctx.list.filter(t => !t.part).map(t => ({ date: t.date, amount: t.amount, cat: displayCat(t) || "Не разобрано", name: planName(t) })), PLAN_SKIP, ESSENTIAL_CATS);
         const fd = d => d.slice(8, 10) + "." + d.slice(5, 7) + "." + d.slice(0, 4);
         const findTx = d => ctx.list.find(t => !t.part && t.date === d.date && Math.abs(Math.abs(t.amount) - d.amount) < 0.005);
         if (an.double.length) ul.append(icard(`${an.double.length} ${an.double.length === 1 ? "случай" : "случая"}`, "Возможное двойное списание",
@@ -3815,7 +3819,7 @@
           const tx0 = findTx(anBig[0]);
           ul.append(icard(`${fmt(anBig[0].amount)} ${CUR}`, `Необычно крупная трата · ${anBig[0].cat}`,
             "Проверьте в приложении банка. Минимум в 4 раза больше обычного в своей категории: " + anBig.slice(0, 5).map(d => `${d.name}, ${fmt(d.amount)} ${CUR} (${fd(d.date)}, обычно около ${fmt(d.usual)} ${CUR})`).join("; ") + ".",
-            tx0 ? h("div", {}, whatWasIt([tx0], anBig[0].cat), h("p", {}, qchip("Показать операцию", () => showTx(tx0), "Открыть её в таблице «Все операции»", "ghost"))) : null));
+            tx0 ? h("div", {}, isUnclear(anBig[0].cat) ? whatWasIt([tx0], anBig[0].cat) : null, h("p", {}, qchip("Показать операцию", () => showTx(tx0), "Открыть её в таблице «Все операции»", "ghost"))) : null));
         }
       }
       // Азартные игры: внесено (расходы) и выведено (поступления с этой категорией): итог за период
@@ -3848,6 +3852,7 @@
       return k.slice(k.indexOf("|") + 1).slice(0, 40) || "без названия";
     }
     const PLAN_SKIP = [Cat.OWN, Cat.LOAN, Cat.SAVINGS, Cat.GAMBLING, "Наличные"];
+    const ESSENTIAL_CATS = ["Продукты", "Транспорт", "Аренда и жильё", "Связь и подписки"];   // крупная трата тут «крупная покупка», а не «необычная»
     const money = n => fmt(Math.round(n * 100) / 100);
     const num = v => { const x = parseFloat(String(v).replace(",", ".")); return Number.isFinite(x) && x >= 0 ? x : null; };
     let planOpen = [false, false, !Object.keys(budgets || {}).length];           // какие карточки раскрыты: накопления, регулярные, бюджет

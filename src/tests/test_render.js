@@ -131,7 +131,7 @@ s = summaryText();
 check("октябрь без долга: итого 400", hasTotal(s, "400,00"));
 {
   const ins = textOf(byId["insights"]);
-  check("крупная трата: одна карточка с «Что это было?» и «Показать операцию»", ins.includes("Самая крупная трата") && (ins.includes("Что это было?") || ins.includes("Сайт определил категорию")) && ins.includes("Показать операцию") && !ins.includes("Необычно крупная трата"));
+  check("крупная трата: одна карточка с «Показать операцию»; у известной категории нет вопроса «Что это было?»", ins.includes("Самая крупная трата") && ins.includes("Показать операцию") && !ins.includes("Необычно крупная трата") && !ins.includes("Это не так, изменить категорию") && !ins.includes("Сайт определил категорию"));
   clickButton(byId["insights"], "Показать операцию");
   check("«Показать операцию» открывает «Все операции» с поиском по дате и сумме", vm.runInContext(`bottomTab`, ctx) === "all" && /^\d\d\.\d\d\.\d{4} \d+,\d\d$/.test(vm.runInContext(`allFilt.query`, ctx)));
   vm.runInContext(`allFilt = Filters.empty(); bottomTab = null;`, ctx);

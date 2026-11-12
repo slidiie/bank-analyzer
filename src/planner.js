@@ -170,8 +170,10 @@
   // Аномалии в расходах: items = [{date, amount, cat, name}]. Только подозрения, не утверждения.
   //  double: два и более списания с тем же названием и суммой (от 10) в один день;
   //  big: расход от 100, не меньше чем в 4 раза больше обычного (медианы) в своей категории, если в ней есть минимум 5 расходов.
-  function findAnomalies(items, skipCats) {
-    const sk = new Set(skipCats || []);
+  //  essentialCats: обязательные категории (продукты, транспорт, жильё, связь): крупная трата там не «необычная», это просто крупная покупка;
+  //  usual: обычная трата (медиана) по каждой категории, где есть минимум 5 расходов.
+  function findAnomalies(items, skipCats, essentialCats) {
+    const sk = new Set(skipCats || []), ess = new Set(essentialCats || []);
     const exp = items.filter(t => t.date && t.amount < 0 && !sk.has(t.cat));
     const groups = new Map();
     for (const t of exp) {
@@ -187,15 +189,17 @@
     const big = [];
     // Трата, которая повторяется в другом месяце с похожей суммой (аренда, кредит), не «необычная»
     const repeats = t => exp.some(u => u !== t && u.name === t.name && u.date.slice(0, 7) !== t.date.slice(0, 7) && Math.abs(u.amount - t.amount) <= 0.15 * -t.amount);
+    const usual = {};
+    for (const [c, a] of byCat) if (a.length >= 5) usual[c] = median(a);
     for (const t of exp) {
       const a = byCat.get(t.cat);
       if (-t.amount < 100 || a.length < 5) continue;
-      if (repeats(t)) continue;
+      if (ess.has(t.cat) || repeats(t)) continue;
       const med = median(a);
       if (med > 0 && -t.amount >= 4 * med) big.push({ date: t.date, name: t.name, cat: t.cat, amount: -t.amount, usual: med });
     }
     big.sort((a, b) => b.amount - a.amount);
-    return { double, big };
+    return { double, big, usual };
   }
 
   const api = { compareMonths, findAnomalies, addMonths, findRegular, schedule, daysBetween, forecast, budgetStatus, savingsPlan, savingsCheck, leftover };
