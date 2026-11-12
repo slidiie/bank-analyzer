@@ -815,6 +815,22 @@
     .wanted h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
     .wantedlist { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: .4rem 0 .8rem; }
     .wantedlist li { padding: .25rem .7rem; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+    .sheet .unicard { max-width: 42rem; }
+    .uniproof { padding: .55rem .75rem; border-radius: var(--r-m); border: 1px solid var(--note-border); background: var(--note-bg); }
+    .uniproof.ok { border-color: var(--ok-border); background: var(--ok-bg); }
+    .uniproof.bad { border-color: var(--warn-border); background: var(--warn-bg); }
+    .uniop { display: grid; grid-template-columns: 6rem 9rem 1fr; gap: .2rem .7rem; padding: .4rem 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+    .uniop > span:first-child { white-space: nowrap; }
+    .uniop .unia { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .uniop .unia.pos { color: var(--pos); }
+    .uniop .unit { min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+    .unicol { display: grid; grid-template-columns: 11.5rem 1fr; gap: .2rem .8rem; padding: .45rem 0; border-bottom: 1px solid var(--line); align-items: center; }
+    .unicol select { width: 100%; max-width: none; }
+    .unicol .unic { min-width: 0; overflow-wrap: anywhere; }
+    .unicol .unic small { display: block; color: var(--muted); }
+    #uniColsBox { margin-top: .8rem; }
+    #uniColsBox summary { cursor: pointer; min-height: 32px; }
+    @media (max-width: 560px) { .uniop { grid-template-columns: auto 1fr; } .uniop .unit { grid-column: 1 / -1; } .unicol { grid-template-columns: 1fr; } }
     .readwarn { margin: 0 0 1rem; }
     .recap .rweak { margin: .4rem 0; padding: .4rem .6rem; border-left: 3px solid var(--warn-border, var(--line)); }
     .readwarn p { margin: .3rem 0; }
@@ -997,7 +1013,7 @@
         <p><b>Android.</b> Скачанная выписка обычно попадает в папку «Загрузки» (Download). Нажмите «Выбрать выписку» и откройте эту папку.</p>
         <p>Выписка пришла на почту: откройте письмо и сохраните вложение, дальше так же. Если сайт открыт внутри Telegram или другого приложения и файл не выбирается, откройте сайт в обычном браузере: меню «⋯» → «Открыть в браузере».</p>
       </details>
-      <p class="muted">Нужен именно файл из банка (PDF или CSV), не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Подробности</button> · <a href="banks/">Все инструкции по банкам</a> · <a href="#wanted">Вашего банка нет?</a></p>
+      <p class="muted">Нужен именно файл из банка (PDF, CSV или Excel), не фото и не скан. <button id="howRow" class="linklike" type="button" aria-haspopup="dialog">Подробности</button> · <a href="banks/">Все инструкции по банкам</a> · <a href="#wanted">Вашего банка нет?</a></p>
     </details>
     <h2 id="faq">Частые вопросы</h2>
     <details><summary>Куда уходит моя выписка?</summary>
@@ -1071,12 +1087,28 @@
       <p id="shareMsg" class="muted" role="status"></p>
     </div>
   </div>
+  <div id="uniSheet" class="modal sheet" hidden>
+    <div class="modalcard unicard" role="dialog" aria-modal="true" aria-labelledby="uniTitle" tabindex="-1">
+      <h2 id="uniTitle" style="margin-top:0">Этого банка нет в списке. Так читаем?</h2>
+      <p id="uniProof" class="uniproof" role="status"></p>
+      <h3>Первые операции, как их прочитал сайт</h3>
+      <div id="uniOps" class="uniops"></div>
+      <p id="uniSum" class="muted"></p>
+      <details id="uniColsBox"><summary>Колонки файла: поправить, если прочитано не так</summary>
+        <p class="muted">У каждой колонки подпись, чем сайт её считает. Поменяйте подпись, и операции выше пересчитаются.</p>
+        <div id="uniCols" class="unicols"></div>
+        <p style="margin-top:.6rem"><button id="uniReset" type="button">Вернуть как было</button></p>
+      </details>
+      <div class="modalbtns"><button id="uniOk" type="button">Да, читаем</button> <button id="uniCancel" type="button">Отмена</button></div>
+      <p class="muted">Файл никуда не отправляется: всё происходит в браузере.</p>
+    </div>
+  </div>
   <div id="fbSheet" class="modal sheet" hidden>
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="fbTitle" tabindex="-1">
       <h2 id="fbTitle" style="margin-top:0">Что-то не так?</h2>
       <p class="muted">Выберите тему и напишите своими словами, что случилось. <b>Суммы, номера карт и описания операций писать не нужно.</b> Сайт сам ничего не отправляет: откроется ваше почтовое приложение с готовым письмом, вы просмотрите его и отправите сами.</p>
       <details class="datablock" id="fbHelp"><summary>Если что-то не так: частые случаи</summary>
-        <p><b>Выписка не прочиталась или прочитана не полностью.</b> Скачайте её в банке заново: нужен именно PDF (или CSV Приорбанка) из интернет-банка, не фото и не скан. Если банка нет в списке, пришлите образец через блок «Вашего банка нет в списке?» на главной.</p>
+        <p><b>Выписка не прочиталась или прочитана не полностью.</b> Скачайте её в банке заново: нужен именно файл из интернет-банка (PDF, CSV или Excel), не фото и не скан. Если банка нет в списке, сайт читает выписку по колонкам и сам говорит, сошлись ли суммы; если прочитано неверно, пришлите образец через блок «Вашего банка нет в списке?» на главной.</p>
         <p><b>Суммы не сошлись с итогами выписки.</b> Значит, часть операций не прочиталась. Над «Итогом месяца» сайт пишет, где пропуск. Сверьте эти дни с приложением банка, а нам напишите, какой это банк.</p>
         <p><b>Неверная категория.</b> Поменяйте её в «Все операции» или в «Уточнить»: выбор запоминается, и в следующий раз этот получатель уже будет в нужной категории.</p>
         <p><b>Траты кажутся завышенными.</b> Переводы между своими счетами отметьте как «Это мои деньги»: они перестанут считаться тратой. Возвраты покупок сайт вычитает сам.</p>
@@ -1159,7 +1191,7 @@
     <h2 id="appTitle" data-sec="overview more">Ваш анализ</h2>
     <p class="muted" data-sec="overview more" style="margin:.2rem 0 .6rem">Можно добавлять несколько файлов: повторы пропускаются.</p>
     <p data-sec="overview more" class="filerow">
-      <input type="file" id="file" class="vh" accept="application/pdf,.pdf,.csv,text/csv" multiple aria-label="Выберите файлы выписок (PDF или CSV)">
+      <input type="file" id="file" class="vh" accept="application/pdf,.pdf,.csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple aria-label="Выберите файлы выписок (PDF, CSV или Excel)">
       <label for="file" class="filebtn">Добавить выписки</label>
       <button id="clearBtn" type="button" hidden>Убрать загруженные выписки</button>
       <button id="dlBtn" type="button" hidden title="Все операции одной таблицей (CSV): открывается в Excel и Google Таблицах">Скачать в Excel</button>
@@ -1367,6 +1399,8 @@
   <script src="priorcsv.js"></script>
   <script src="transfers.js"></script>
   <script src="merchants.js"></script>
+  <script src="universal.js"></script>
+  <script src="sheets.js"></script>
   <script src="banks.js"></script>
   <script src="demo.js"></script>
   <script src="merge.js"></script>
@@ -1465,7 +1499,7 @@
     }
     const SP = StatementParser;
     const Cat = Categories;
-    const bankOf = hdr => Banks.BANKS.find(b => b.id === (hdr && hdr.bank)) || Banks.BANKS[Banks.BANKS.length - 1];
+    const bankOf = hdr => Banks.byId(hdr && hdr.bank) || Banks.BANKS[Banks.BANKS.length - 1];
 
     // ---------- Демо-режим: выдуманные данные, ничего не сохраняется и настоящий разбор не трогается ----------
     let demoMode = false;
@@ -1579,7 +1613,7 @@
     const BANK_ORDER = ["belarusbank", "mtbank", "mtb", "vtb", "prior", "sber", "alfa", "belinvest"];
     const bankRank = b => { const i = BANK_ORDER.indexOf(b.id); return i < 0 ? BANK_ORDER.length : i; };
     const bankNames = Banks.BANKS.slice().sort((a, b) => bankRank(a) - bankRank(b)).map(b => b.name).join(", ");
-    $("faqBanks").textContent = "Сейчас: " + bankNames + ". Вашего банка нет? Напишите, добавим: это по образцу выписки, ниже есть кнопка.";
+    $("faqBanks").textContent = "Точно читаются: " + bankNames + ". Вашего банка нет в списке? Всё равно загрузите выписку (PDF, CSV или Excel): сайт сам найдёт колонки, покажет первые операции и спросит, верно ли прочитано.";
 
     // Пример на главной = последний месяц постоянного демо (Demo.make без зерна). test_render.js сверяет эти числа с демо.
     const LANDING_SAMPLE = [["Аренда и жильё", 700], ["Продукты", 367.17], ["Кафе и рестораны", 285.64], ["Наличные", 100], ["Не разобрано", 81.3], ["Транспорт", 55.65], ["Связь и подписки", 36.59], ["Развлечения", 18], ["Комиссии банка", 3]];
@@ -1709,7 +1743,7 @@
       return null;
     }
     const FOCUSABLE = 'summary, a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const openModal = () => [...SHEETS, "resetBox"].map(id => $(id)).find(el => el && !el.hidden) || null;
+    const openModal = () => ["uniSheet", ...SHEETS, "resetBox"].map(id => $(id)).find(el => el && !el.hidden) || null;
     if (document.addEventListener) document.addEventListener("keydown", e => {
       if (e.key !== "Tab") return;
       const m = openModal();
@@ -2550,7 +2584,7 @@
       if (demoMode) { box.className = ""; box.replaceChildren(); renderReadWarn(); return; }
       let ok = true, unchecked = [];
       const lines = statements.map(st => {
-        let t = `${st.bankName}: ${st.count} операций` + (st.from ? ` за период ${fmtDate(st.from)} — ${fmtDate(st.to)}` : "");
+        let t = `${st.bankName}${st.universal && st.bankName !== Banks.OTHER.name ? " (банка нет в списке, прочитано по колонкам)" : ""}: ${st.count} операций` + (st.from ? ` за период ${fmtDate(st.from)} — ${fmtDate(st.to)}` : "");
         if (st.skipped) t += `, повторов пропущено: ${st.skipped}`;
         t += ". ";
         const c = st.check;
@@ -2559,7 +2593,10 @@
           t += `Списания: по выписке ${fmt(c.headerExpense)}, найдено ${fmt(c.expense)} ${c.expenseOk ? "✓" : "✗"}.`;
           if (c.pending) t += ` Ещё не проведено банком: ${c.pending} ${opsWord(c.pending)}. Они учтены в тратах и не входят в итоги выписки; после проведения банк покажет их в следующей выписке.`;
           if (!c.ok) { ok = false; t += " Суммы не сошлись: часть операций прочитана неверно или пропущена (подробности вверху раздела)."; }
-        } else { unchecked.push(st.bankName); t += "Итоговых сумм в этой выписке нет, сверить не с чем."; }
+        } else if (st.universal && st.proof === "balance") t += "Суммы сходятся с остатком после каждой операции ✓.";
+        else if (st.universal && st.proof === "totals") t += "Остаток на начало, операции и остаток на конец сходятся ✓.";
+        else if (st.universal && st.proof === "mismatch") { ok = false; t += "Остатки на начало и конец не сходятся с операциями ✗."; }
+        else { unchecked.push(st.bankName); t += st.universal ? "Этого банка нет в списке: прочитано по догадке, сверить не с чем." : "Итоговых сумм в этой выписке нет, сверить не с чем."; }
         if (st.unread && st.unread.length) ok = false;
         return h("div", {}, t);
       });
@@ -2609,20 +2646,32 @@
           else t += " Скорее всего, одна или несколько операций не прочитаны или прочитаны с ошибкой.";
           items.push(h("div", {}, t));
         }
+        if (st.universal && st.proof === "mismatch" && !(c && c.headerIncome != null))
+          items.push(h("div", {}, "Остаток на начало и на конец выписки не сходится с прочитанными операциями: часть операций пропущена или сумма взята не из той колонки."));
         if (items.length) out.push(h("div", { class: "rwbank" }, statements.length > 1 ? h("b", {}, st.bankName + ". ") : "", ...items));
       });
       return out;
     }
+    // Выписки банков не из списка, которые нечем проверить (нет итогов и остатков): «прочитано по догадке»
+    const guessed = () => demoMode ? [] : statements.filter(st => st.universal && st.proof !== "totals" && st.proof !== "balance" && st.proof !== "mismatch");
     function renderReadWarn() {
       const box = $("readWarn");
       if (!box) return;
-      const probs = readProblems();
-      box.hidden = !probs.length;
-      if (!probs.length) { box.replaceChildren(); return; }
+      const probs = readProblems(), gs = guessed();
+      box.hidden = !probs.length && !gs.length;
+      if (!probs.length && !gs.length) { box.replaceChildren(); return; }
+      const gnote = gs.length ? h("p", {}, (gs.length === 1 ? (gs[0].bankName === Banks.OTHER.name ? "Этого банка" : "Банка «" + gs[0].bankName + "»") + " нет в списке" : "Части банков нет в списке") + ", а в выписке нет итогов и остатков, чтобы проверить суммы. Сверьте итог и две-три операции с приложением банка.") : null;
+      if (!probs.length) {
+        box.className = "note readwarn";
+        box.replaceChildren(h("b", {}, "Прочитано по догадке"), gnote,
+          h("p", { class: "muted" }, "Если цифры не сходятся, ",
+            h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "пришлите образец"), " (личные данные закроются): добавлю этот банк в список."));
+        return;
+      }
       box.className = "warn readwarn";
       box.replaceChildren(h("b", {}, "Выписка прочитана не полностью"),
         h("p", {}, "Цифры ниже могут быть неточными: итог месяца, категории и бюджет посчитаны без этих операций."),
-        ...probs,
+        ...probs, ...(gnote ? [gnote] : []),
         h("p", { class: "muted" }, "Попробуйте скачать выписку из банка заново. Если ошибка повторится, ",
           h("button", { type: "button", class: "linklike", onclick: () => { $("fbTopic").value = "parse"; $("fbOpen4").click(); } }, "напишите, что не так"), " или ",
           h("button", { type: "button", class: "linklike", onclick: () => showAnon(false) }, "пришлите образец"), " (личные данные закроются), и я поправлю чтение."));
@@ -3355,7 +3404,7 @@
         r.note ? h("p", { class: "rnote" + (weak ? " rweak" : " muted") }, r.note, " ", goReview) : "",
         r.save && !weak ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} BYN`, h("small", {}, "могло остаться, если бы выросшие траты были на обычном уровне")) : "",
         h("ul", {}, r.lines.filter(l => l.kind !== "save" || !r.save).map(l => h("li", { class: "k-" + l.kind }, l.text))),
-        shareData && shareData.bar.length && !readProblems().length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");
+        shareData && shareData.bar.length && !readProblems().length && !guessed().length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");
     }
 
     // ---------- Карточка «Поделиться итогом»: картинка 4:5, рисуется на canvas в браузере (без сумм по умолчанию) ----------
@@ -4749,11 +4798,17 @@
 
     // ---------- Чтение PDF ----------
     // CSV-выписка (пока Приорбанк): кодировка windows-1251, разбор тот же, что и у PDF
-    async function readCsv(file) {
+    async function readCsv(file, label) {
       if (file.size > 20 * 1024 * 1024) throw new Error("файл слишком большой для выписки");
       const text = PriorCsvParser.decode(new Uint8Array(await file.arrayBuffer()));
       const res = Banks.parseCsv(text);
-      if (!res) throw Object.assign(new Error("не удалось прочитать. Из CSV сайт пока читает только выписки Приорбанка, для других банков нужен PDF (где его взять, написано на главной). Если это выписка другого банка, можно подготовить образец и отправить автору (откроется пошаговое окно)"), { unsupported: true });
+      if (!res) {
+        // Не Приорбанк: читаем таблицу тем же путём, что и PDF неизвестного банка
+        let grid = null; try { grid = Universal.gridFromTable(Sheets.parseCsv(text)); } catch (e) { grid = null; }
+        const u = await readUnknown(grid, file, label);
+        if (u) return u;
+        throw Object.assign(new Error("в этой таблице не нашлось колонок с датой и суммой. Попробуйте скачать выписку в PDF (где его взять, написано на главной) или подготовьте образец и отправьте автору (откроется пошаговое окно)"), { unsupported: true });
+      }
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
@@ -4767,12 +4822,94 @@
       const g = Banks.balanceGap(res.txs);
       if (g) { res.check.gapFrom = g.from; res.check.gapTo = g.to; }
     }
+    // ---------- Банк не из списка: окно «Так читаем?» ----------
+    // Показывает первые операции, как их прочитал сайт, и колонки файла с подписями; подпись колонки можно поменять.
+    // Возвращает результат Universal.guess (с правками человека) или null, если человек отказался.
+    let uniFinish = null;
+    function askUniversal(grid, first) {
+      return new Promise(resolve => {
+        let cur = first, roles = first.roles.slice(), stuck = false;
+        const sample = Universal.preview(grid, 3);
+        const UNIQUE = ["date", "amount", "expense", "income", "balance", "currency", "sign"];
+        const draw = () => {
+          const p = cur.proof;
+          $("uniProof").className = "uniproof" + (stuck || p === "mismatch" ? " bad" : p === "totals" || p === "balance" ? " ok" : "");
+          $("uniProof").textContent = stuck ? "Так прочитать не получается: нужна колонка с датой и колонка с суммой (или «Расход» и «Приход»)."
+            : p === "totals" ? "Проверено: суммы сошлись с итогами в самой выписке ✓"
+            : p === "balance" ? "Проверено: суммы сходятся с остатком после каждой операции ✓"
+            : p === "mismatch" ? "Суммы не сошлись с итогами выписки ✗. Посмотрите колонки ниже: возможно, сумма взята не из той."
+            : "Прочитано по догадке: в выписке нет итогов и остатков, проверить суммы нечем. Сверьте операции ниже со своей выпиской.";
+          const c = cur.header.currency || "BYN";
+          $("uniOps").replaceChildren(...cur.txs.slice(0, 5).map(t => h("div", { class: "uniop" },
+            h("span", {}, Banks.realDate(t.date) ? fmtDate(t.date) : "дата не читается"),
+            h("span", { class: "unia" + (t.amount > 0 ? " pos" : "") }, Number.isFinite(t.amount) ? (t.amount > 0 ? "+" : "−") + fmt(Math.abs(t.amount)) + " " + c : "сумма не читается"),
+            h("span", { class: "unit" }, t.details || "без описания"))));
+          const good = cur.txs.filter(t => Number.isFinite(t.amount) && Banks.realDate(t.date)), bad = cur.txs.length - good.length;
+          $("uniSum").textContent = `Всего ${good.length} ${opsWord(good.length)}` + (cur.header.from ? ` за ${fmtDate(cur.header.from)} — ${fmtDate(cur.header.to)}` : "") +
+            `: пришло ${fmt(cur.check.income)}, ушло ${fmt(cur.check.expense)} ${c}. Как понято: ${cur.how}.` + (bad ? ` Не читается ${bad} ${opsWord(bad)}.` : "");
+          $("uniCols").replaceChildren(...grid.cols.map((col, j) => {
+            const ex = sample.map(r => r[j]).filter(Boolean);
+            if (!ex.length && roles[j] === "skip") return null;
+            const sel = h("select", { "aria-label": "Что в колонке " + (col.title || j + 1), onchange: ev => {
+              const v = ev.currentTarget.value;
+              if (UNIQUE.includes(v)) roles = roles.map((r, k) => k !== j && (r === v || (v === "amount" && (r === "expense" || r === "income")) || ((v === "expense" || v === "income") && r === "amount")) ? "skip" : r);
+              roles[j] = v;
+              let next = null; try { next = Universal.guess(grid, roles); } catch (e) { next = null; }
+              stuck = !(next && next.txs.length);
+              if (!stuck) cur = next;
+              draw();
+            } }, ...Universal.ROLES.map(([id, name]) => h("option", { value: id }, name)));
+            sel.value = roles[j];
+            return h("div", { class: "unicol" }, sel, h("div", { class: "unic" }, h("b", {}, col.title || "Без названия"), h("small", {}, ex.length ? ex.join(" · ") : "пусто")));
+          }).filter(Boolean));
+          $("uniOk").disabled = stuck;
+        };
+        uniFinish = ok => { uniFinish = null; $("uniSheet").hidden = true; resolve(ok && !stuck ? cur : null); };
+        $("uniReset").onclick = () => { cur = first; roles = first.roles.slice(); stuck = false; draw(); };
+        $("uniColsBox").open = first.proof === "mismatch";
+        draw();
+        $("uniSheet").hidden = false;
+        try { $("uniSheet").querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ }
+      });
+    }
+    $("uniOk").addEventListener("click", () => { if (uniFinish) uniFinish(true); });
+    $("uniCancel").addEventListener("click", () => { if (uniFinish) uniFinish(false); });
+    if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape" && uniFinish) uniFinish(false); });
+    // Банк не узнан: пробуем прочитать по колонкам и спрашиваем человека. null: прочитать не вышло (дальше обычная ошибка).
+    async function readUnknown(grid, file, label) {
+      let first = null;
+      try { first = grid ? Universal.guess(grid) : null; } catch (e) { first = null; }
+      if (!first || !first.txs.some(t => Number.isFinite(t.amount) && Banks.realDate(t.date))) return null;
+      setStatus(`${label}Этого банка нет в списке: проверьте, верно ли прочитано…`);
+      const g = await askUniversal(grid, first);
+      if (!g) throw Object.assign(new Error("чтение отменено"), { unsupported: /\.(pdf|csv)$/i.test(file.name) });
+      const res = Banks.fromUniversal(g);
+      if (!res.txs.length) throw new Error("операций в файле не нашлось");
+      const v = res.bank.validate(res.txs, res.header);
+      res.check = res.header.income == null || res.header.expense == null ? null :
+        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
+      res.uni = { proof: res.check && !res.check.ok ? "mismatch" : g.proof };
+      addGap(res);
+      statsPing("другой-банк");
+      return res;
+    }
+    // Excel: .xlsx и таблицы HTML под видом .xls. Читается тем же путём, что и PDF неизвестного банка.
+    async function readSheet(file, label) {
+      if (file.size > 20 * 1024 * 1024) throw new Error("файл слишком большой для выписки");
+      setStatus(`${label}Открываю таблицу…`);
+      const tables = await Sheets.read(new Uint8Array(await file.arrayBuffer()), file.name);
+      const grids = tables.map(t => { try { return Universal.gridFromTable(t); } catch (e) { return null; } }).filter(Boolean).sort((a, b) => b.rows.length - a.rows.length);
+      const u = await readUnknown(grids[0] || null, file, label);
+      if (u) return u;
+      throw new Error("в этой таблице не нашлось колонок с датой и суммой. Попробуйте скачать выписку из банка в PDF (где его взять, написано на главной)");
+    }
     // Читает один файл и возвращает { bank, header, txs, check } или бросает ошибку с понятным текстом
     async function readStatement(file, label) {
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
       const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
-      if (isCsv) return readCsv(file);
-      if (!isPdf) throw new Error("формат не поддерживается. Скачайте выписку из интернет-банка в формате PDF (CSV сейчас читается только у Приорбанка, Excel и Word не поддерживаются)");
+      if (isCsv) return readCsv(file, label);
+      if (/\.(xlsx|xlsm|xls)$/i.test(file.name) || /spreadsheet|ms-excel/.test(file.type || "")) return readSheet(file, label);
+      if (!isPdf) throw new Error("формат не поддерживается. Нужна выписка из интернет-банка: PDF, CSV или Excel (.xlsx). Word и картинки не читаются");
       let pdf;
       setStatus(`${label}Открываю PDF…`);
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -4803,7 +4940,7 @@
         const content = await page.getTextContent();
         pages.push(content.items.map(i => {
           const x = i.transform[4], y = i.transform[5];
-          return { x, y, vx: t[0] * x + t[2] * y + t[4], vy: t[1] * x + t[3] * y + t[5], text: i.str };
+          return { x, y, vx: t[0] * x + t[2] * y + t[4], vy: t[1] * x + t[3] * y + t[5], w: i.width, text: i.str };
         }));
       }
       if (!pages.some(pg => pg.some(i => i.text.trim()))) {
@@ -4812,7 +4949,13 @@
       const res = Banks.parse(pages);
       const partial = !res && Banks.partialOf ? Banks.partialOf(pages) : null;
       if (partial) throw new Error("похоже на выписку «" + partial + "», но без начала: нет первой страницы с итогами и периодом. Скачайте выписку из банка заново целиком и загрузите весь файл");
-      if (!res) throw Object.assign(new Error("этот банк пока не поддерживается (сейчас читаются: " + bankNames + "). Если ваш банк в этом списке, проверьте, что файл целый, с первой страницей: по ней сайт узнаёт банк. Можно за пару минут подготовить образец без личных данных и отправить автору (откроется пошаговое окно): тогда банк добавим. Файл пока никуда не отправлялся"), { unsupported: true });
+      // Банк не узнан, или узнан по общей фразе, но его парсер ничего не нашёл (значит, это другой банк): читаем по колонкам
+      if (!res || !res.txs.length) {
+        let grid = null; try { grid = Universal.gridFromPages(pages); } catch (e) { grid = null; }
+        const u = await readUnknown(grid, file, label);
+        if (u) return u;
+      }
+      if (!res) throw Object.assign(new Error("этого банка нет в списке, и прочитать выписку по колонкам не получилось (из списка читаются: " + bankNames + "). Если ваш банк в этом списке, проверьте, что файл целый, с первой страницей: по ней сайт узнаёт банк. Можно за пару минут подготовить образец без личных данных и отправить автору (откроется пошаговое окно): тогда банк добавим. Файл пока никуда не отправлялся"), { unsupported: true });
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось. Возможно, за выбранный период их не было, или банк изменил формат файла");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
@@ -4841,7 +4984,8 @@
           const st = { txs, statements };
           const r = Merge.addStatement(st, res);
           loaded++;
-          notes.push(`${f.name}: ${res.bank.name}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
+          if (res.uni) Object.assign(statements[r.index], { universal: true, proof: res.uni.proof });
+          notes.push(`${f.name}: ${res.bank.name}${res.uni ? (res.bank.name === Banks.OTHER.name ? "" : " (банка нет в списке)") + (res.uni.proof === "totals" || res.uni.proof === "balance" ? ", суммы проверены" : res.uni.proof === "mismatch" ? ", суммы не сошлись" : ", прочитано по догадке") : ""}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
           const curNote = Merge.currencyNote(res.header, rates); if (curNote) notes.push(curNote);
         } catch (err) {
           notes.push(`${f.name}: ${String(err.message).replace(/\.$/, "")}.`);

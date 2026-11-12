@@ -211,10 +211,15 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   await check('мастер образца, шаг 4 (согласие)', tag);
   await closeDialog();
 
-  // Ошибки загрузки: битый файл, банк не поддерживается (сразу открывается мастер)
+  // Ошибки загрузки: битый файл; банк не из списка (открывается окно «Так читаем?», после отказа: мастер образца)
   await setFile('#file', BROKEN_PDF); await wait(1500);
   await check('ошибка: битый файл', tag); await shot('ошибка-битый-файл', tag);
   await setFile('#file', FAKE_CSV); await wait(1500);
+  await check('банк не из списка: окно «Так читаем?»', tag); await shot('банк-не-из-списка', tag);
+  await tabCycle('банк не из списка: окно «Так читаем?»', tag);
+  await ev(`document.getElementById("uniColsBox").open = true`); await wait(150);
+  await check('банк не из списка: колонки раскрыты', tag); await shot('банк-не-из-списка-колонки', tag);
+  await ev(`document.getElementById("uniCancel").click()`); await wait(1200);
   await check('ошибка: банк не поддерживается', tag); await shot('ошибка-банк-не-поддерживается', tag);
   await tabCycle('ошибка: банк не поддерживается (мастер)', tag);
   await closeDialog(); await wait(200);
