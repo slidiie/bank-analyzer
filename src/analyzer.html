@@ -13,7 +13,18 @@
       var m = null;
       try { m = JSON.parse(localStorage.getItem("ba_theme_v2")); } catch (e) { m = null; }
       if (m !== "light" && m !== "dark" && m !== "auto") { try { m = JSON.parse(localStorage.getItem("ba_theme_v1")); } catch (e) { m = null; } }
-      document.documentElement.setAttribute("data-theme", m === "light" || m === "dark" ? m : "auto");
+      var mode = m === "light" || m === "dark" ? m : "auto";
+      var root = document.documentElement;
+      root.setAttribute("data-theme", mode);
+      /* Тёмная ли тема на самом деле: по этому признаку ползунок в шапке сразу стоит на своём месте, без «переезда» при загрузке */
+      var dark = mode === "dark";
+      if (mode === "auto") { try { dark = window.matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) { dark = false; } }
+      root.setAttribute("data-dark", String(dark));
+      /* Пока страница не показана, анимации выключены; включаются после первой отрисовки */
+      root.classList.add("noanim");
+      var on = function () { root.classList.remove("noanim"); };
+      window.addEventListener("load", function () { (window.requestAnimationFrame || setTimeout)(function () { (window.requestAnimationFrame || setTimeout)(on); }); });
+      setTimeout(on, 3000);
     })();
   </script>
   <title>Fernwood: анализ выписки. Куда утекают ваши деньги</title>
@@ -44,9 +55,10 @@
       --fs-xs:.8125rem; --fs-s:.85rem; --fs-m:1rem; --fs-l:1.15rem; --fs-xl:1.6rem;
       --shadow:0 1px 2px rgba(26,31,43,.06), 0 2px 8px rgba(26,31,43,.05);
       --t:.18s ease;
-      --cat-food:#4FA67A;   --cat-cafe:#E49B3F;   --cat-transport:#4C8FD6;
-      --cat-home:#8F7AD8;   --cat-subs:#D86C9E;   --cat-health:#2FA9A0;
-      --cat-shop:#C9A93A;   --cat-fun:#E5715A;    --cat-transfer:#8C93A1;
+      --cat-food:#D8512C;   --cat-cafe:#E07B16;   --cat-transport:#B88A12;
+      --cat-home:#22897D;   --cat-subs:#3A97CD;   --cat-health:#735EB1;
+      --cat-shop:#D04489;   --cat-fun:#A66673;    --cat-transfer:#8C93A1;
+      --cat-cash:#879B65;
       --cat-other:#B9BCC4;
       --note-bg:var(--surface); --note-border:var(--line);
       --ok-bg:var(--surface); --ok-border:#93C4AB;
@@ -62,9 +74,10 @@
         --text:#ECECEE; --muted:#A3A3AB; --details:#C8C8CE;
         --accent:#6C9CFF; --on-accent:#111112; --focus:#6C9CFF;
         --pos:#4CC38A; --neg:#E5736B;
-        --cat-food:#5CC592;   --cat-cafe:#F0A94F;   --cat-transport:#5B9DF0;
-        --cat-home:#A38CF0;   --cat-subs:#EE7FB1;   --cat-health:#3FC4B9;
-        --cat-shop:#DDBE4A;   --cat-fun:#F2806A;    --cat-transfer:#9BA2B0;
+        --cat-food:#E76F51;   --cat-cafe:#F4A261;   --cat-transport:#E9C46A;
+        --cat-home:#2A9D8F;   --cat-subs:#5FA8D3;   --cat-health:#8E7DBE;
+        --cat-shop:#D66BA0;   --cat-fun:#B5838D;    --cat-transfer:#8C93A1;
+        --cat-cash:#A3B18A;
         --cat-other:#6E727B;
         --ok-border:#2F6B4F; --warn-border:#6A5E32;
         --ctl-border:#76767E;
@@ -78,9 +91,10 @@
       --text:#ECECEE; --muted:#A3A3AB; --details:#C8C8CE;
       --accent:#6C9CFF; --on-accent:#111112; --focus:#6C9CFF;
       --pos:#4CC38A; --neg:#E5736B;
-      --cat-food:#5CC592;   --cat-cafe:#F0A94F;   --cat-transport:#5B9DF0;
-      --cat-home:#A38CF0;   --cat-subs:#EE7FB1;   --cat-health:#3FC4B9;
-      --cat-shop:#DDBE4A;   --cat-fun:#F2806A;    --cat-transfer:#9BA2B0;
+      --cat-food:#E76F51;   --cat-cafe:#F4A261;   --cat-transport:#E9C46A;
+      --cat-home:#2A9D8F;   --cat-subs:#5FA8D3;   --cat-health:#8E7DBE;
+      --cat-shop:#D66BA0;   --cat-fun:#B5838D;    --cat-transfer:#8C93A1;
+      --cat-cash:#A3B18A;
       --cat-other:#6E727B;
       --ok-border:#2F6B4F; --warn-border:#6A5E32;
       --ctl-border:#76767E; --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
@@ -148,6 +162,7 @@
     .ftile .fval { font-size: 1.35rem; font-weight: 700; line-height: 1.2; letter-spacing: -.015em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
     .ftile .fval small { font-size: var(--fs-s); font-weight: 500; color: var(--muted); margin-left: .25rem; white-space: nowrap; display: inline-block; overflow-wrap: normal; }
     .ftile .fhint { font-size: var(--fs-xs); color: var(--muted); }
+    @media (max-width: 420px) { .ftile .fval { font-size: 1.2rem; } .ftile .fval small { margin-left: .15rem; } .ftile.wide .fval { font-size: 1.9rem; } }   /* на узком телефоне сумма и «BYN» в одной строке */
     .ftile.wide { grid-column: 1 / -1; }   /* «Разница» главная цифра: во всю ширину и крупнее */
     .ftile.wide .fval { font-size: 2.1rem; }
     .ftile.pos .fval { color: var(--pos, inherit); }
@@ -242,6 +257,41 @@
     #plan .bamt { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--details); white-space: nowrap; }
     #plan .bnote { margin-top: .35rem; font-size: var(--fs-s); }
     #plan .bedit { padding: 0 1.1rem 1rem; }
+    /* Вариант А (как Monarch): слева список групп, справа липкая сводка с кольцом; на телефоне сводка сверху */
+    #plan .bgrid { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; align-items: start; }
+    #plan .bmain { min-width: 0; }
+    #plan .bside { position: sticky; top: .8rem; display: grid; gap: .8rem; }
+    #plan .bgroup { margin: 0 0 1rem; }
+    #plan .bgtitle { display: flex; align-items: baseline; gap: .6rem; margin: 0 .2rem .4rem; }
+    #plan .bgtitle h3 { margin: 0; font-size: var(--fs-l); }
+    #plan .bgtitle .muted { font-size: var(--fs-s); }
+    #plan .bgroup .blist { margin-bottom: 0; }
+    #plan .brow > :not(summary):not(.bsum) { margin-left: 1.1rem; margin-right: 1.1rem; }
+    #plan .brow > :last-child:not(summary) { margin-bottom: 1rem; }
+    #plan .brow > table { width: calc(100% - 2.2rem); }
+    #plan .brow > table td { overflow-wrap: anywhere; }
+    #plan .brow > table td.num { white-space: nowrap; text-align: right; }
+    #plan .brow > summary .btrack { margin: 0 0 .1rem; }
+    #plan .brow > summary .bamt { color: var(--muted); }
+    #plan .bsum { padding: .75rem 1.1rem; }
+    #plan .brow > summary { position: relative; padding-right: 2.2rem; }
+    #plan .brow > summary::after { content: ""; position: absolute; right: 1.1rem; top: 1.15rem; width: .45rem; height: .45rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .18s ease; }
+    #plan .brow[open] > summary::after { transform: rotate(-135deg); top: 1.3rem; }
+    #plan .bringrow { display: flex; align-items: center; gap: 1rem; margin: .5rem 0 .2rem; }
+    #plan .bring { flex: 0 0 auto; width: 110px; height: 110px; }
+    #plan .bring svg { width: 100%; height: 100%; display: block; }
+    #plan .bstats { display: grid; gap: .6rem; min-width: 0; }
+    #plan .bk { color: var(--muted); font-size: var(--fs-s); }
+    #plan .bv { font-size: var(--fs-l); font-weight: 700; font-variant-numeric: tabular-nums; }
+    #plan .bv.bgood { color: var(--pos); }
+    #plan .bhint { font-size: var(--fs-s); margin: .5rem 0 0; }
+    #plan .bsumrow { display: flex; justify-content: space-between; gap: .8rem; padding: .4rem 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+    #plan .bcap + .bsumrow { border-top: 0; }
+    #plan .bsumrow .bstrong { font-weight: 700; }
+    @media (max-width: 860px) {
+      #plan .bgrid { grid-template-columns: minmax(0, 1fr); }
+      #plan .bside { position: static; order: -1; }
+    }
     #plan .brow2 { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .2rem; }
     /* Поля ввода на странице «План»: скруглённые, цифры крупнее, без стандартной обводки фокуса */
     #plan input[type=text], #plan input[type=number] { min-height: 40px; padding: .35rem .8rem; border-radius: 999px; background: var(--surface-2); border: 1px solid transparent; font: inherit; font-variant-numeric: tabular-nums; text-align: right; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow var(--t), background-color var(--t); }
@@ -492,8 +542,9 @@
     .themesw { position: relative; display: inline-flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 5rem; height: 2.75rem; min-height: 0; padding: 0 .72rem; border-radius: 999px; background: var(--surface-2); border-color: var(--ctl-border); }
     .themesw svg { position: relative; z-index: 1; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; color: var(--muted); transition: color .2s; }
     .themesw .knob { position: absolute; top: 50%; left: .2rem; width: 2.15rem; height: 2.15rem; margin-top: -1.075rem; border-radius: 50%; background: var(--accent); transition: transform .2s; }
-    .themesw[data-dark="true"] .knob { transform: translateX(2.3rem); }
-    .themesw[data-dark="false"] .ic-sun, .themesw[data-dark="true"] .ic-moon { color: var(--on-accent); }
+    html.noanim *, html.noanim *::before, html.noanim *::after { transition: none !important; animation-duration: 0s !important; }
+    html[data-dark="true"] .themesw .knob { transform: translateX(2.3rem); }
+    html[data-dark="false"] .themesw .ic-sun, html[data-dark="true"] .themesw .ic-moon { color: var(--on-accent); }
     .upcard { background: var(--surface); border: 1.5px dashed var(--line); border-radius: var(--r-l); padding: 1.4rem 1.2rem; text-align: center; }
     .upcard.drag { border-color: var(--accent); background: var(--surface-2); }
     .upicon { width: 2.4rem; height: 2.4rem; color: var(--accent); }
@@ -759,7 +810,7 @@
       body:not(.demo) .hero > .mini { grid-column: 2; grid-row: 2 / 6; margin-top: .4rem; }
     }
     .themesw .knob { background: var(--text); }
-    .themesw[data-dark="false"] .ic-sun, .themesw[data-dark="true"] .ic-moon { color: var(--bg); }
+    html[data-dark="false"] .themesw .ic-sun, html[data-dark="true"] .themesw .ic-moon { color: var(--bg); }
     .wanted { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--accent); border-radius: 0; }
     .wanted h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
     .wantedlist { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: .4rem 0 .8rem; }
@@ -805,6 +856,7 @@
     .brand { display: inline-flex; align-items: center; gap: .55rem; font-size: 1.05rem; font-weight: 650; color: var(--text); letter-spacing: -.01em; }
     .sharecanvas { display: block; width: min(100%, 340px); height: auto; margin: .25rem auto 1rem; border-radius: 14px; border: 1px solid var(--line); }
     .rshare { margin-top: .9rem; }
+    .rshare button, .secthint button { border-width: 1.5px; }   /* рамка читается и при ярком свете */
     .brand .brand-text { display: inline-flex; flex-direction: column; line-height: 1.1; }
     .brand .brand-sub { font-weight: 450; font-size: .68rem; letter-spacing: .02em; color: var(--muted); margin-top: .12rem; }
     @media (max-width: 480px) { .brand .brand-sub { display: none; } }
@@ -833,13 +885,13 @@
     /* «Итог месяца» (этап A): первым блоком «Обзора» */
     .recap { border-left: 4px solid var(--accent); }
     .recap h3 { margin: 0 0 .1rem; font-size: 1.15rem; }
-    .recap .rsave { margin: .5rem 0 .2rem; font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--pos); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .recap .rsave { margin: .5rem 0 .2rem; font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }   /* не зелёный: это упущенная возможность, а не выигрыш */
     .recap .rsave small { display: block; font-size: var(--fs-s); font-weight: 400; color: var(--muted); }
     .recap ul { list-style: none; margin: .5rem 0 0; padding: 0; }
     .recap li { margin: .35rem 0; padding-left: 1rem; position: relative; line-height: 1.5; overflow-wrap: anywhere; }
-    .recap li::before { content: ""; position: absolute; left: 0; top: .6em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); }
+    .recap li::before { content: ""; position: absolute; left: 0; top: .55em; width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
     .recap li.k-grew::before { background: var(--neg); }
-    .recap li.k-save::before { background: var(--pos); }
+    .recap li.k-save::before { background: var(--accent); }
     .recap .rnote { margin: .5rem 0 0; }
     .recap .rnote .linklike { display: inline-block; padding: .75rem .2rem; margin: -.75rem 0; }
     .noticed { margin: .8rem 0 1rem; padding: .7rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); }
@@ -1699,6 +1751,7 @@
       const dark = effectiveDark();
       $("themeToggle").setAttribute("aria-checked", String(dark));
       $("themeToggle").setAttribute("data-dark", String(dark));
+      document.documentElement.setAttribute("data-dark", String(dark));
       // Цвет строки браузера: при явном выборе обе метки получают один цвет, пока выбора нет возвращаются свои
       $("themeMetaL").setAttribute("content", themeMode === "dark" ? THEME_COLOR.dark : THEME_COLOR.light);
       $("themeMetaD").setAttribute("content", themeMode === "light" ? THEME_COLOR.light : THEME_COLOR.dark);
@@ -2653,7 +2706,7 @@
       "Продукты": "food", "Кафе и рестораны": "cafe", "Транспорт": "transport", "Путешествия": "transport",
       "Аренда и жильё": "home", "Товары для дома": "home", "Связь и подписки": "subs", "Образование": "subs",
       "Здоровье": "health", "Красота и уход": "health", "Одежда и покупки": "shop", "Подарки": "shop",
-      "Развлечения": "fun", "Азартные игры": "fun", "Наличные": "transfer", "Прочее": "other", "Не разобрано": "other",
+      "Развлечения": "fun", "Азартные игры": "fun", "Наличные": "cash", "Прочее": "other", "Не разобрано": "other",
       [Cat.OWN]: "transfer", [Cat.LOAN]: "transfer", [Cat.SAVINGS]: "transfer", [Cat.FEES]: "transfer",
       [Cat.BUCKETS[0]]: "other", [Cat.BUCKETS[1]]: "other", [Cat.BUCKETS[2]]: "transfer"
     };
@@ -2687,6 +2740,7 @@
     const pctText = (part, total) => { if (!total || !part) return "0%"; const p = Math.round(part / total * 100); return p < 1 ? "<1%" : p + "%"; };
     function pieChart(st, opts = {}) {
       const MIN = 0.03;
+      const MAX_SEPARATE_SMALL = 4;   // до 4 мелких категорий рисуем каждую своим цветом, больше: одна серая доля «Мелкие категории»
       const slices = [];
       const small = [];
       // «Нужно разобрать» идёт первой и ставится по центру правой стороны кольца (в 3 часа)
@@ -2700,10 +2754,12 @@
       });
       const sliceOf = new Map();               // категория -> номер доли
       slices.forEach((sl, i) => sl.cats.forEach(([c]) => sliceOf.set(c, i)));
-      if (small.length) {
+      if (small.length > MAX_SEPARATE_SMALL) {
         const sum = small.reduce((a, [, v]) => a + v, 0);
-        slices.push({ cats: small, sum, color: small.length > 1 ? "var(--cat-other)" : catColor(small[0][0]), v: small.length > 1 ? "--cat-other" : catVar(small[0][0]), group: small.length > 1 });
+        slices.push({ cats: small, sum, color: "var(--cat-other)", v: "--cat-other", group: true });
         small.forEach(([cat]) => sliceOf.set(cat, slices.length - 1));
+      } else {
+        small.forEach(([cat, sum]) => { slices.push({ cats: [[cat, sum]], sum, color: catColor(cat), v: catVar(cat) }); sliceOf.set(cat, slices.length - 1); });
       }
 
       const CX = 50, CY = 50, R = 47, r = 24, M = (R + r) / 2;
@@ -2729,7 +2785,7 @@
         if (f >= 0.06) {
           const icon = sl.group || f < 0.12 ? "" : `<g class="lbl" style="stroke:${ink}" transform="translate(${(mx - 3.6).toFixed(2)} ${(my - 8.2).toFixed(2)}) scale(0.3)">${ICON_SVG[iconKey(sl.cats[0][0])] || ICON_SVG.tag}</g>`;
           parts += icon + `<text class="pct" style="fill:${ink}" x="${mx.toFixed(2)}" y="${(my + (sl.group || f < 0.12 ? 1.8 : 6)).toFixed(2)}" text-anchor="middle" font-size="4.6">${pct}%</text>`;
-        } else if (f >= 0.03) {
+        } else if (f >= 0.05) {
           parts += `<text class="pct" style="fill:${ink}" x="${mx.toFixed(2)}" y="${(my + 1.5).toFixed(2)}" text-anchor="middle" font-size="3.6">${pct}%</text>`;
         }
         // Выдвинутая доля (пример на главной): сдвиг наружу по середине доли, без обводки
@@ -3304,7 +3360,7 @@
 
     // ---------- Карточка «Поделиться итогом»: картинка 4:5, рисуется на canvas в браузере (без сумм по умолчанию) ----------
     let shareData = null;
-    const SHARE_COLORS = { "--cat-food": "#5CC592", "--cat-cafe": "#F0A94F", "--cat-transport": "#5B9DF0", "--cat-home": "#A38CF0", "--cat-subs": "#EE7FB1", "--cat-health": "#3FC4B9", "--cat-shop": "#DDBE4A", "--cat-fun": "#F2806A", "--cat-transfer": "#9BA2B0", "--cat-other": "#6E727B" };
+    const SHARE_COLORS = { "--cat-food": "#E76F51", "--cat-cafe": "#F4A261", "--cat-transport": "#E9C46A", "--cat-home": "#2A9D8F", "--cat-subs": "#5FA8D3", "--cat-health": "#8E7DBE", "--cat-shop": "#D66BA0", "--cat-fun": "#B5838D", "--cat-cash": "#A3B18A", "--cat-transfer": "#8C93A1", "--cat-other": "#6E727B" };
     function shareModel(withMoney) {
       const r = shareData.r, rate = r.lines.find(l => l.kind === "rate");
       let kicker, big, good = true, neutral = false, used = null;
@@ -3751,26 +3807,30 @@
       x.mode = calc.saveMode === "byn" ? "byn" : "pct";
       x.plan = Planner.savingsPlan({ income: x.income, mode: x.mode, value: calc.saveVal });
       x.available = x.income - x.plan.amount;
-      // Три карточки: у каждой одна цифра, подробности раскрываются по нажатию
-      const head = (big, cap, act) => h("summary", {}, h("span", { class: "pbig" }, big), h("span", { class: "pcap" }, cap), h("span", { class: "pact", "data-open": "Свернуть" }, act || "Подробнее"));
+      // Один список, как у Monarch: накопления, обязательные платежи и категории с лимитами в одной колонке, справа сводка с кольцом.
+      // Строка = заголовок крупно, состояние справа и мелко; нажатие раскрывает правку на месте.
+      const rowHead = (name, amt, note, fillPct) => h("summary", {},
+        h("div", { class: "btop" }, h("span", { class: "bname" }, name), h("span", { class: "bamt" }, amt)),
+        ...(fillPct != null ? [h("div", { class: "btrack" }, h("div", { class: "bfill", style: `width:${fillPct}%;background:var(--accent)` }))] : []),
+        h("div", { class: "bnote muted" }, note));
       const regSum = x.regular.reduce((a, r) => a + r.perMonth, 0);
-      const saveCap = x.plan.amount > 0
-        ? "Откладывать в месяц: " + (x.plan.pct != null ? `${String(Math.round(x.plan.pct * 10) / 10).replace(".", ",")}% от дохода ${money(x.income)} BYN` : `${money(x.plan.amount)} BYN из дохода ${money(x.income)} BYN`)
-        : "Сколько откладывать в месяц";
-      const save = savingsBlock(x, head(x.plan.amount > 0 ? `${money(x.plan.amount)} BYN` : "Не задано", saveCap, x.plan.amount > 0 ? "Изменить" : "Задать"));
-      calcBlock(x, save);
-      const blocks = [
-        budgetBlock(x),
-        save,
-        regularBlock(x.regular, fc, months, full, fullAll.length, head(x.regular.length ? `${money(regSum)} BYN` : "Не найдено", x.regular.length ? `Регулярные платежи в месяц: ${x.regular.length} ${plur(x.regular.length, "платёж", "платежа", "платежей")}` : "Регулярные платежи", x.regular.length ? "Список и прогноз" : "Почему")),
-      ];
-      blocks.forEach((d, i) => {
-        if (d.tagName === "DETAILS") {
-          if (planOpen[i]) d.setAttribute("open", "");
-          d.addEventListener("toggle", () => { planOpen[i] = d.open; });
-        }
-        box.append(d);
+      const pctText = x.plan.pct != null ? `${String(Math.round(x.plan.pct * 10) / 10).replace(".", ",")}% от дохода ${money(x.income)} BYN` : `из дохода ${money(x.income)} BYN`;
+      const factOk = x.plan.amount > 0 && x.hasSavings;
+      const save = savingsBlock(x, rowHead("Откладывать в месяц",
+        x.plan.amount > 0 ? `${money(x.plan.amount)} BYN` : "не задано",
+        x.plan.amount > 0 ? pctText + (factOk ? `. Отложено ${money(x.factSaved)}` : "") : "Нажмите, чтобы указать процент или сумму",
+        x.plan.amount > 0 ? Math.min(100, Math.max(0, x.factSaved / x.plan.amount * 100)) : null));
+      const calc2 = h("details", { class: "brow" }, h("summary", {}, h("div", { class: "btop" }, h("span", { class: "bname" }, "Сколько реально остаётся"), h("span", { class: "bamt" }, "прикинуть")),
+        h("div", { class: "bnote muted" }, "Доход минус накопления, обязательные платежи и остальные траты")));
+      calcBlock(x, calc2);
+      const reg = regularBlock(x.regular, fc, months, full, fullAll.length, rowHead("Регулярные платежи",
+        x.regular.length ? `${money(regSum)} BYN` : "не найдены",
+        x.regular.length ? `${x.regular.length} ${plur(x.regular.length, "платёж", "платежа", "платежей")} в месяц, список и прогноз по нажатию` : "Нужны платежи одной суммы минимум в двух месяцах"));
+      [save, reg, calc2].forEach((d, i) => {
+        if (planOpen[i]) d.setAttribute("open", "");
+        d.addEventListener("toggle", () => { planOpen[i] = d.open; });
       });
+      box.append(budgetBlock(x, { save, reg, calc: calc2 }));
       if (focusId) {
         const el = box.querySelector(`[data-id="${focusId}"]`);
         if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) { /* не страшно */ } }
@@ -3778,7 +3838,7 @@
     }
 
     function regularBlock(regular, fc, months, full, fullTotal, head) {
-      const d = h("details", {}, head);
+      const d = h("details", { class: "brow" }, head);
       if (months.length < 2) { d.append(h("p", { class: "muted" }, "Для этого нужны данные хотя бы за два месяца. Загрузите выписку за больший период.")); return d; }
       if (full.length >= 2) d.append(h("p", { class: "muted" }, `Считаем по последним ${full.length} полным месяцам (${monthRange(full[0], full[full.length - 1])})` + (fullTotal > full.length ? `, более ранние в расчёт не берутся.` : ".")));
       if (!regular.length) d.append(h("p", { class: "muted" }, `Одинаковых платежей не нашлось. Ищем платёж одной и той же суммы минимум в ${Math.max(2, Math.ceil(full.length * 0.6))} из ${full.length} месяцев; аренда и коммунальные платежи с меняющейся суммой так не находятся.`));
@@ -3802,7 +3862,7 @@
     }
 
     function savingsBlock(x, head) {
-      const d = h("details", {}, head);
+      const d = h("details", { class: "brow" }, head);
       d.append(h("p", { class: "muted" }, `Откладывать удобнее первым делом, а не «что останется»: к концу месяца обычно не остаётся. Доход для расчёта: ${money(x.income)} BYN (${calc.income != null ? "введён вами ниже" : x.incomeNote}).`));
       const sel = h("select", { "aria-label": "Как задать накопления" }, h("option", { value: "pct" }, "% от дохода"), h("option", { value: "byn" }, "BYN в месяц"));
       sel.value = x.mode;
@@ -3830,8 +3890,8 @@
     // «Лимиты на месяц»: сверху одна общая полоса, ниже строки категорий (как в YNAB, Monarch, Copilot): название, «потрачено из лимита», закруглённая полоса.
     // Нажатие на строку раскрывает правку: полоса-регулятор (без бегунка), поле и быстрые кнопки.
     const planOpenCats = new Set();
-    function budgetBlock(x) {
-      const d = h("section", { class: "budget" });
+    function budgetBlock(x, extra) {
+      const d = h("div", { class: "bmain" });
       const period = x.period;
       const inPeriod = period === "all" ? txs.filter(t => t.date && x.useM.includes(t.date.slice(0, 7))) : txs.filter(t => t.date && t.date.startsWith(period));
       const st = statsFor(inPeriod);
@@ -3847,27 +3907,36 @@
       // Общая полоса: траты по категориям с лимитом против суммы лимитов
       const limited = cats.filter(c => budgets[c] > 0);
       const limitSum = limited.reduce((a, c) => a + budgets[c], 0), spentLim = limited.reduce((a, c) => a + (spentOf.get(c) || 0), 0);
-      const hero = h("div", { class: "bhero" });
-      if (limitSum > 0) {
-        const left = limitSum - spentLim, pct = Math.min(100, spentLim / limitSum * 100);
-        hero.append(h("div", { class: "bcap" }, "Лимиты на месяц · " + when),
-          h("div", { class: "bbig" }, `${money(spentLim)} `, h("span", {}, `из ${money(limitSum)} BYN`)),
-          h("div", { class: "btrack" }, h("div", { class: "bfill", style: `width:${pct}%;background:${left < 0 ? "var(--lvl-over)" : "var(--accent)"}` })),
-          h("div", { class: "bleft " + (left < 0 ? "lvl-over" : "muted") }, left >= 0 ? `Осталось ${money(left)} BYN` : `Превышено на ${money(-left)} BYN`));
-      } else {
-        hero.append(h("div", { class: "bcap" }, "Лимиты на месяц"),
-          h("div", { class: "bbig" }, "Лимитов пока нет"),
-          h("div", { class: "muted" }, "Лимит помогает следить за категорией: полоса покажет, сколько ещё можно потратить."));
-      }
+      // Правая колонка (на телефоне сверху): кольцо «Гибкие траты» и сводка месяца
+      const left = limitSum - spentLim, pctRing = limitSum > 0 ? Math.min(100, spentLim / limitSum * 100) : 0;
+      const R = 42, C = 2 * Math.PI * R;
+      const ringEl = h("div", { class: "bring" });
+      ringEl.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${R}" fill="none" stroke="var(--surface-2)" stroke-width="11"/>` +
+        (limitSum > 0 && spentLim > 0 ? `<circle cx="50" cy="50" r="${R}" fill="none" stroke="${left < 0 ? "var(--lvl-over)" : "var(--accent)"}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * pctRing / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 50 50)"/>` : "") + `</svg>`;
+      const stat = (k, v, cls) => h("div", { class: "bstat" }, h("div", { class: "bk" }, k), h("div", { class: "bv " + (cls || "") }, v));
+      const hero = h("div", { class: "bhero" }, h("div", { class: "bcap" }, "Гибкие траты · " + when),
+        h("div", { class: "bringrow" }, ringEl, h("div", { class: "bstats" },
+          limitSum > 0
+            ? [stat("Потрачено", `${money(spentLim)} BYN`), stat(left >= 0 ? "Осталось" : "Превышено", `${money(Math.abs(left))} BYN`, left < 0 ? "lvl-over" : "bgood")]
+            : [stat("Лимитов", "пока нет"), h("div", { class: "muted bhint" }, "Лимит покажет, сколько ещё можно потратить на категорию.")])));
+      if (limitSum > 0) hero.append(h("div", { class: "muted bhint" }, `Лимиты ${money(limitSum)} BYN, из них ушло ${Math.round(pctRing)}%.`));
       if (autoCats.length) hero.append(h("div", { class: "bact" }, h("button", { type: "button", class: "primary", onclick: () => {
         autoCats.forEach(c => { budgets[c] = Math.ceil((spentOf.get(c) || 0) / 10) * 10; }); refresh();
       } }, `Поставить лимиты по среднему (${autoCats.length})`)));
-      d.append(hero);
-      if (x.plan.amount > 0) {
-        d.append(h("p", { class: "muted" }, `Доступно на траты: ${money(x.available)} BYN в месяц (доход ${money(x.income)} минус накопления ${money(x.plan.amount)}).`));
-        if (limitSum > x.available) d.append(h("p", { class: "lvl-over" }, `Лимиты больше доступного на ${money(limitSum - x.available)} BYN.`));
-      }
-      if (!cats.length) { d.append(h("p", { class: "muted" }, "Пока нет разобранных категорий.")); return d; }
+      const sumRow = (k, v, cls) => h("div", { class: "bsumrow" }, h("span", { class: "muted" }, k), h("span", { class: cls || "" }, v));
+      const regSumM = x.regular.reduce((a, r) => a + r.perMonth, 0);
+      const month = h("div", { class: "bhero" }, h("div", { class: "bcap" }, "Месяц в числах"),
+        sumRow("Доход", `${money(x.income)} BYN`),
+        sumRow("Откладываю", x.plan.amount > 0 ? `${money(x.plan.amount)} BYN` : "не задано", x.plan.amount > 0 ? "" : "muted"),
+        sumRow("Доступно на траты", `${money(x.available)} BYN`, "bstrong"),
+        ...(regSumM > 0 ? [sumRow("из них обязательные", `${money(regSumM)} BYN`, "muted")] : []));
+      if (x.plan.amount > 0 && limitSum > x.available) month.append(h("p", { class: "lvl-over bhint" }, `Лимиты больше доступного на ${money(limitSum - x.available)} BYN.`));
+      const side = h("aside", { class: "bside" }, hero, month);
+      const group = (title, sub, ...kids) => h("section", { class: "bgroup" }, h("div", { class: "bgtitle" }, h("h3", {}, title), sub ? h("span", { class: "muted" }, sub) : ""), h("div", { class: "blist" }, ...kids));
+      const staticRow = (name, amt, note) => h("div", { class: "brow" }, h("div", { class: "bsum" }, h("div", { class: "btop" }, h("span", { class: "bname" }, name), h("span", { class: "bamt" }, amt)), h("div", { class: "bnote muted" }, note)));
+      d.append(group("Накопления", "платите себе первым", extra.save));
+      d.append(group("Обязательные платежи", "лимит не нужен", extra.reg, ...fixedCats.map(c => staticRow(c, `${money(spentOf.get(c) || 0)} BYN`, "обязательные платежи, лимит не нужен"))));
+      if (!cats.length) { d.append(h("section", { class: "bgroup" }, h("div", { class: "bgtitle" }, h("h3", {}, "Гибкие траты")), h("p", { class: "muted" }, "Пока нет разобранных категорий."))); d.append(group("Расчёт", "", extra.calc)); return h("div", { class: "bgrid" }, d, side); }
       const list = h("div", { class: "blist" });
       let over = 0, warn = 0;
       cats.forEach(c => {
@@ -3916,13 +3985,13 @@
         row.addEventListener("toggle", () => { if (row.open) planOpenCats.add(c); else planOpenCats.delete(c); });
         list.append(row);
       });
-      d.append(list);
+      d.append(h("section", { class: "bgroup" }, h("div", { class: "bgtitle" }, h("h3", {}, "Гибкие траты"), h("span", { class: "muted" }, "лимиты по категориям")), list));
+      d.append(group("Расчёт", "", extra.calc));
       const foot = [];
-      if (fixedCats.length) foot.push(`${fixedCats.map(c => "«" + c + "»").join(", ")}: обязательные платежи, лимит для них не нужен.`);
       foot.push(period === "all" ? "Сравниваем с вашим средним за полный месяц. Как вы укладываетесь в конкретном месяце, видно в «Обзоре»." : `Сравниваем с расходом за ${monthLow(period)}.`);
       if (period !== "all" && (over || warn)) foot.unshift(`Превышено лимитов: ${over}, близко к лимиту (от 80%): ${warn}.`);
       d.append(h("p", { class: "muted" }, foot.join(" ")));
-      return d;
+      return h("div", { class: "bgrid" }, d, side);
     }
 
     function calcBlock(x, d) {
