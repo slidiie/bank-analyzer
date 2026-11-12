@@ -160,5 +160,59 @@ check("«в N раз»", R.times(2) === "в 2 раза" && R.times(2.4) === "в 
   check("сдвиг зарплаты: строки «Доход вырос» нет", r && !r.lines.some(l => l.kind === "income"));
 }
 
+// ---- Аудит цифр 12.11 (АУДИТ-цифры.md): каждая проверка падала до исправления ----
+// А1. Перерасход: «обычно 15%» после «потрачено на 20% больше» читалось как «обычно на 15% больше»
+{
+  const items = [], income = [];
+  for (const ym of ["2026-08", "2026-09"]) { items.push(t(ym + "-05", -1700, "Продукты")); income.push({ date: ym + "-10", amount: 2000 }); }
+  items.push(t("2026-10-05", -2400, "Продукты")); income.push({ date: "2026-10-10", amount: 2000 });
+  const r = R.monthRecap(Object.assign({ items, income, fullMonths: ["2026-08", "2026-09", "2026-10"] }, base));
+  const rate = r.lines.find(l => l.kind === "rate");
+  check("А1 перерасход: обычный уровень назван словами «обычно остаётся 15% дохода»", rate && /на 20% больше, чем пришло/.test(rate.text) && /обычно остаётся 15% дохода/.test(rate.text));
+}
+// А2. Прошлый месяц почти без трат (отпуск, карта лежала) не должен занижать «обычно»
+{
+  const items = [t("2026-08-05", -1500, "Продукты"), t("2026-10-05", -1500, "Продукты")];
+  const r = R.monthRecap(Object.assign({ items, fullMonths: ["2026-08", "2026-09", "2026-10"] }, base));
+  check("А2 пустой сентябрь: октябрь не «на 100% больше обычного»", !r.lines.some(l => /на 100% больше|в 2 раза больше/.test(l.text)) && r.save === 0);
+  check("А2 сравнение с единственным нормальным месяцем названо честно", /почти как обычно|чем в августе/.test(r.lines[0].text) && r.compared === 1);
+  const items2 = [t("2026-07-05", -1500, "Продукты"), t("2026-08-05", -1500, "Продукты"), t("2026-09-05", -90, "Продукты"), t("2026-10-05", -1500, "Продукты")];
+  const r2 = R.monthRecap(Object.assign({ items: items2, fullMonths: ["2026-07", "2026-08", "2026-09", "2026-10"] }, base));
+  check("А2 сентябрь с 90 BYN трат в «обычно» не входит: октябрь почти как обычно", /почти как обычно/.test(r2.lines[0].text) && r2.compared === 2);
+}
+// А3. Две зарплаты в одном месяце (1-го и 31-го): это сдвиг выплаты, а не «доход вырос на 100%»
+{
+  const items = [], income = [];
+  for (const ym of ["2026-07", "2026-08", "2026-09", "2026-10"]) items.push(t(ym + "-05", -1500, "Продукты"));
+  for (const ym of ["2026-07", "2026-08", "2026-09"]) income.push({ date: ym + "-01", amount: 2000 });
+  income.push({ date: "2026-10-01", amount: 2000 }, { date: "2026-10-31", amount: 2000 });
+  const r = R.monthRecap(Object.assign({ items, income, fullMonths: ["2026-07", "2026-08", "2026-09", "2026-10"] }, base));
+  check("А3 лишняя выплата в месяце: строки «Доход вырос» нет", !r.lines.some(l => l.kind === "income"));
+  const inc2 = [{ date: "2026-09-10", amount: 1000 }, { date: "2026-10-01", amount: 1000 }, { date: "2026-10-10", amount: 1000 }];
+  const r2 = R.monthRecap(Object.assign({ items: [t("2026-09-05", -1500, "Продукты"), t("2026-10-05", -1500, "Продукты")], income: inc2, fullMonths: ["2026-09", "2026-10"] }, base));
+  check("А3 аванс сентября пришёл 1 октября (два месяца в выписке): строки «Доход вырос» нет", !r2.lines.some(l => l.kind === "income"));
+  const inc3 = [{ date: "2026-08-10", amount: 2000 }, { date: "2026-09-10", amount: 2000 }, { date: "2026-10-10", amount: 2600 }];
+  const r3 = R.monthRecap(Object.assign({ items: [t("2026-08-05", -1500, "Продукты"), t("2026-09-05", -1500, "Продукты"), t("2026-10-05", -1500, "Продукты")], income: inc3, fullMonths: ["2026-08", "2026-09", "2026-10"] }, base));
+  check("А3 настоящая прибавка (та же одна выплата, но больше) названа", r3.lines.some(l => l.kind === "income" && /на 30%/.test(l.text)));
+}
+// А4. Подписка, отменённая два месяца назад, не входит в «в месяц» и «в год»
+{
+  const months = ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10"];
+  const items = []; months.forEach(m => items.push(t(m + "-05", -800, "Продукты")));
+  ["2026-06", "2026-07", "2026-08"].forEach(m => items.push(t(m + "-03", -30, "Связь и подписки", "KINO")));
+  months.forEach(m => items.push(t(m + "-09", -20, "Связь и подписки", "MOBILE")));
+  const regular = require("../planner.js").findRegular(items, months, []);
+  const r = R.monthRecap(Object.assign({ items, fullMonths: months, regular }, base));
+  const subs = r.lines.find(l => l.kind === "subs");
+  check("А4 отменённая подписка (последний платёж в августе) не считается в итоге октября: 20 в месяц, 240 в год", subs && /: 20 BYN в месяц, это 240 BYN в год \(1 платёж\)/.test(subs.text));
+}
+// А5. «На 100% меньше» при ненулевых тратах: 99,6% не округляем до 100
+{
+  const items = [t("2026-09-05", -1000, "Продукты"), t("2026-09-06", -1000, "Кафе"), t("2026-10-05", -1000, "Продукты"), t("2026-10-06", -4, "Кафе"), t("2026-10-07", -800, "Одежда")];
+  const r = R.monthRecap(Object.assign({ items, fullMonths: ["2026-09", "2026-10"] }, base));
+  const fell = r.lines.find(l => l.kind === "fell");
+  check("А5 кафе 4 BYN вместо 1000: «на 99% меньше», а не «на 100%»", fell && /4 BYN, на 99% меньше/.test(fell.text));
+}
+
 console.log(failed ? `\nОШИБКА: не прошло ${failed}` : "\nВсе проверки прошли");
 process.exit(failed ? 1 : 0);

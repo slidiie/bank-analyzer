@@ -773,5 +773,46 @@ vm.runInContext(`
 `, ctx);
 check("азарт: поступление с названием площадки само не становится «выводом»", vm.runInContext(`categoryOf(txs[1]) !== Cat.GAMBLING`, ctx));
 check("азарт: нейтральная строка и никаких «похоже на вывод»", !textOf(byId["insights"]).includes("похож") && textOf(byId["insights"]).includes("отметьте эти поступления сами"));
+// ---- Аудит цифр 12.11 (АУДИТ-цифры.md): на странице ----
+{
+  const flat = n => textOf(n).replace(/\u00A0/g, " ").replace(/\s+/g, " ");
+  const head = () => flat(vm.runInContext(`headlineCard(renderSummaryCore())`, ctx));
+  const reset = `userRules = {}; txRules = {}; budgets = {}; statements = []; activeTab = "all"; allCat = "all"; summaryView = "table";`;
+  // «В день»: выписка с 10.10 по 09.11 это 31 день, даже если первая операция 12-го, а последняя 8-го. До исправления «Обзор» делил на 28, а «Итог» на 31
+  vm.runInContext(reset + `header = { from: "2026-10-10", to: "2026-11-09" }; statements = [{ bank: "mtb", from: "2026-10-10", to: "2026-11-09" }];
+    txs = [{ date: "2026-10-12", time: "10:00:00", amount: -310, mcc: "5411", details: "SHOP A", balance: 1 }, { date: "2026-11-08", time: "10:00:00", amount: -310, mcc: "5411", details: "SHOP A", balance: 2 }]; render();`, ctx);
+  check("аудит: «в день» в «Обзоре» и в «Итоге» одно число (620 за 31 день = 20,00)", /в среднем 20 BYN в день/.test(flat(byId["recap"])) && /В среднем 20,00 BYN в день/.test(head()));
+  // Снятие с накоплений и возврат долга не доход. До исправления: «Пришло 1 700», «Разница +1 400», «Не потрачено 82%»
+  vm.runInContext(reset + `header = { from: "2026-10-01", to: "2026-10-31" };
+    txs = [{ date: "2026-10-01", time: "10:00:00", amount: 1000, mcc: null, details: "Зачисление заработной платы", balance: 1 },
+           { date: "2026-10-05", time: "10:00:00", amount: -300, mcc: "5411", details: "SHOP A", balance: 2 },
+           { date: "2026-10-06", time: "10:00:00", amount: -500, mcc: null, details: "Перевод на вклад", balance: 3 },
+           { date: "2026-10-20", time: "10:00:00", amount: 500, mcc: null, details: "Возврат со вклада", balance: 4 },
+           { date: "2026-10-08", time: "10:00:00", amount: -200, mcc: null, details: "Перевод Пете", balance: 5 },
+           { date: "2026-10-22", time: "10:00:00", amount: 200, mcc: null, details: "Перевод от Пети", balance: 6 }];
+    setTxRule(txs[2], Cat.SAVINGS); setTxRule(txs[3], Cat.SAVINGS); setTxRule(txs[4], Cat.LOAN); setTxRule(txs[5], Cat.LOAN); render();`, ctx);
+  { const hd = head();
+    check("аудит: снятие с накоплений и возврат долга не входят в «Пришло» (1 000, разница +700)", /Пришло 1 000,00 BYN/.test(hd) && /Разница \+700,00 BYN/.test(hd));
+    check("аудит: «Итог» считает долю от настоящего дохода (не потрачено 70%)", /Не потрачено 70% дохода/.test(flat(byId["recap"])));
+    check("аудит: отложили 500 и сняли 500: «отложено» не показано", !/тложено в накопления|нято с накоплений/.test(hd)); }
+  vm.runInContext(`txs = txs.filter((t, i) => i !== 2 && i !== 4); render();`, ctx);
+  { const hd = head(), sm = flat(byId["summary"]);
+    check("аудит: только снятие с накоплений: названо «Снято с накоплений», а не «Отложено −500»", /Снято с накоплений: 500,00 BYN/.test(hd) && !/Отложено в накопления/.test(hd) && /Разница \+700,00/.test(hd));
+    check("аудит: только возврат долга: «вернули долг: 200,00», без минуса", /вернули долг: 200,00/.test(sm) && !/дал в долг/.test(sm)); }
+  // Возврат больше покупок в своей категории: раньше 700 BYN пропадали молча
+  vm.runInContext(reset + `header = { from: "2026-10-01", to: "2026-10-31" };
+    txs = [{ date: "2026-10-01", time: "10:00:00", amount: 1000, mcc: null, details: "Зачисление заработной платы", balance: 1 },
+           { date: "2026-10-05", time: "10:00:00", amount: -300, mcc: "5411", details: "SHOP A", balance: 2 },
+           { date: "2026-10-06", time: "10:00:00", amount: -100, mcc: "5651", details: "ODEZHDA", balance: 3 },
+           { date: "2026-10-07", time: "10:00:00", amount: 800, mcc: "5651", details: "ODEZHDA возврат", balance: 4 }]; render();`, ctx);
+  check("аудит: возврат на 700 больше покупок периода назван под таблицей", /Возвраты на 700,00 BYN больше покупок/.test(flat(byId["summary"])));
+  // «Обычно за месяц»: одежда в 2 месяцах из 5 не «около 400»
+  vm.runInContext(reset + `header = { from: "2026-06-01", to: "2026-11-10" }; txs = [];
+    ["06","07","08","09","10","11"].forEach((m, i) => { txs.push({ date: "2026-" + m + "-05", time: "10:00:00", amount: -500, mcc: "5411", details: "SHOP A", balance: i * 10 + 1 }); });
+    txs.push({ date: "2026-06-07", time: "10:00:00", amount: -300, mcc: "5651", details: "ODEZHDA", balance: 501 }, { date: "2026-09-07", time: "10:00:00", amount: -500, mcc: "5651", details: "ODEZHDA", balance: 502 });
+    render();`, ctx);
+  check("аудит: «обычно» для категории из 2 месяцев из 5 не выдумывается, для ежемесячной 500", vm.runInContext(`usualMonthly("Одежда и покупки") === null && usualMonthly("Продукты") === 500`, ctx));
+  vm.runInContext(reset + `header = {}; txs = []; render();`, ctx);
+}
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

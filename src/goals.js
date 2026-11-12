@@ -44,6 +44,24 @@
     return out.slice(-6);
   }
 
+  // «Обычно за месяц» по категории: середина по последним полным месяцам (до 6), округлённая до 10.
+  // Месяцы без этой категории считаются нулём: крупная покупка два раза за полгода не «обычный месяц».
+  // Категория встречается меньше чем в половине месяцев или месяцев меньше двух: null (обычного уровня нет).
+  function usual(store, cat, exceptYm, daysIn) {
+    const v = [];
+    Object.keys(store || {}).sort().forEach(ym => {
+      const m = store[ym];
+      if (ym === exceptYm || !m || m.first !== 1 || m.last !== daysIn(ym)) return;
+      v.push(m.cats && m.cats[cat] > 0 ? m.cats[cat] : 0);
+    });
+    const w = v.slice(-6);
+    if (w.length < 2 || w.filter(x => x > 0).length * 2 < w.length) return null;
+    w.sort((a, b) => a - b);
+    const mid = w.length % 2 ? w[(w.length - 1) / 2] : (w[w.length / 2 - 1] + w[w.length / 2]) / 2;
+    const rounded = Math.round(mid / 10) * 10;
+    return rounded > 0 ? rounded : null;
+  }
+
   const ORDER = { over: 0, risk: 1, warn: 2, ok: 3 };
   // Строки для блока: по каждому лимиту темп, самые тревожные сверху.
   // spentBy: { категория: сумма за месяц }, budgets: { категория: лимит }.
@@ -69,7 +87,7 @@
     return { limit: r2(limit), spent: r2(spent), left: r2(limit - spent) };
   }
 
-  const api = { pace, suggestLimit, historyValues, rows, totals, summary, MIN_DAYS };
+  const api = { pace, suggestLimit, historyValues, usual, rows, totals, summary, MIN_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Goals = api;
 })(typeof self !== "undefined" ? self : this);

@@ -47,4 +47,13 @@ const rc = G.rows({ budgets: { "Кафе": 50, "Такси": 100 }, spentBy: { "
 check("сводка: превышено 1 из 2", JSON.stringify(G.summary(rc, true)) === JSON.stringify({ level: "over", over: 1, near: 0, n: 2 }));
 check("сводка: всё в норме", G.summary(G.rows({ budgets: { "Кафе": 50 }, spentBy: { "Кафе": 10 }, day: 8, dim: 28, closed: true }), true).level === "ok");
 check("сводка: близко к лимиту в идущем месяце", G.summary(G.rows({ budgets: { "Кафе": 50 }, spentBy: { "Кафе": 45 }, day: 20, dim: 30 }), false).level === "warn");
+// Аудит цифр 12.11: «обычно за месяц» по категории, которая бывает не каждый месяц (до исправления: 400 по двум месяцам из шести)
+{
+  const st = {}; const dIn = ym => new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+  ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"].forEach((ym, i) => { st[ym] = { first: 1, last: dIn(ym), total: 1000, cats: Object.assign({ "Продукты": 500 + i * 10 }, i === 0 ? { "Одежда": 300 } : i === 4 ? { "Одежда": 500 } : {}) }; });
+  check("обычно: категория в 2 месяцах из 6 не получает «обычно 400»", typeof G.usual === "function" && G.usual(st, "Одежда", "2026-10", dIn) === null);
+  check("обычно: категория каждый месяц: середина, до 10", typeof G.usual === "function" && G.usual(st, "Продукты", "2026-10", dIn) === 530);
+  st["2026-09"].cats["Одежда"] = 200; st["2026-07"].cats["Одежда"] = 100; st["2026-06"].cats["Одежда"] = 100;
+  check("обычно: категория в 5 месяцах из 6: середина с учётом пустого месяца (0,100,100,200,300,500 → 150)", typeof G.usual === "function" && G.usual(st, "Одежда", "2026-10", dIn) === 150);
+}
 process.exit(failed ? 1 : 0);

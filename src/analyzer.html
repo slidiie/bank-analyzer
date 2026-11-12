@@ -2028,6 +2028,9 @@
     // Возврат денег за покупку: поступление с категорией трат (по коду MCC или выбранной человеком). Уменьшает траты этой категории, доходом не считается
     const NOT_SPEND = [Cat.INCOME, Cat.OWN, Cat.LOAN, Cat.SAVINGS, Cat.GAMBLING];
     const isRefund = tx => { if (!(tx.amount > 0)) return false; const c = displayCat(tx); return !isUnclear(c) && !NOT_SPEND.includes(c); };
+    // Доход («Пришло»): поступления без переводов между своими, без возвратов за покупки, без снятия с накоплений и без возвращённого долга
+    // (отложенное и данное в долг не считались тратой, значит, их возвращение не доход)
+    const isIncome = tx => tx.amount > 0 && ![Cat.OWN, Cat.SAVINGS, Cat.LOAN].includes(displayCat(tx)) && !isRefund(tx);
     // Откуда взялась категория: подпись «почему здесь» под выбором категории
     function whyCat(tx) {
       if (tx.part) return "часть разделённой операции";
@@ -2750,6 +2753,7 @@
       for (const tx of list) {
         if (tx.amount >= 0) {
           if (displayCat(tx) === Cat.SAVINGS) saved -= tx.amount;                     // снятие с накоплений уменьшает «отложено»
+          else if (displayCat(tx) === Cat.LOAN) loan -= tx.amount;                    // вернули долг: уменьшает «дал в долг»
           else if (isRefund(tx)) sums.set(displayCat(tx), (sums.get(displayCat(tx)) || 0) - tx.amount);   // возврат уменьшает траты своей категории
           continue;
         }
@@ -2762,7 +2766,10 @@
       // Возврат больше покупок за период: категория просто обнуляется, в минус не уходит
       const rows = [...sums.entries()].filter(([, v]) => v > 0.004).sort((a, b) => b[1] - a[1]);
       total = rows.reduce((a, [, v]) => a + v, 0);
-      return { rows, total, own, loan, saved };
+      // Сколько возвратов не поместилось в свои категории (покупка была до начала периода): в «Потрачено» и «Пришло» их нет, говорим об этом отдельно
+      const refundOver = Math.round([...sums.values()].filter(v => v < -0.004).reduce((a, v) => a - v, 0) * 100) / 100;
+      const r2 = v => (Math.abs(v) < 0.005 ? 0 : v);
+      return { rows, total, own, loan: r2(loan), saved: r2(saved), refundOver };
     }
 
     // Блок: заголовок, пояснение, таблица с полосками по категориям
@@ -3038,9 +3045,14 @@
       if (st.rows.some(r => r[0] !== TR_BUCKET && Cat.BUCKETS.includes(r[0]))) notes.push(h("li", {}, "ЕРИП и интернет-банк: в выписке виден только способ оплаты, а не покупка. Их можно уточнить в разделе «Уточнить»."));
       const extra = [];
       if (st.own) { const pc = Merge.pairCount(txs); extra.push(`переводы между своими: ${fmt(st.own)}` + (pc ? ` (${pc} ${plur(pc, "пара", "пары", "пар")} «пришло и сразу ушло» найдены сами, в «Все операции» они с пометкой ⇄)` : "")); }
-      if (st.loan) extra.push(`дал в долг: ${fmt(st.loan)}`);
-      if (st.saved) extra.push(`отложено в накопления: ${fmt(st.saved)}`);
+      if (st.loan > 0) extra.push(`дал в долг: ${fmt(st.loan)}`);
+      if (st.saved > 0) extra.push(`отложено в накопления: ${fmt(st.saved)}`);
       if (extra.length) notes.push(h("li", {}, `В траты не входит: ${extra.join("; ")} BYN.`));
+      { const back = [];
+        if (st.loan < 0) back.push(`вернули долг: ${fmt(-st.loan)}`);
+        if (st.saved < 0) back.push(`снято с накоплений: ${fmt(-st.saved)}`);
+        if (back.length) notes.push(h("li", {}, `В «Пришло» не входит: ${back.join("; ")} BYN.`)); }
+      if (st.refundOver >= 1) notes.push(h("li", {}, `Возвраты на ${fmt(st.refundOver)} BYN больше покупок в своих категориях за этот период (сама покупка была раньше): эти деньги не уменьшили «Потрачено» и не вошли в «Пришло».`));
       if (notes.length) parts.push(h("ul", { class: "onotes" }, notes));
       return h("div", { class: "ocard" }, h("h3", { class: "ohead" }, "Траты по категориям"), parts);
     }
@@ -3054,8 +3066,12 @@
       if (!d.length) return 0;
       // Крайние месяцы, покрытые выпиской целиком, считаем по календарю (1-е число, последний день месяца), а не от первой до последней операции
       let a = d[0], b = d[d.length - 1];
+      // Неполный крайний месяц: от начала (до конца) самой выписки, а не от первой до последней операции, как и в «Итоге»:
+      // иначе «в день» в двух блоках одного экрана расходится
       if (!coverageNote(a.slice(0, 7))) a = a.slice(0, 7) + "-01";
+      else if (header.from && header.from <= a && header.from.slice(0, 7) === a.slice(0, 7)) a = header.from;
       if (!coverageNote(b.slice(0, 7))) b = b.slice(0, 7) + "-" + String(new Date(+b.slice(0, 4), +b.slice(5, 7), 0).getDate()).padStart(2, "0");
+      else if (header.to && header.to >= b && header.to.slice(0, 7) === b.slice(0, 7)) b = header.to;
       let n = Math.round((Date.parse(b) - Date.parse(a)) / 864e5) + 1;
       // Месяцы внутри периода, за которые нет ни одной операции (например, между выписками двух лет), в «в день» не входят
       for (const ym of emptyMonths(list)) n -= new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
@@ -3107,7 +3123,7 @@
     function usualMonthly(cat, exceptYm) {
       const store = demoMode ? statementSummary() : Object.assign({}, historyStore, statementSummary());
       const ms = monthsInStatement();
-      return Goals.suggestLimit(Goals.historyValues(store, cat, exceptYm === undefined ? ms[ms.length - 1] : exceptYm, y => new Date(+y.slice(0, 4), +y.slice(5, 7), 0).getDate()));
+      return Goals.usual(store, cat, exceptYm === undefined ? ms[ms.length - 1] : exceptYm, y => new Date(+y.slice(0, 4), +y.slice(5, 7), 0).getDate());
     }
     // Цели и бюджеты: «осталось X на категорию до конца месяца» по лимитам из «Планирования»
     function goalsBlock(ctx) {
@@ -3212,12 +3228,12 @@
       const biggest = spendList(all).reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
       if (biggest) facts.push(`Самая крупная трата: ${fmt(-biggest.amount)} BYN${biggest.date ? ", " + shortDate(biggest.date) : ""}`);
       // Пришло: поступления без переводов между своими счетами и без возвратов (возврат уменьшает траты, а не доход)
-      const income = Math.round(all.filter(t => t.amount > 0 && displayCat(t) !== Cat.OWN && !isRefund(t)).reduce((a, t) => a + t.amount, 0) * 100) / 100;
+      const income = Math.round(all.filter(isIncome).reduce((a, t) => a + t.amount, 0) * 100) / 100;
       const diff = Math.round((income - st.total) * 100) / 100;
       // «Разница» считается до накоплений: отложенное не траты. Показываем, что осталось на счёте после откладывания, чтобы «осталось 152, отложено 180» не путало
       if (st.saved) {
         const after = Math.round((diff - st.saved) * 100) / 100;
-        facts.push(`Отложено в накопления: ${fmt(st.saved)} BYN (не траты). С учётом этого на счёте ${after >= 0 ? "прибавилось" : "убавилось"} ${fmt(Math.abs(after))} BYN`);
+        facts.push(`${st.saved > 0 ? `Отложено в накопления: ${fmt(st.saved)} BYN (не траты)` : `Снято с накоплений: ${fmt(-st.saved)} BYN (не доход)`}. С учётом этого на счёте ${after >= 0 ? "прибавилось" : "убавилось"} ${fmt(Math.abs(after))} BYN`);
       }
       const big = h("span", {}, fmt(st.total));
       const key = `${ctx.label}|${st.total.toFixed(2)}`;
@@ -3234,7 +3250,7 @@
         }
       }
       const tiles = income > 0
-        ? [tile("Пришло", fmt(income)), tile("Потрачено", big, "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), (diff >= 0 ? "pos" : "neg") + " wide", diff >= 0 ? (st.saved ? "осталось до накоплений" : "осталось") : "ушло больше, чем пришло")]
+        ? [tile("Пришло", fmt(income)), tile("Потрачено", big, "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), (diff >= 0 ? "pos" : "neg") + " wide", diff >= 0 ? (st.saved > 0 ? "осталось до накоплений" : "осталось") : "ушло больше, чем пришло")]
         : [tile("Потрачено", big, "spent")];
       if (balNote) facts.unshift(balNote);
       return h("div", { class: "hsum" + (fresh ? " anim" : "") },
@@ -3390,7 +3406,7 @@
       const dates = txs.map(t => t.date).filter(Boolean).sort();
       let regular = [];
       try { regular = regularCtx().regular; } catch (e) { /* без подписок */ }
-      const income = txs.filter(t => t.date && t.amount > 0 && displayCat(t) !== Cat.OWN && !isRefund(t)).map(t => ({ date: t.date, amount: t.amount }));
+      const income = txs.filter(t => t.date && isIncome(t)).map(t => ({ date: t.date, amount: t.amount }));
       const r = Recap.monthRecap({
         items, income, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
         period: recapPeriod(dates),

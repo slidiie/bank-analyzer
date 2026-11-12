@@ -16,7 +16,8 @@
 
   // Слова, по которым операция похожа на перевод между счетами. Покупки и наличные сюда не входят.
   const TRANSFERISH = /перевод|p2p|пополнен|интернет-банк|internetbank|ерип|erip|между своими|своего счёта|своего счета/i;
-  const NOT_TRANSFER = /покупка товара|выдача наличных|снятие наличных/i;
+  // Зарплата, пенсия, пособие приходят от работодателя или государства: парой к чужому переводу на ту же сумму они быть не могут
+  const NOT_TRANSFER = /покупка товара|выдача наличных|снятие наличных|заработн|зарплат|пенси|стипенд|пособи|отпускны/i;
 
   const newState = () => ({ txs: [], statements: [] });
 
@@ -50,10 +51,22 @@
     for (const t of list) {
       const bank = bankOf(t);
       if (t.pending && posted.has(pkey(bank, t))) { skipped++; continue; }
-      if (!t.pending && pending.has(pkey(bank, t))) {
-        const i = state.txs.indexOf(pending.get(pkey(bank, t)));
-        if (i >= 0) state.txs.splice(i, 1);
-        pending.delete(pkey(bank, t));
+      if (!t.pending) {
+        let pk = pending.has(pkey(bank, t)) ? pkey(bank, t) : null;
+        // Покупка в валюте: банк списывает по курсу дня проведения, сумма отличается от холда на проценты.
+        // Та же секунда регистрации, тот же знак и сумма в пределах 10 %: это та же операция, холд заменяется списанием
+        if (!pk && t.time) {
+          const head = [bank, t.regDate || t.date || "", t.time, ""].join("|"), a = baseAmt(t);
+          for (const [k, p] of pending) {
+            const b = baseAmt(p);
+            if (k.startsWith(head) && a * b > 0 && Math.abs(a - b) <= 0.1 * Math.abs(b)) { pk = k; break; }
+          }
+        }
+        if (pk) {
+          const i = state.txs.indexOf(pending.get(pk));
+          if (i >= 0) state.txs.splice(i, 1);
+          pending.delete(pk);
+        }
       }
       if (takeDup(cnt, bank, txId(t))) { skipped++; continue; }
       const copy = Object.assign({}, t, { bank, src: srcOf(t) });
