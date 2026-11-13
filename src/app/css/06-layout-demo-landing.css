@@ -177,7 +177,6 @@
     details:not(#plan details) > summary::-webkit-details-marker { display: none; }
     details:not(#plan details) > summary::after { content: ""; flex: none; width: .5rem; height: .5rem; margin-right: .2rem; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); transition: transform .18s ease; }
     details[open]:not(#plan details) > summary::after { transform: rotate(45deg); }
-    .icard details:not(#plan details) > summary { justify-content: flex-start; gap: .5rem; }
     @media print { details > summary::after { display: none; } }
     details > summary:hover { color: var(--accent); }
     details > summary:focus:not(:focus-visible) { outline: none; }

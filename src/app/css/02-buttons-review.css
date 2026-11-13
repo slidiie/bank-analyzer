@@ -7,10 +7,6 @@
     .muted { color: var(--muted); font-size: var(--fs-s); }
     a { color: var(--link); }
     .linklike { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
-    ul.insights { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .7rem; }
-    ul.insights { align-items: start; }
-    ul.insights li { margin: 0; display: flex; flex-direction: column; }
-    ul.insights li > .icard { flex: 1 1 auto; box-sizing: border-box; }
     @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
     .hsum { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
