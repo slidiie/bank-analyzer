@@ -2,7 +2,7 @@
 // Реальную проверку на разных ширинах экрана делает tests/mobile_layout_check.js (вставляется в консоль браузера).
 const fs = require("fs");
 const path = require("path");
-const html = fs.readFileSync(path.join(__dirname, "..", "analyzer.html"), "utf8");
+const html = require("../page.js").readPage();
 const css = (html.match(/<style>([\s\S]*?)<\/style>/) || [, ""])[1];
 
 let failed = 0;

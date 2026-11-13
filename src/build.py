@@ -1,9 +1,19 @@
-# Сборка одного файла: вшивает скрипты и pdf.js в analyzer.html -> bank-analyzer.html
-# Запуск: python3 build.py  (после любых правок analyzer.html и скриптов)
+# Сборка одного файла: склеивает analyzer.html с кусками из app/, вшивает скрипты -> bank-analyzer.html
+# Запуск: python3 build.py  (после любых правок analyzer.html, app/ и скриптов)
 import os, re, hashlib, base64, shutil
 d = os.path.dirname(os.path.abspath(__file__))
 rd = lambda *p: open(os.path.join(d, *p), encoding='utf8').read()
 s = rd('analyzer.html')
+# Страница разрезана на куски: стили в app/css/*.css, скрипт в app/*.js. Здесь они склеиваются обратно по порядку имён
+# (01-…, 02-…) на место строк /*app:css*/ и /*app:js*/. То же самое делает page.js для тестов и make_seo.mjs.
+def _glue(s, mark, ext, *folder):
+    m = re.search(r'^[ \t]*' + re.escape(mark) + r'[ \t]*\n', s, re.M)
+    assert m, mark
+    files = sorted(f for f in os.listdir(os.path.join(d, *folder)) if f.endswith(ext))
+    assert files, folder
+    return s[:m.start()] + ''.join(rd(*folder, f) for f in files) + s[m.end():]
+s = _glue(s, '/*app:css*/', '.css', 'app', 'css')
+s = _glue(s, '/*app:js*/', '.js', 'app')
 for f in ('parser.js', 'categories.js', 'vtb.js', 'belarusbank.js', 'belinvest.js', 'prior.js', 'priorcsv.js', 'alfa.js', 'sber.js', 'transfers.js', 'merchants.js', 'universal.js', 'sheets.js', 'banks.js', 'demo.js', 'merge.js', 'export.js', 'planner.js', 'recap.js', 'backup.js', 'device.js', 'history.js', 'goals.js', 'filters.js', 'condrules.js', 'splits.js', 'rates.js', 'feedback.js', 'hints.js', 'pwa.js', 'anonymize.js', 'pro.js'):
     tag = f'<script src="{f}"></script>'
     assert tag in s, tag

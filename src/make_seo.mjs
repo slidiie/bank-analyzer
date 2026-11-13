@@ -6,11 +6,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(process.argv[2] || path.join(here, "..", "pwa"));
 const SITE = "https://fernwood.by";
-const html = fs.readFileSync(path.join(here, "analyzer.html"), "utf8");
+const html = createRequire(import.meta.url)("./page.js").readPage(here);
 
 const i0 = html.indexOf("const BANK_HELP = [");
 if (i0 < 0) throw new Error("BANK_HELP не найден в analyzer.html");

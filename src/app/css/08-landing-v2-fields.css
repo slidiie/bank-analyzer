@@ -1,0 +1,107 @@
+    /* Главная v2 (9 ноября): графит + лайм-сигнал. Лайм только фоном под тёмным текстом или цветом текста на тёмном фоне. */
+    :root { --sig:#C8EE4A; --sig-ink:#1E2700; }
+    body:not([data-view]) #app [data-sec], body[data-view="none"] #app [data-sec] { display: none !important; }
+    button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    #demoBtn { color: var(--text); border-color: var(--line); }
+    .upicon { color: var(--muted); }
+    .devcard { margin: .6rem 0 0; padding: .7rem .9rem; border: 1px solid var(--line, #d0d7de); border-radius: .7rem; text-align: left; }
+    .devcard p { margin: .2rem 0; }
+    .devkeep { display: flex; gap: .5rem; align-items: flex-start; margin: .3rem 0; }
+    .devkeep input { margin-top: .25rem; }
+    .upcard .restore { margin: .4rem 0 0; font-size: .85rem; }
+    .upcard .howlink { margin: .2rem 0 .8rem; font-size: .9rem; }
+    .upcard .howlink a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+    .howinline { margin: 1.6rem 0 1rem; }
+    @media (min-width: 1000px) {
+      body:not(.demo) .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 2.4rem; align-items: start; grid-template-rows: auto auto auto auto 1fr; }
+      body:not(.demo) .hero > * { grid-column: 1 / -1; }
+      body:not(.demo) .hero > h1 { grid-column: 1; grid-row: 2; }
+      body:not(.demo) .hero > .lede { grid-column: 1; grid-row: 3; }
+      body:not(.demo) .hero > .upcard { grid-column: 1; grid-row: 4; }
+      body:not(.demo) .hero > .mini { grid-column: 2; grid-row: 2 / 6; margin-top: .4rem; }
+    }
+    .themesw .knob { background: var(--text); }
+    html[data-dark="false"] .themesw .ic-sun, html[data-dark="true"] .themesw .ic-moon { color: var(--bg); }
+    .wanted { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--accent); border-radius: 0; }
+    .wanted h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
+    .wantedlist { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: .4rem 0 .8rem; }
+    .wantedlist li { padding: .25rem .7rem; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+    .sheet .unicard { max-width: 42rem; }
+    .uniproof { padding: .55rem .75rem; border-radius: var(--r-m); border: 1px solid var(--note-border); background: var(--note-bg); }
+    .uniproof.ok { border-color: var(--ok-border); background: var(--ok-bg); }
+    .uniproof.bad { border-color: var(--warn-border); background: var(--warn-bg); }
+    .uniop { display: grid; grid-template-columns: 6rem 9rem 1fr; gap: .2rem .7rem; padding: .4rem 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+    .uniop > span:first-child { white-space: nowrap; }
+    .uniop .unia { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .uniop .unia.pos { color: var(--pos); }
+    .uniop .unit { min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+    .unicol { display: grid; grid-template-columns: 11.5rem 1fr; gap: .2rem .8rem; padding: .45rem 0; border-bottom: 1px solid var(--line); align-items: center; }
+    .unicol select { width: 100%; max-width: none; }
+    .unicol .unic { min-width: 0; overflow-wrap: anywhere; }
+    .unicol .unic small { display: block; color: var(--muted); }
+    #uniColsBox { margin-top: .8rem; }
+    #uniColsBox summary { cursor: pointer; min-height: 32px; }
+    @media (max-width: 560px) { .uniop { grid-template-columns: auto 1fr; } .uniop .unit { grid-column: 1 / -1; } .unicol { grid-template-columns: 1fr; } }
+    .readwarn { margin: 0 0 1rem; }
+    .curbox { margin: 0 0 1rem; }
+    .curbox p { margin: .3rem 0; }
+    .curlist { list-style: none; margin: .5rem 0; padding: 0; }
+    .curlist li { display: flex; flex-wrap: wrap; gap: .15rem .9rem; padding: .35rem 0; border-top: 1px solid var(--note-border); font-variant-numeric: tabular-nums; }
+    .curlist li b { min-width: 2.6rem; }
+    .curpick { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .5rem 0 .3rem; }
+    .curpick > span { flex-basis: 100%; }
+    .recap .rweak { margin: .4rem 0; padding: .4rem .6rem; border-left: 3px solid var(--warn-border, var(--line)); }
+    .readwarn p { margin: .3rem 0; }
+    .readwarn .unread { margin: .3rem 0; padding-left: 1.2rem; }
+    .readwarn .rwbank { margin: .4rem 0; }
+    .wantedmore > summary { cursor: pointer; font-weight: 600; margin: .2rem 0 .4rem; }
+    .wanted:target { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .about { margin: 1.6rem 0 1rem; padding: .8rem 1rem; border-left: 3px solid var(--sig); border-radius: 0; }
+    .about h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
+    .about ul { margin: .4rem 0; padding-left: 1.2rem; }
+    .howinline > summary { cursor: pointer; font-weight: 600; font-size: 1.05rem; margin: 0 0 .5rem; }
+    .howtabs { display: flex; gap: .4rem; overflow-x: auto; padding: .5rem 0 .6rem; scrollbar-width: thin; }
+    .howtabs button { flex: none; min-height: 40px; padding: .35rem .8rem; border-radius: 999px; font-size: .9rem; }
+    /* Зоны нажатия: ссылки-кнопки на главной и в «Обзоре» не меньше 32 px на ПК и 44 px на телефоне (Чистовая шлифовка) */
+    #privRow, #importLand, #howRow, #wantedCopy, #app .linklike { display: inline-flex; align-items: center; min-height: 32px; }
+    .pie .lrow.catopen { min-height: 24px; }   /* плюс отступы = 32 px */
+    @media (max-width: 767px) { .pie .lrow.catopen { min-height: 36px; } }
+    @media (max-width: 767px) { #privRow, #importLand, #howRow, #wantedCopy, #app .linklike, .howtabs button { min-height: 44px; } }
+    /* Ссылки внутри текста на главной: на телефоне зона нажатия выше самой строки (отступы у строчного элемента строку не раздвигают) */
+    @media (pointer: coarse), (max-width: 767px) { #landing p a { padding: .7rem 0; } }
+    /* Единый вид полей и кнопок везде (без «системных» кусков): окно «Написать автору» и все формы */
+    :root { --ring-c: var(--accent); }
+    select:focus-visible, textarea:focus-visible, input[type=text]:focus-visible, input[type=date]:focus-visible { outline: none; border-color: var(--ring-c); box-shadow: 0 0 0 2px var(--ring-c); }
+    select { font: inherit; font-size: var(--fs-m, 1rem); }
+    textarea { resize: none; }   /* системный «уголок» для растяжки выбивался из дизайна */
+    input[type=date] { background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .25rem .5rem; min-height: 36px; font: inherit; }
+    * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    .modalbtns > button, .modalbtns > a.btnlink { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .5rem 1rem; border-radius: var(--r-m); font: inherit; line-height: 1.2; text-align: center; }
+    .modalbtns > a.btnlink { font-weight: 600; }
+    .howtabs button[aria-selected="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .howpane { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l, 16px); padding: .6rem 1rem; }
+    .howpane ol { margin: .4rem 0; padding-left: 1.2rem; }
+    .howpane li { margin: .3rem 0; }
+    /* Главная v2.1: без синего на главной, спокойная карточка загрузки, столбцы месяцев по центру */
+    #landing a, #landing .linklike { color: var(--text); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+    .mini .viewswitch button.active { background: var(--text); color: var(--bg); }
+    .upcard { border: 1px solid var(--line); }
+    .upcard .upicon { display: none; }
+    .brand { display: inline-flex; align-items: center; gap: .55rem; font-size: 1.05rem; font-weight: 650; color: var(--text); letter-spacing: -.01em; }
+    .sharecanvas { display: block; width: min(100%, 340px); height: auto; margin: .25rem auto 1rem; border-radius: 14px; border: 1px solid var(--line); }
+    .rshare { margin-top: .9rem; }
+    .rshare button, .secthint button { border-width: 1.5px; }   /* рамка читается и при ярком свете */
+    .brand .brand-text { display: inline-flex; flex-direction: column; line-height: 1.1; }
+    .brand .brand-sub { font-weight: 450; font-size: .68rem; letter-spacing: .02em; color: var(--muted); margin-top: .12rem; }
+    @media (max-width: 480px) { .brand .brand-sub { display: none; } }
+    .brand .logo { width: 32px; height: 32px; flex: none; border-radius: 7px; }
+    :root[data-theme="dark"] .brand .logo { box-shadow: 0 0 0 1px var(--line); }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand .logo { box-shadow: 0 0 0 1px var(--line); } }
+    .trend { margin-left: auto; margin-right: auto; }
+    .trend .col { fill: var(--text); opacity: .62; }
+    .trend .col.max { opacity: .85; }
+    .trend .col.hot, .trend .col.sel { opacity: 1; }
+    .trend.hasSel .col:not(.sel):not(.hot) { opacity: .28; }
+    .trend text.val { fill: var(--text); font-size: 14px; }
+    @media (max-width: 520px) { .trend text.val { font-size: 20px; } }
