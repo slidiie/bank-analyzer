@@ -1,0 +1,120 @@
+    /* Регулятор лимита: просто закруглённая полоса, которую можно тянуть (--lc цвет категории, --fill заливка); бегунка нет */
+    #plan .lslider { flex: 1 1 100%; width: 100%; height: 44px; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; --lc: var(--accent); --fill: 0%; --trk: var(--surface-2); touch-action: pan-y; }
+    #plan .lslider:focus { outline: none; }
+    #plan .lslider::-webkit-slider-runnable-track { height: 18px; border-radius: 999px; background: linear-gradient(to right, var(--lc) var(--fill), var(--trk) var(--fill)); }
+    #plan .lslider::-moz-range-track { height: 18px; border-radius: 999px; background: var(--trk); }
+    #plan .lslider::-moz-range-progress { height: 18px; border-radius: 999px; background: var(--lc); }
+    #plan .lslider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 1px; height: 18px; background: transparent; border: 0; box-shadow: none; }
+    #plan .lslider::-moz-range-thumb { width: 1px; height: 18px; background: transparent; border: 0; box-shadow: none; }
+    #plan .lslider:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 999px; }
+    /* Бюджет: общая полоса и строки категорий */
+    #plan .budget { margin: 0 0 1rem; }
+    #plan .bhero { background: var(--surface); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 1rem 1.1rem; margin-bottom: .8rem; }
+    #plan .bcap { color: var(--muted); font-size: var(--fs-s); }
+    #plan .bbig { font-size: var(--fs-xl); font-weight: 700; line-height: 1.25; margin: .15rem 0 .5rem; font-variant-numeric: tabular-nums; }
+    #plan .bbig span { font-size: var(--fs-m); font-weight: 500; color: var(--muted); }
+    #plan .btrack { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    #plan .bhero .btrack { height: 14px; }
+    #plan .bfill { height: 100%; border-radius: 999px; min-width: 0; transition: width .25s ease; }
+    #plan .bleft { margin-top: .45rem; font-size: var(--fs-s); }
+    #plan .bact { margin-top: .8rem; }
+    #plan .blist { background: var(--surface); border-radius: var(--r-l); box-shadow: var(--shadow); overflow: hidden; margin-bottom: .8rem; }
+    #plan .brow { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 0; max-width: none; border-radius: 0; background: transparent; }
+    #plan .brow:first-child { border-top: 0; }
+    #plan .brow > summary { padding: .75rem 1.1rem; min-height: 44px; display: block; font-weight: 400; }
+    #plan .btop { display: flex; align-items: baseline; gap: .55rem; margin-bottom: .45rem; }
+    #plan .bdot { flex: 0 0 .7rem; width: .7rem; height: .7rem; border-radius: 50%; align-self: center; }
+    #plan .bname { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+    #plan .bamt { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--details); white-space: nowrap; }
+    #plan .bnote { margin-top: .35rem; font-size: var(--fs-s); }
+    #plan .bedit { padding: 0 1.1rem 1rem; }
+    /* Вариант А (как Monarch): слева список групп, справа липкая сводка с кольцом; на телефоне сводка сверху */
+    #plan .bgrid { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; align-items: start; }
+    #plan .bmain { min-width: 0; }
+    #plan .bside { position: sticky; top: .8rem; display: grid; gap: .8rem; }
+    #plan .bgroup { margin: 0 0 1rem; }
+    #plan .bgtitle { display: flex; align-items: baseline; gap: .6rem; margin: 0 .2rem .4rem; }
+    #plan .bgtitle h3 { margin: 0; font-size: var(--fs-l); }
+    #plan .bgtitle .muted { font-size: var(--fs-s); }
+    #plan .bgroup .blist { margin-bottom: 0; }
+    #plan .brow > :not(summary):not(.bsum) { margin-left: 1.1rem; margin-right: 1.1rem; }
+    #plan .brow > :last-child:not(summary) { margin-bottom: 1rem; }
+    #plan .brow > table { width: calc(100% - 2.2rem); }
+    #plan .brow > table td { overflow-wrap: anywhere; }
+    #plan .brow > table td.num { white-space: nowrap; text-align: right; }
+    #plan .brow > summary .btrack { margin: 0 0 .1rem; }
+    #plan .brow > summary .bamt { color: var(--muted); }
+    #plan .bsum { padding: .75rem 1.1rem; }
+    #plan .brow > summary { position: relative; padding-right: 2.2rem; }
+    #plan .brow > summary::after { content: ""; position: absolute; right: 1.1rem; top: 1.15rem; width: .45rem; height: .45rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .18s ease; }
+    #plan .brow[open] > summary::after { transform: rotate(-135deg); top: 1.3rem; }
+    #plan .bringrow { display: flex; align-items: center; gap: 1rem; margin: .5rem 0 .2rem; }
+    #plan .bring { flex: 0 0 auto; width: 110px; height: 110px; }
+    #plan .bring svg { width: 100%; height: 100%; display: block; }
+    #plan .bstats { display: grid; gap: .6rem; min-width: 0; }
+    #plan .bk { color: var(--muted); font-size: var(--fs-s); }
+    #plan .bv { font-size: var(--fs-l); font-weight: 700; font-variant-numeric: tabular-nums; }
+    #plan .bv.bgood { color: var(--pos); }
+    #plan .bhint { font-size: var(--fs-s); margin: .5rem 0 0; }
+    #plan .bsumrow { display: flex; justify-content: space-between; gap: .8rem; padding: .4rem 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+    #plan .bcap + .bsumrow { border-top: 0; }
+    #plan .bsumrow .bstrong { font-weight: 700; }
+    @media (max-width: 860px) {
+      #plan .bgrid { grid-template-columns: minmax(0, 1fr); }
+      #plan .bside { position: static; order: -1; }
+    }
+    #plan .brow2 { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .2rem; }
+    /* Поля ввода на странице «План»: скруглённые, цифры крупнее, без стандартной обводки фокуса */
+    #plan input[type=text], #plan input[type=number] { min-height: 40px; padding: .35rem .8rem; border-radius: 999px; background: var(--surface-2); border: 1px solid transparent; font: inherit; font-variant-numeric: tabular-nums; text-align: right; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow var(--t), background-color var(--t); }
+    #plan input[type=text]:hover { box-shadow: inset 0 0 0 1px var(--ctl-border); }
+    #plan input[type=text]:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); }
+    #plan input::placeholder { color: var(--muted); opacity: 1; }
+    #plan .moneyfield { position: relative; display: inline-flex; align-items: center; }
+    #plan .moneyfield input { width: 8rem; padding-right: 3rem; }
+    #plan .moneyfield .unit { position: absolute; right: .9rem; color: var(--muted); font-size: var(--fs-s); pointer-events: none; }
+    #plan .limchips { display: inline-flex; gap: .4rem; flex-wrap: wrap; }
+    #plan .chip { min-height: 32px; padding: .15rem .7rem; border-radius: 999px; font-size: var(--fs-s); background: transparent; color: var(--link); border: 1px solid var(--line); cursor: pointer; }
+    #plan .chip:hover { border-color: var(--accent); }
+    .goalsdet { border: 0; padding: 0; margin: .8rem 0; max-width: none; }
+    .goalsdet > summary { padding: .6rem 1rem; min-height: 44px; background: var(--surface); border-radius: var(--r-m); box-shadow: var(--shadow); font-weight: 600; }
+    .goalsdet > summary > span { flex: 1 1 auto; margin-right: auto; }
+    .goalsdet > .goals { margin-top: .6rem; }
+    .ovmore { border: 0; padding: 0; margin: .8rem 0; max-width: none; }
+    .ovmore > summary { padding: .6rem 1rem; min-height: 44px; background: var(--surface); border-radius: var(--r-m); box-shadow: var(--shadow); font-weight: 600; }
+    .ovmore > summary > span { flex: 1 1 auto; margin-right: auto; }
+    .ovmore > summary small { font-weight: 400; }
+    .ovmore[open] > summary { margin-bottom: .8rem; }
+    .gdot { flex: none; width: .7rem; height: .7rem; border-radius: 50%; background: var(--accent); }
+    .gdot.lvl-warn { background: var(--lvl-warn); } .gdot.lvl-over { background: var(--lvl-over); }
+    #plan .psub { margin: 1rem 0 .3rem; font-size: var(--fs-m); }
+    #plan table td { padding: .15rem .5rem .15rem 0; vertical-align: top; }
+    #plan input[type=number] { width: 7.5rem; padding: .2rem .4rem; }
+    #plan .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
+    #plan .prow .pname { flex: 1 1 9rem; }
+    #plan .prow .pbar { flex: 2 1 10rem; }
+    #plan .pnote { flex: 1 1 100%; font-size: var(--fs-s); }
+    td .why { font-size: var(--fs-xs); margin-top: .15rem; }
+    .opnote { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .25rem; }
+    @media (min-width: 768px) { .opnote .qchip { min-height: 32px; padding: 0 .6rem; font-size: var(--fs-xs); } }
+    .opnote .tag { color: var(--accent); }
+    .opsplit { display: flex; flex-direction: column; gap: .25rem; margin-top: .25rem; align-items: flex-start; }
+    .opsplit .frow { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+    .notein { flex: 1 1 14rem; min-width: 0; }
+    #plan .lvl-warn { color: var(--lvl-warn); } #plan .lvl-over { color: var(--lvl-over); }
+    @media (max-width: 520px) {
+      #plan details { padding: .5rem .8rem; }
+      #plan .prow { gap: .1rem .5rem; margin: .3rem 0; }
+      #plan .prow .pname { flex: 1 1 100%; font-size: .9rem; }
+      #plan .prow .pbar { flex: 1 1 100%; }
+      #plan .pnote { font-size: .8rem; }
+      #plan input[type=text] { width: 6rem; }
+    }
+    #rulesList .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
+    #rulesList .prow .pname { flex: 1 1 12rem; }
+    #condList .prow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .45rem 0; }
+    #condList .prow .pname { flex: 1 1 12rem; }
+    .condform { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+    .condform input, .condform select { flex: 1 1 8rem; min-height: 44px; padding: .4rem .6rem; font-size: var(--fs-m); box-sizing: border-box; }
+    .condform input#condText { flex: 1 1 100%; }
+    #plan .result { font-size: 1.1rem; margin: .5rem 0; }
+    .anonpage { border: 1px solid var(--ctl-border); border-radius: 6px; padding: .4rem; max-height: 22rem; overflow: auto; font-size: var(--fs-s); }

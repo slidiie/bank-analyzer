@@ -1,0 +1,89 @@
+    /*FONTS*/
+    /* Палитра А (светлая холодная, тёмная графитовая с 10.11; категории обновлены 10.11). Светлая по умолчанию; тёмная: системная (если выбор не светлый) и явная [data-theme="dark"].
+       Старые имена (--note-bg, --bar, --ctl-* …) оставлены и ссылаются на новые. Копия старых цветов: папка Резерв, v4.33-до-дизайна. */
+    :root {
+      color-scheme: light dark;
+      --bg:#EEF1F6; --surface:#FFFFFF; --surface-2:#E7ECF3; --line:#CDD5E1;
+      --text:#1A1F2B; --muted:#5B6578; --details:#3D4657;
+      --accent:#2B5FD9; --on-accent:#FFFFFF; --focus:#2B5FD9; --accent-ink:#2350BA;
+      --pos:#177A4D; --neg:#B8423A;
+      --r-s:8px; --r-m:12px; --r-l:16px;
+      --sp-1:.25rem; --sp-2:.5rem; --sp-3:.75rem; --sp-4:1rem; --sp-5:1.5rem;
+      --fs-xs:.8125rem; --fs-s:.85rem; --fs-m:1rem; --fs-l:1.15rem; --fs-xl:1.6rem;
+      --shadow:0 1px 2px rgba(26,31,43,.06), 0 2px 8px rgba(26,31,43,.05);
+      --t:.18s ease;
+      --cat-food:#D8512C;   --cat-cafe:#E07B16;   --cat-transport:#B88A12;
+      --cat-home:#22897D;   --cat-subs:#3A97CD;   --cat-health:#735EB1;
+      --cat-shop:#D04489;   --cat-fun:#A66673;    --cat-transfer:#8C93A1;
+      --cat-cash:#879B65;
+      --cat-other:#B9BCC4;
+      --note-bg:var(--surface); --note-border:var(--line);
+      --ok-bg:var(--surface); --ok-border:#93C4AB;
+      --warn-bg:var(--surface); --warn-border:#D4B86A;
+      --bar:var(--accent); --barbg:var(--surface-2); --active-text:var(--on-accent);
+      --ctl-bg:var(--surface); --ctl-border:#808A9C; --ctl-text:var(--text);
+      --lvl-warn:#8a5f00; --lvl-over:#b3261e;
+      --tab-bg:color-mix(in srgb, var(--accent) 14%, var(--surface)); --tab-fg:var(--accent-ink); --tab-border:var(--accent); --link:var(--accent-ink);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:#111112; --surface:#1A1A1C; --surface-2:#242427; --line:#323236;
+        --text:#ECECEE; --muted:#A3A3AB; --details:#C8C8CE;
+        --accent:#6C9CFF; --on-accent:#111112; --focus:#6C9CFF;
+        --pos:#4CC38A; --neg:#E5736B;
+        --cat-food:#E76F51;   --cat-cafe:#F4A261;   --cat-transport:#E9C46A;
+        --cat-home:#2A9D8F;   --cat-subs:#5FA8D3;   --cat-health:#8E7DBE;
+        --cat-shop:#D66BA0;   --cat-fun:#B5838D;    --cat-transfer:#8C93A1;
+        --cat-cash:#A3B18A;
+        --cat-other:#6E727B;
+        --ok-border:#2F6B4F; --warn-border:#6A5E32;
+        --ctl-border:#76767E;
+        --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
+        --lvl-warn:#d9a400; --lvl-over:#e0554f;
+        --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent); --link:var(--accent);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg:#111112; --surface:#1A1A1C; --surface-2:#242427; --line:#323236;
+      --text:#ECECEE; --muted:#A3A3AB; --details:#C8C8CE;
+      --accent:#6C9CFF; --on-accent:#111112; --focus:#6C9CFF;
+      --pos:#4CC38A; --neg:#E5736B;
+      --cat-food:#E76F51;   --cat-cafe:#F4A261;   --cat-transport:#E9C46A;
+      --cat-home:#2A9D8F;   --cat-subs:#5FA8D3;   --cat-health:#8E7DBE;
+      --cat-shop:#D66BA0;   --cat-fun:#B5838D;    --cat-transfer:#8C93A1;
+      --cat-cash:#A3B18A;
+      --cat-other:#6E727B;
+      --ok-border:#2F6B4F; --warn-border:#6A5E32;
+      --ctl-border:#76767E; --shadow:0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
+      --lvl-warn:#d9a400; --lvl-over:#e0554f;
+      --tab-bg:var(--accent); --tab-fg:var(--on-accent); --tab-border:var(--accent); --link:var(--accent);
+    }
+    :root[data-theme="light"] { color-scheme: light; }
+    :root[data-theme="dark"] { color-scheme: dark; }
+    body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; background: var(--bg); color: var(--text); }
+    h2 { margin-top: 2rem; }
+    /* Плашка демо всегда на виду при прокрутке, кнопка выхода заметная */
+    #demoBar { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-bottom: .6rem; background: linear-gradient(var(--note-bg), var(--note-bg)), var(--bg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    #demoBar[hidden] { display: none; }
+    @media (max-width: 520px) { #demoBar .demohint { display: none; } #demoBar { position: static; padding: .4rem .8rem; } #demoBar #demoExit { padding: .3rem .8rem; font-size: .95rem; } }
+    #demoExit { font-size: var(--fs-m); padding: .5rem 1.1rem; font-weight: 600; background: transparent; color: var(--text); border-color: var(--ctl-border); }
+    .note { background: var(--note-bg); border: 1px solid var(--note-border); padding: .75rem 1rem; border-radius: var(--r-m); }
+    .ok { background: var(--ok-bg); border: 1px solid var(--ok-border); padding: .75rem 1rem; border-radius: var(--r-m); }
+    .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: .75rem 1rem; border-radius: var(--r-m); }
+    table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: .35rem .5rem; text-align: left; vertical-align: top; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    @media (min-width: 521px) {
+      #all table { table-layout: fixed; width: 100%; }
+      #all th:nth-child(1) { width: 6.2rem; } #all th:nth-child(2) { width: 8rem; } #all th:nth-child(3) { width: 17rem; }
+      #all .catview { display: none; }
+    }
+    .flab { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-size: var(--fs-s); }
+    .rwraw { border: 0; padding: .1rem 0; font-size: var(--fs-s); }
+    .rwraw > summary { font-weight: 500; color: var(--muted); }
+    .condform #condCat { flex: 1 1 100%; }
+    .bar { background: var(--bar); height: .8rem; border-radius: 3px; min-width: 2px; }
+    .barwrap { background: var(--barbg); border-radius: 3px; width: 100%; }
+    .details { color: var(--details); max-width: 38rem; word-break: break-word; }
+    select, input[type=text], input[type=number], button { background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); }
+    select, input[type=text] { padding: .25rem; max-width: 14rem; }

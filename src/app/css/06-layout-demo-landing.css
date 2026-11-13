@@ -1,0 +1,256 @@
+    /* ПРАВИЛО ВЁРСТКИ (iPhone): в контейнерах с flex-wrap у каждого блока задаём базу (flex: 1 1 Nrem), никогда «flex: 1» без базы
+       и не min-width: 0 для переноса. Иначе блок остаётся в той же строке в щели шириной в несколько пикселей. Проверка: tests/test_css.js. */
+    .pie .legend { flex: 1 1 16rem; min-width: 0; }
+    .pie .lrow { display: flex; flex-wrap: wrap; align-items: center; gap: .1rem .4rem; padding: .25rem 0; border-bottom: 1px solid var(--line); }
+    .sw.review { background: var(--surface-2); border: 1.5px dashed var(--muted); box-sizing: border-box; }
+    td .sw { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .45rem; vertical-align: middle; }
+    .pie .sw { width: .8rem; height: .8rem; border-radius: 3px; flex: none; }
+    .pie .lname { flex: 1 1 8rem; }
+    th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    .searchwrap { position: relative; display: inline-block; }
+    .ffilters { display: flex; flex-direction: column; gap: .5rem; margin: .5rem 0; }
+    .ffilters .frow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .ffilters input.fq { width: 100%; max-width: 100%; min-height: 44px; padding: .4rem .6rem; font-size: var(--fs-m); box-sizing: border-box; }
+    .ffilters input.fa { width: 6.5rem; min-height: 44px; padding: .4rem .6rem; font-size: var(--fs-m); box-sizing: border-box; }
+    .ffilters [hidden] { display: none; }
+    /* Демо: прячем длинное вступление и загрузку файлов, чтобы кнопка и результат были рядом */
+    body.demo #landing > :not(.topbar):not(.upcard), body.demo .upcard > :not(.cta), body.demo #app > :not(#demoBar):not(#report) { display: none !important; }
+    body.demo #startBtn, body.demo .upcard { display: none; }
+    body.demo .hero { margin-bottom: .6rem; padding-bottom: .6rem; }
+    .hero { padding-bottom: .4rem; margin-bottom: 1.2rem; }
+
+    .upcard .safe { margin: .8rem 0 0; font-size: .85rem; }
+    .chips { list-style: none; margin: 0 0 1.1rem; padding: 0; display: flex; flex-wrap: wrap; gap: .45rem; }
+    .chips li { display: inline-flex; align-items: center; gap: .4rem; margin: 0; padding: .35rem .75rem .35rem .6rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .88rem; line-height: 1.2; }
+    .chips .gi { width: 1.05rem; height: 1.05rem; color: var(--pos); stroke-width: 2; }
+    .minirecap { padding: .2rem 0 .2rem .9rem; }
+    .minirecap .rsave { font-size: 1.9rem; }
+    .minibar { margin: 1.1rem 0 .2rem; font-size: .85rem; }
+    .mbar { display: flex; gap: 2px; height: .9rem; margin: .35rem 0 .5rem; border-radius: 999px; overflow: hidden; }
+    .mbar i { display: block; min-width: 3px; }
+    .mlegend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .2rem .9rem; }
+    .minirecap .mlegend li { margin: 0; padding: 0; display: inline-flex; align-items: center; gap: .35rem; }
+    .minirecap .mlegend li::before { display: none; }
+    .mlegend i { width: .65rem; height: .65rem; border-radius: 2px; flex: none; }
+    .chips { gap: .4rem; }
+    .chips li { padding: .3rem .65rem .3rem .55rem; font-size: .85rem; }
+    .mini { margin-top: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 1rem 1.1rem; }
+    .minitag { font-size: .78rem; margin: .15rem 0 .6rem; line-height: 1.4; }
+    .minihead { font-size: .95rem; }
+    /* Пока скрипт не построил пример, блок не показываем: раньше пару секунд на медленном телефоне виднелись только бледные подписи без самого примера */
+    .mini:not(.ready) { visibility: hidden; min-height: 11rem; }
+    .minibody { margin: .3rem 0; }
+    .miniview { min-width: 0; }
+    .miniview:not(.on) { display: none; }   /* занимает место только открытая вкладка: раньше высоту задавала самая длинная («Таблица») */
+    /* без плавного появления: пока образец «проявлялся», на секунду был виден бледным и нечитаемым */
+    .mini .viewswitch { margin: .3rem 0 .2rem; }
+    .mini .pie { justify-content: center; gap: 1rem 1.5rem; }
+    .mini .pieleft { width: 15rem; }
+    .mini .pie svg.donut { width: 15rem; }
+    .mini .pietip { min-height: 1.6rem; margin-bottom: .3rem; }
+    .mini table { margin: 0; }
+    @media (prefers-reduced-motion: reduce) { .miniview.on { animation: none; } }
+    .donut { position: relative; width: 9rem; height: 9rem; flex: none; }
+    .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut circle { fill: none; stroke-width: 6; }
+    .legend { list-style: none; margin: 0; padding: 0; flex: 1 1 12rem; max-width: 20rem; font-size: .9rem; }
+    .legend li { display: flex; align-items: center; gap: .5rem; padding: .18rem 0; margin: 0; }
+    .legend i { width: .75rem; height: .75rem; border-radius: 3px; flex: none; }
+    .legend .num { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .mini > button { width: 100%; margin-top: .4rem; }
+
+
+    #summary h3, .dyn h3 { font-size: 1.05rem; font-weight: 600; }
+    .hero h1 { font-size: clamp(1.5rem, 4.6vw, 2.1rem); margin: .4rem 0 1.1rem; line-height: 1.2; }
+    button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+    .gi { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .8rem; margin-bottom: 1.4rem; }
+    .lede { margin: -.4rem 0 1.1rem; color: var(--muted); max-width: 34rem; }
+    .brand { flex: 1 1 auto; font-size: .9rem; color: var(--muted); }
+    .topact { display: flex; align-items: center; gap: .5rem; }
+    .themesw { position: relative; display: inline-flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 5rem; height: 2.75rem; min-height: 0; padding: 0 .72rem; border-radius: 999px; background: var(--surface-2); border-color: var(--ctl-border); }
+    .themesw svg { position: relative; z-index: 1; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; color: var(--muted); transition: color .2s; }
+    .themesw .knob { position: absolute; top: 50%; left: .2rem; width: 2.15rem; height: 2.15rem; margin-top: -1.075rem; border-radius: 50%; background: var(--accent); transition: transform .2s; }
+    html.noanim *, html.noanim *::before, html.noanim *::after { transition: none !important; animation-duration: 0s !important; }
+    html[data-dark="true"] .themesw .knob { transform: translateX(2.3rem); }
+    html[data-dark="false"] .themesw .ic-sun, html[data-dark="true"] .themesw .ic-moon { color: var(--on-accent); }
+    .upcard { background: var(--surface); border: 1.5px dashed var(--line); border-radius: var(--r-l); padding: 1.4rem 1.2rem; text-align: center; }
+    .upcard.drag { border-color: var(--accent); background: var(--surface-2); }
+    .upicon { width: 2.4rem; height: 2.4rem; color: var(--accent); }
+    .upcard .cta { display: flex; flex-direction: column; gap: .6rem; max-width: 24rem; margin: 0 auto; }
+    .upcard .cta button { width: 100%; margin: 0; }
+    #demoBtn { background: transparent; color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .rowcard { display: flex; align-items: center; gap: .7rem; width: 100%; min-height: 3rem; margin-top: .6rem; padding: .6rem 1rem; text-align: left; font-size: var(--fs-m); background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); }
+    .rowcard > span { flex: 1 1 auto; min-width: 0; }
+    .rowcard .gi { color: var(--accent); }
+    .rowcard .chev { color: var(--muted); }
+    body.demo .topbar { margin-bottom: .8rem; }
+    body.demo .upcard { padding: .6rem; border-style: solid; }
+    body.demo .upcard .cta { max-width: none; }
+    .sheet .modalcard { width: 100%; max-width: 34rem; background: var(--surface); }
+    .sheet h3 { margin: 1rem 0 .2rem; font-size: var(--fs-m); }
+    .sheet p { margin: .2rem 0; }
+    .sheet .modalcard:focus { outline: none; }
+    .howlist { display: flex; flex-direction: column; gap: .4rem; margin: .6rem 0 1rem; }
+    .howlist .rowcard { margin-top: 0; }
+    .rowcard > .howtag, .rowcard > .chevw { flex: none; }
+    .chevw { display: inline-flex; }
+    .howtag { flex: none; font-size: .72rem; padding: .1rem .5rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+    .howtag.ok { background: var(--accent); color: var(--on-accent); }
+    #howDetail h3 { margin: .8rem 0 .2rem; }
+    #howDetail ul { margin: .3rem 0; padding-left: 1.2rem; }
+    #howDetail li { margin: .35rem 0; }
+    .bigact { width: 100%; min-height: 52px; font-size: 1.05rem; }
+    .mailapps { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .mailapps .btnlink { flex: 1 1 8rem; }
+    .anonpeek { max-height: 12rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-xs); background: var(--surface-2); border-radius: var(--r-s); padding: .6rem .8rem; margin: .4rem 0 0; }
+    .btnlink.alt { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+    .howback { margin-bottom: .4rem; }
+    @media (max-width: 520px) {
+      .modal.sheet { align-items: flex-end; padding: 0; }
+      .sheet .modalcard { max-width: none; border-radius: var(--r-l) var(--r-l) 0 0; max-height: 85vh; max-height: 85dvh; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+      .modal.wizsheet { align-items: stretch; }
+      .modal.wizsheet .wizcard { width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; padding: 0; }
+    }
+    #app > h2:first-child { margin-top: 1rem; }
+    #status, .landstatus { white-space: pre-line; }
+    .landstatus { margin: .6rem 0 0; font-size: var(--fs-s); }
+    .landstatus:empty { display: none; }
+    footer { margin-top: 3rem; }
+    .profeat { margin: .3rem 0 .6rem; padding-left: 1.1rem; }
+    .profeat li { margin: .25rem 0; }
+    .profeat .soon { color: var(--muted); font-size: var(--fs-s); }
+    .btnlink { display: inline-block; padding: .5rem .9rem; border-radius: var(--r-m, 8px); text-decoration: none; }
+    .morecard { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-l); padding: .9rem 1rem; margin: 0 0 .8rem; }
+    .morecard h3 { margin: 0 0 .3rem; font-size: 1.05rem; }
+    .morecard .muted { margin: .3rem 0; }
+    .cardbtns { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0 .2rem; }
+    .cardbtns button { flex: 1 1 9rem; }
+    .morecard .datablock { margin: .5rem 0 0; border-color: var(--line); background: var(--bg); }
+    .morecard .datablock > summary { font-weight: 500; font-size: .95rem; }
+    .fallback > summary { color: var(--muted); }
+    .dangerrow { margin: 1.2rem 0 .6rem; text-align: center; }
+    button.danger { background: transparent; color: var(--neg); border-color: var(--neg); }
+    .filerow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .filebtn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 1.1rem; border-radius: var(--r-m); background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer; }
+    .vh:focus-visible + .filebtn { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .lead { font-size: var(--fs-l); max-width: 46rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); gap: .8rem; margin: 1rem 0; }
+    .card { border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: .8rem 1rem; background: var(--note-bg); }
+    .card h3 { margin: 0 0 .35rem; font-size: var(--fs-m); }
+    .card p { margin: 0; }
+    #demoBar[hidden], #clearBtn[hidden] { display: none; }
+    tr.own td { opacity: .62; }
+    tr.own td:nth-child(3) { opacity: 1; }
+    .bankchips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .6rem; }
+    .bankchips:empty { display: none; }
+    .bankchip { display: inline-flex; align-items: center; gap: .45rem; padding: .15rem .7rem .15rem .2rem; border: 1px solid var(--ctl-border); border-radius: 999px; font-size: .9rem; }
+    .bankchip .mono { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: var(--fs-s); }
+    .badge { display: inline-block; border: 1px solid var(--ctl-border); border-radius: 6px; padding: 0 .4rem; margin-right: .4rem; font-size: .85em; white-space: nowrap; }
+    .suggest { position: absolute; top: 100%; left: .4rem; z-index: 30; min-width: 15rem; max-height: 16rem; overflow: auto; text-align: left;
+      background: var(--bg); border: 1px solid var(--ctl-border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .45); font-weight: 400; }
+    .suggest[hidden] { display: none; }
+    .suggest .opt { padding: .35rem .7rem; cursor: pointer; white-space: nowrap; }
+    .suggest .opt:hover, .suggest .opt.hi { background: var(--note-bg); }
+    .suggest .opt.cur { font-weight: 700; }
+    th.sortable:hover { color: var(--bar); }
+    .oprow { border-top: 1px solid var(--warn-border); padding: .4rem 0; }
+    #bottom { margin-top: 2rem; }
+    .modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, .6); }
+    .modal[hidden] { display: none; }
+    .modalcard { background: var(--bg); color: var(--text); border: 1px solid var(--ctl-border); border-radius: 12px; padding: 1.2rem 1.4rem; max-width: 30rem; max-height: calc(100vh - 2rem); overflow: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
+    .modalbtns { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    /* Без цветных квадратов при нажатии на телефоне: подсветка касания выключена везде, рамка фокуса только с клавиатуры.
+       html.touch ставится при касании и снимается при нажатии клавиши (Chrome на Android иногда считает фокус после касания «видимым»). */
+    *, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+    :focus:not(:focus-visible) { outline: none; }
+    html.touch :is(button, a, summary, label, [role=switch], [tabindex]):focus { outline: none; box-shadow: none; }
+    button::-moz-focus-inner { border: 0; }
+    details { border-bottom: 1px solid var(--line); padding: .5rem 0; max-width: 46rem; }
+    details > summary { cursor: pointer; font-weight: 600; -webkit-tap-highlight-color: transparent; }
+    /* Единая стрелка для всех раскрывающихся пунктов: шеврон справа, поворачивается при открытии, без рамки и фона при наведении */
+    details:not(#plan details) > summary { display: flex; align-items: center; justify-content: space-between; gap: .8rem; list-style: none; }
+    details:not(#plan details) > summary::-webkit-details-marker { display: none; }
+    details:not(#plan details) > summary::after { content: ""; flex: none; width: .5rem; height: .5rem; margin-right: .2rem; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); transition: transform .18s ease; }
+    details[open]:not(#plan details) > summary::after { transform: rotate(45deg); }
+    .icard details:not(#plan details) > summary { justify-content: flex-start; gap: .5rem; }
+    @media print { details > summary::after { display: none; } }
+    details > summary:hover { color: var(--accent); }
+    details > summary:focus:not(:focus-visible) { outline: none; }
+    @media (prefers-reduced-motion: reduce) { details > summary::after { transition: none; } }
+    details > p { margin: .5rem 0 .2rem; }
+    @media (max-width: 520px) {
+      body { margin: 1rem auto; padding: 0 .7rem; }
+      h1 { font-size: var(--fs-xl); }
+      table { font-size: var(--fs-s); }
+      th, td { padding: .3rem .3rem; }
+      .details { max-width: 100%; }
+      .pie .legend { flex: 1 1 100%; }   /* легенда всегда под диаграммой (раньше на 390 px оказывалась в щели шириной 8 px рядом с ней) */
+      .pie svg.donut { margin: 0 auto; display: block; }
+      .suggest { max-width: calc(100vw - 2rem); }
+      .modalcard { padding: 1rem; }
+      input[type=text], select { max-width: 100%; }
+      /* «Все операции» на телефоне: каждая операция карточкой на всю ширину (раньше четыре колонки сжимали описание до узкой полоски и кнопки ломались по буквам) */
+      #all { overflow-x: visible; }
+      #all table, #all tbody { display: block; width: 100%; }
+      #all thead { display: block; }
+      #all thead tr { display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: center; border-bottom: 1px solid var(--line); padding: .2rem 0; }
+      #all thead th { border: 0; padding: 0; display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+      #all thead th:last-child { display: none; }
+      #all tbody tr[data-tx] { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .15rem .75rem; padding: .55rem 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+      #all tbody tr[data-tx] > td { border: 0; padding: 0; min-width: 0; }
+      #all tbody tr[data-tx] > td.cdate { display: none; }
+      #all tbody tr[data-tx] > td.details { grid-column: 1; grid-row: 1; overflow-wrap: anywhere; }
+      #all tbody tr[data-tx] > td.num { grid-column: 2; grid-row: 1; text-align: right; font-weight: 600; white-space: nowrap; }
+      #all tbody tr[data-tx] > td.ccat { grid-column: 1 / -1; grid-row: 2; }
+      #all .dtext { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+      #all tr.open .dtext { display: block; }
+      #all .dextra, #all .catedit { display: none; }
+      #all tr.open .dextra, #all tr.open .catedit { display: block; margin-top: .3rem; }
+      #all tr.open .catview { display: none; }
+      #all .catview { display: flex; align-items: center; gap: .6rem; color: var(--muted); font-size: var(--fs-s); }
+      #all .catview .dt { flex: none; }
+      #all tbody tr:not([data-tx]) { display: block; padding: .6rem 0; }
+      #all tbody tr:not([data-tx]) > td { display: block; border: 0; padding: 0; }
+      #all .opnote, #all .opsplit .frow { width: 100%; }
+      #all .opnote .qchip, #all .opsplit > .qchip { white-space: nowrap; }
+    }
+    /* На самых узких экранах (320 px) полоска в таблице трат отнимает место у названия категории: прячем её, цифры остаются */
+    @media (max-width: 359px) { #summary td:nth-child(4), #summary th:nth-child(4) { display: none; } }
+    /* Защита от раздувания страницы (iPhone): длинное слово без пробелов не должно растягивать раскладку шире экрана,
+       иначе iOS уменьшает страницу и отключает мобильные правила выше. */
+    html { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+    body { overflow-wrap: anywhere; }
+    .pname, .pnote, summary, td:not(.num):not(.muted), th:not(.num) { overflow-wrap: anywhere; min-width: 0; }
+    td.muted { overflow-wrap: break-word; }   /* короткие подписи (~7-го) не рвутся по буквам, длинные (категория) переносятся по словам */
+    #all { overflow-x: auto; }
+    .pie .lname, .lrow > span { overflow-wrap: break-word; min-width: 0; }
+    .catopen { cursor: pointer; }
+    /* Значок «›» у нажимаемых строк категорий: на телефоне наведения нет, без него непонятно, что строка открывается */
+    .lrow.catopen::after { content: "›"; color: var(--muted); font-size: 1.1em; line-height: 1; margin-left: .1rem; }
+    tr.catopen > td:last-child::after { content: "›"; color: var(--muted); margin-left: .4rem; }
+    tr.catopen > td:last-child { white-space: nowrap; }
+    tr.catopen > td:last-child .barwrap { display: inline-block; width: calc(100% - 1rem); vertical-align: middle; }
+    /* Пояснения под диаграммой «Траты по категориям»: короткий список вместо сплошного текста */
+    .onotes { margin: .6rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: var(--fs-s); }
+    .onotes li { margin: .25rem 0; }
+    .onotes .onote-key { color: var(--text); }
+    .catopen:hover { background: var(--surface-2); }
+    .catopen:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+    button, .tab { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+    /* Доступность: цели нажатия не меньше 44 px на телефоне и сенсорных экранах */
+    @media (pointer: coarse), (max-width: 768px) {
+      button:not(.linklike), .tab, select { min-height: 44px; }
+      .viewswitch button { min-height: 44px; padding-left: 1rem; padding-right: 1rem; }
+    }
+    .fbbtn { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0 .9rem; background: transparent; color: var(--accent-ink); border: 1px solid var(--line); border-radius: 999px; font: inherit; font-size: .92rem; cursor: pointer; transition: border-color .18s, color .18s; }
+    .fbbtn svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; flex: none; }
+    @media (max-width: 520px) { .fbbtn { padding: 0 .6rem; } .fbbtn .fbt2 { display: none; } }
+    .fbbtn:hover { border-color: var(--accent); }
+    :root[data-theme="dark"] .fbbtn { color: var(--accent); }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fbbtn { color: var(--accent); } }
+    #fbSheet label { font-weight: 600; }
+    #fbSheet select { max-width: 100%; }
+    #printBtn[hidden], #dlBtn[hidden] { display: none; }

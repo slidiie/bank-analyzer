@@ -1,0 +1,90 @@
+    /* Анализ v2 (9 ноября, вечер): синий внутри анализа заменён графитом. --accent теперь = цвет текста, на нём цвет фона.
+       Синий остаётся только у категории «Транспорт» (--cat-transport). Лайм: бейдж «Разобрать» и плашки «Что заметили». */
+    :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+      --accent: var(--text); --on-accent: var(--bg); --accent-ink: var(--text); --focus: var(--text);
+      --tab-bg: var(--text); --tab-fg: var(--bg); --tab-border: var(--text); --link: var(--text); --bar: var(--text); --active-text: var(--bg);
+    }
+    #app a, #app .linklike, footer a, footer .linklike, .modal a { text-decoration-color: var(--muted); text-underline-offset: 3px; }
+    #tabbar .tabbadge { background: var(--sig); color: var(--sig-ink); }
+    #tabbar button.active { color: var(--text); border-bottom-color: var(--text); }
+    .bar { background: var(--text); opacity: .75; }
+    #reviewBanner .barwrap .bar { opacity: 1; }
+    #plan .lslider { accent-color: var(--text); }
+    /* «Итог месяца» (этап A): первым блоком «Обзора» */
+    .recap { border-left: 4px solid var(--accent); }
+    .recap h3 { margin: 0 0 .1rem; font-size: 1.15rem; }
+    .recap .rsave { margin: .5rem 0 .2rem; font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }   /* не зелёный: это упущенная возможность, а не выигрыш */
+    .recap .rsave small { display: block; font-size: var(--fs-s); font-weight: 400; color: var(--muted); }
+    .recap ul { list-style: none; margin: .5rem 0 0; padding: 0; }
+    .recap li { margin: .35rem 0; padding-left: 1rem; position: relative; line-height: 1.5; overflow-wrap: anywhere; }
+    .recap li::before { content: ""; position: absolute; left: 0; top: .55em; width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
+    .recap li.k-grew::before { background: var(--neg); }
+    .recap li.k-save::before { background: var(--accent); }
+    .recap .rnote { margin: .5rem 0 0; }
+    .recap .rnote .linklike { display: inline-block; padding: .75rem .2rem; margin: -.75rem 0; }
+    /* «Подробнее о периоде»: все блоки одинаковыми карточками, графики одного стиля (скруглённые полосы цвета категории или графита) */
+    .ovmore > :not(summary) { box-sizing: border-box; margin: 0 0 .8rem; padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: none; max-width: none; }
+    .ovmore .tbar { height: 8px; border-radius: 4px; }
+    .ovmore .tbar > i { border-radius: 4px; }
+    .noticed { margin: .8rem 0 1rem; padding: .7rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); }
+    .noticed h3 { margin: 0 0 .3rem; font-size: 1rem; }
+    .noticed ul { list-style: none; margin: 0; padding: 0; }
+    .noticed li { margin: .3rem 0; line-height: 1.6; }
+    .sigchip { display: inline-block; padding: 0 .45rem; border-radius: 999px; background: var(--sig); color: var(--sig-ink); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    /* Демо, «Настройки»: вместо пустоты карточки видны, но неактивны (inert), с подписью */
+    body.demo[data-view="more"] #app > section.morecard:not(#demoBar):not(#report):not([hidden]) { display: block !important; position: relative; opacity: .55; filter: grayscale(1); }
+    body.demo[data-view="more"] #app > h2.setgroup:not([hidden]) { display: block !important; }
+    body.demo[data-view="more"] #app > section.morecard:not([hidden])::before { content: "Доступно с вашей выпиской"; display: inline-block; margin: 0 0 .4rem; padding: .05rem .55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--text); font-size: var(--fs-xs); }
+    #subs .sbig .syear { margin-left: .6rem; padding: .05rem .5rem; border-radius: 999px; background: var(--sig); color: var(--sig-ink); font-size: var(--fs-s); font-weight: 600; vertical-align: middle; white-space: nowrap; }
+    /* Ряд вкладок на телефоне листается: правый край тает, пока есть что листать (сам себя не трогает, если ряд помещается) */
+    @property --tabfade { syntax: "<length>"; inherits: false; initial-value: 0px; }
+    @keyframes tabfade { 0%, 92% { --tabfade: 2.5rem; } 100% { --tabfade: 0px; } }
+    @supports (animation-timeline: scroll()) { @media (max-width: 768px) {
+      .tabs { mask-image: linear-gradient(to right, #000 calc(100% - var(--tabfade)), transparent); animation: tabfade linear both; animation-timeline: scroll(self inline); }
+    } }
+    @media (max-width: 768px) { .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; } .tabs::-webkit-scrollbar { display: none; } .tabs > .tab { flex: none; white-space: nowrap; } }
+    /* Плашка на всю ширину с полями (на узком экране при left:50% она сжималась и слова рвались по слогам) */
+    .sw-update { position: fixed; left: 1rem; right: 1rem; width: max-content; max-width: 28rem; margin: 0 auto; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 60; display: flex; align-items: center; gap: .6rem;
+      box-sizing: border-box; padding: .4rem .5rem .4rem 1rem; border-radius: var(--r-m); background: var(--text); color: var(--bg); box-shadow: var(--shadow); }
+    .sw-update > span { flex: 1 1 auto; white-space: nowrap; }
+    .sw-update button { min-height: 40px; padding: .3rem .9rem; background: var(--sig); color: var(--sig-ink); border: 0; font-weight: 600; white-space: nowrap; flex: none; }
+    .sw-update .sw-x { background: transparent; color: var(--bg); min-width: 40px; padding: 0; font-size: 1.2rem; }
+    /* Тёмная тема: --text светлый, поэтому плашка была белой; делаем тёмную плашку с рамкой */
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sw-update { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); } :root:not([data-theme="light"]) .sw-update .sw-x { color: var(--text); } }
+    :root[data-theme="dark"] .sw-update { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+    :root[data-theme="dark"] .sw-update .sw-x { color: var(--text); }
+    @media (max-width: 768px) { .sw-update { bottom: calc(5rem + env(safe-area-inset-bottom)); } }
+    /* Единый вид полей (10 ноября): выбор файла в мастере образца, галочки и поля текста больше не «браузерные» */
+    .filepick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; width: 100%; box-sizing: border-box; min-height: 96px; padding: 1rem; border: 1.5px dashed var(--ctl-border); border-radius: var(--r-m); background: var(--surface-2); color: var(--text); text-align: center; cursor: pointer; }
+    .filepick:hover, .filepick.over { border-color: var(--text); background: var(--surface); }
+    .vh:focus-visible + .filepick { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .filepick .fpbtn { display: inline-flex; align-items: center; min-height: 40px; padding: 0 1.1rem; border-radius: var(--r-m); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .filepick .fpname { color: var(--muted); font-size: var(--fs-s, .9rem); overflow-wrap: anywhere; }
+    .filepick.has .fpname { color: var(--text); font-weight: 600; }
+    #anonStep2 label input[type=text] { width: 100%; max-width: 22rem; box-sizing: border-box; margin-top: .3rem; padding: .45rem .7rem; }
+    input[type=checkbox], input[type=radio] { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; flex: 0 0 auto; cursor: pointer; vertical-align: -4px; margin: 0 .35rem 0 0; background: var(--ctl-bg); border: 1.5px solid var(--ctl-border); border-radius: 6px; display: inline-grid; place-content: center; transition: background-color var(--t), border-color var(--t); }
+    input[type=radio] { border-radius: 50%; }
+    input[type=checkbox]::before { content: ""; width: 10px; height: 6px; border-left: 2px solid var(--on-accent); border-bottom: 2px solid var(--on-accent); transform: translateY(-1px) rotate(-45deg) scale(0); transition: transform var(--t); }
+    input[type=radio]::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--on-accent); transform: scale(0); transition: transform var(--t); }
+    input[type=checkbox]:checked, input[type=radio]:checked { background: var(--accent); border-color: var(--accent); }
+    input[type=checkbox]:checked::before { transform: translateY(-1px) rotate(-45deg) scale(1); }
+    input[type=radio]:checked::before { transform: scale(1); }
+    input[type=checkbox]:focus-visible, input[type=radio]:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg, #fff), 0 0 0 4px var(--accent); }
+    input[type=checkbox]:disabled, input[type=radio]:disabled { cursor: not-allowed; opacity: .5; }
+    textarea { width: 100%; box-sizing: border-box; background: var(--ctl-bg); color: var(--ctl-text); border: 1px solid var(--ctl-border); border-radius: var(--r-m); padding: .55rem .7rem; font: inherit; resize: none; }
+    textarea:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+    /* Телефон: сверху живая мини-карточка итога, под ней «Выбрать выписку»; обе на первом экране */
+    @media (max-width: 767px) {
+      body:not(.demo) .hero { display: flex; flex-direction: column; }
+      body:not(.demo) .hero > * { order: 9; }
+      body:not(.demo) .hero > .topbar { order: 0; }
+      body:not(.demo) .hero > h1 { order: 1; margin-bottom: .6rem; }
+      body:not(.demo) .hero > .lede { order: 1; margin: 0 0 .7rem; font-size: .95rem; }
+      body:not(.demo) .hero > .lede .lede-long { display: none; }
+      body:not(.demo) .hero > .mini { order: 2; margin: 0 0 .8rem; padding: .7rem .9rem; }
+      body:not(.demo) .hero > .upcard { order: 3; padding: .9rem 1rem; }
+      body:not(.demo) .mini .minitag, body:not(.demo) .mini .viewswitch, body:not(.demo) .mini .minibar, body:not(.demo) .mini > button { display: none; }
+      body:not(.demo) .mini .minirecap h3 { margin: 0; }
+      body:not(.demo) .mini .minirecap .rsave { font-size: 1.5rem; }
+      body:not(.demo) .mini .minirecap ul li:nth-child(n+3) { display: none; }
+    }

@@ -1,0 +1,85 @@
+    /* ===== Строже, без «ИИ-вида» (v4.77). Весь блок можно удалить целиком: остальная вёрстка от него не зависит. =====
+       Плоские карточки с тонкой рамкой вместо мягких теней, меньше скруглений, чёткие заголовки и крупные числа,
+       меньше декоративных значков, плотнее таблицы. */
+    :root { --r-m:8px; --r-l:10px; }
+    .hsum, .icard, #plan details, #subs .scard, .goalsdet > summary, .ovmore > summary, .rowcard, .morecard, .card, .mini { box-shadow: none; border: 1px solid var(--line); }
+    #demoBar { box-shadow: none; border-bottom: 1px solid var(--line); }
+    /* Демо: тонкая полоса вместо целой карточки */
+    #demoBar { padding: .25rem .8rem; font-size: var(--fs-s, .9rem); gap: .3rem .8rem; border-radius: 8px; }
+    #demoBar #demoExit { padding: .2rem .7rem; font-size: inherit; min-height: 0; white-space: nowrap; flex: none; }
+    @media (max-width: 520px) { #demoBar { flex-wrap: nowrap; } #demoBar .dx { display: none; } }
+    #demoBar .demoact { display: inline-flex; gap: .4rem; flex: none; }
+    #demoBar #demoOwn { padding: .2rem .8rem; font-size: inherit; min-height: 0; white-space: nowrap; }
+    @media (max-width: 400px) { #demoBar .dm2 { display: none; } }
+    #demoBar #demoOwn, #demoBar #demoExit { min-height: 32px; }
+    @media (max-width: 767px) { #demoBar #demoOwn, #demoBar #demoExit { min-height: 44px; } }
+    h2, .sect > h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+    h3, #summary h3, .dyn h3, .morecard h3 { font-size: 1rem; font-weight: 650; letter-spacing: 0; }
+    .ibig, #subs .sbig, #plan .pbig { font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .hsum .hlabel, .ilabel, #plan .pcap { color: var(--muted); }
+    .hsum li::before { background: var(--muted); width: .3rem; height: .3rem; }
+    th { font-size: var(--fs-s); font-weight: 600; color: var(--muted); }
+    th, td { padding: .3rem .5rem; }
+    td { line-height: 1.35; }
+    td.num { font-variant-numeric: tabular-nums; }
+    @media (min-width: 769px) { #tabbar .tabico { display: none; } }   /* на ПК вкладки без значков, на телефоне значки нужны в нижней панели */
+    .rowcard > .gi { display: none; }
+    #plan input[type=text], #plan input[type=number] { border-radius: var(--r-s); }
+    #plan .chip, .recur, .howtag, .bankchip { border-radius: var(--r-s); }
+    /* Находки аудита v4.77 (А1–А8 в HANDOFF.md) */
+    details > summary { min-height: 36px; }   /* А1: пункты FAQ, «Подробнее» и т.п. были высотой 20–24 px */
+    select { min-height: 36px; padding: .3rem .5rem; }   /* А2 */
+    /* Свой значок-стрелка вместо системного (на Android и iPhone выглядел по-разному) */
+    select { -webkit-appearance: none; appearance: none; padding-right: 2rem; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 1.1rem) 50%, calc(100% - .8rem) 50%; background-size: .32rem .32rem; background-repeat: no-repeat; cursor: pointer; }
+    .wizx { width: 2.75rem; height: 2.75rem; }   /* А4 */
+    .chips > button { flex: 1 1 9rem; }   /* А5: кнопки выбора ровными рядами, а не «лесенкой» */
+    .warn.revcard, .warn.revcard .oprow { border-color: var(--line); }   /* А6: карточка разбора не предупреждение */
+    .trend { max-width: 40rem; }   /* А8: на ПК подписи месяцев были 25 px, столбцы во весь экран */
+    @media (max-width: 520px) { .trend text { font-size: 22px; } }   /* А8: на телефоне подписи были 9 px */
+    @media (max-width: 520px) { .secthint button, #reviewBanner button { display: block; margin: .4rem 0 0; } }   /* А7: «Сменить период» и «Разобрать» не ломают строку подписи */
+    #reviewBanner { border-color: var(--line); }   /* сводка разбора: сведения, а не предупреждение */
+    @media (pointer: coarse), (max-width: 768px) {
+      details > summary, #plan .chip, select { min-height: 44px; }   /* А1, А2, А3 */
+    }
+    /* Находки аудита v4.78 (Н1–Н5 в HANDOFF.md) */
+    footer a, footer .linklike { display: inline-flex; align-items: center; min-height: 32px; }   /* Н1: ссылки подвала были 18–20 px */
+    input[type=text] { min-height: 36px; }   /* Н2: поля фильтра, новой категории, банка в мастере были 25 px */
+    .printval { display: none; }
+    /* iPhone приближает экран, когда в поле ввода шрифт меньше 16 px («Своя категория», фильтры): везде 16 px */
+    input[type=text], input[type=number], input[type=search], input[type=date], textarea { font-size: 16px; }
+    /* «Подробнее» в карточке «Уточнить»: отдельная строка под кнопками выбора, слева, цветом ссылки, со стрелкой рядом */
+    #review .revcard > details.revmore { margin-top: .8rem; padding-top: .2rem; border-top: 1px solid var(--line); }
+    #review .revcard > details.revmore > summary { justify-content: flex-start; gap: .45rem; width: fit-content; padding: 0 .1rem; min-height: 44px; color: var(--accent); font-weight: 600; font-size: .95rem; }
+    #review .revcard > details.revmore > summary::after { margin-right: 0; }
+    @media (pointer: coarse), (max-width: 768px) {
+      footer a, footer .linklike, input[type=text] { min-height: 44px; }   /* Н1, Н2 */
+      th.sortable { height: 44px; }   /* Н3: заголовки сортировки были 35 px */
+    }
+    /* Печать / сохранение в PDF средствами браузера: печатается открытый раздел, всегда светлая тема, без кнопок и навигации */
+    @media print { #keepNote, #demoMore { display: none !important; }
+      html:root:not([data-p1]):not([data-p2]) {
+        color-scheme: light;
+        --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#EBEFF5; --line:#C9D0DB;
+        --text:#000000; --muted:#4A5263; --details:#1A1F2B;
+        --accent:#2350BA; --on-accent:#FFFFFF; --accent-ink:#2350BA;
+        --pos:#177A4D; --neg:#B8423A; --ctl-border:#808A9C; --ctl-text:#000000; --ctl-bg:#FFFFFF;
+        --tab-bg:#FFFFFF; --tab-fg:#2350BA; --tab-border:#2350BA;
+      }
+      body { max-width: none; margin: 0; padding: 0; background: #fff; color: #000; font-size: 11pt; line-height: 1.35; }
+      #landing, .modal, #tabbar, #demoBar, .filerow, #undoBar, #undoBarTop, #bottomTabs, #reviewTools, #ffilters, .ffilters, #shareBox, #resetRow,
+      #exportBox, .setgroup, #helpBox, #dataRules, #printBtn, #clearBtn, footer .muted:not(#build), button, .nav, .howto, .cardbtns, input, select, textarea { display: none !important; }
+      #report, #app, main { display: block !important; }
+      .sect, .morecard, .note, .warn, .ok, table tr, .pie, svg { break-inside: avoid; page-break-inside: avoid; }
+      h2, h3 { break-after: avoid; page-break-after: avoid; }
+      table { width: 100%; }
+      thead { display: table-header-group; }
+      a { color: inherit; text-decoration: none; }
+      details > *:not(summary) { display: block; }
+      * { box-shadow: none !important; animation: none !important; transition: none !important; }
+      .hsum, .icard, #plan details, #subs .scard, .morecard, .card, .rowcard { border: 1px solid #999 !important; }
+      .printval { display: inline; }
+      #app::before { content: "Fernwood: анализ выписки"; display: block; font-size: 9pt; color: #4A5263; margin-bottom: .4rem; }
+    }
+    button, select, input, textarea, .tab, .rowcard, .bankchip, summary, a { transition: background-color var(--t), border-color var(--t), box-shadow var(--t), color var(--t), transform var(--t); }
+    .icard, .hsum, .morecard, .card, .scard { transition: box-shadow var(--t), background-color var(--t); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }

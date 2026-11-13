@@ -1,0 +1,77 @@
+    /* Обзор v3 (9.11.2026): блоки в карточках, как пример на главной */
+    .srcap { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    .ocard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 1rem 1.1rem; margin: 0 0 1.2rem; }
+    .ocard > h3.ohead, .ocard > h3:first-child { margin-top: 0; }
+    .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(8.6rem, 100%), 1fr)); gap: .6rem; margin: .4rem 0 .2rem; }
+    .ftile { background: var(--surface-2); border-radius: var(--r-m); padding: .6rem .8rem; min-width: 0; }
+    .ftile .flabel { font-size: var(--fs-s); color: var(--muted); }
+    .ftile .fval { font-size: 1.35rem; font-weight: 700; line-height: 1.2; letter-spacing: -.015em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .ftile .fval small { font-size: var(--fs-s); font-weight: 500; color: var(--muted); margin-left: .25rem; white-space: nowrap; display: inline-block; overflow-wrap: normal; }
+    .ftile .fhint { font-size: var(--fs-xs); color: var(--muted); }
+    @media (max-width: 420px) { .ftile .fval { font-size: 1.2rem; } .ftile .fval small { margin-left: .15rem; } .ftile.wide .fval { font-size: 1.9rem; } }   /* на узком телефоне сумма и «BYN» в одной строке */
+    .ftile.wide { grid-column: 1 / -1; }   /* «Разница» главная цифра: во всю ширину и крупнее */
+    .ftile.wide .fval { font-size: 2.1rem; }
+    .ftile.pos .fval { color: var(--pos, inherit); }
+    .ftile.neg .fval { color: var(--neg, inherit); }
+    .shortnote { margin: -.4rem 0 1.2rem; }
+    .trend { width: 100%; height: auto; display: block; }
+    .trend .col { fill: var(--accent); opacity: .5; transform-box: fill-box; transform-origin: bottom; }
+    .trend.anim .col { animation: grow .5s ease both; }
+    .trend .col.max { opacity: .8; }
+    .trend .col.hot { opacity: 1; }
+    .trend .col.sel { opacity: 1; }
+    .trend.hasSel .col:not(.sel):not(.hot) { opacity: .3; }
+    .trend .hit { fill: transparent; }
+    .trend.go .hit { cursor: pointer; }
+    .trend, .trend * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+    .trend .hit, .trend .hit:focus, .trend .hit:focus-visible, .trend .hit:active { outline: none !important; outline-style: none !important; box-shadow: none; stroke: none; }   /* рамки нет: столбец подсвечивается сам (наведение, фокус с клавиатуры, выбор) */
+    .trend text { fill: var(--muted); font-size: 15px; }
+    .toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; margin: .5rem 0; align-items: baseline; }
+    .toprow .tname { display: flex; min-width: 0; }
+    .toprow .tname .tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .toprow .tname .muted { flex: none; white-space: nowrap; }
+    .tbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); }
+    .tbar > i { display: block; height: 100%; border-radius: 3px; }
+    .icard { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: .8rem 1rem; }
+    .ibig { font-size: var(--fs-xl); line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
+    .ilabel { margin-top: .15rem; }
+    .icard details { border: 0; padding: 0; margin: .4rem 0 0; }
+    .icard details > summary { font-weight: 400; color: var(--accent); font-size: .9rem; }
+    .icard details > p { margin: .35rem 0 0; }
+    .goals { margin: 0 0 1.5rem; }
+    .goals h3 { margin: 0 0 .2rem; }
+    .goals .grow { padding: .55rem 0; border-top: 1px solid var(--line); }
+    .goals .grow:first-of-type { border-top: 0; }
+    .goals .gtop { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; justify-content: space-between; }
+    .goals .gname { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+    .goals .gleft { font-variant-numeric: tabular-nums; }
+    .goals .gtrack { height: .5rem; border-radius: 3px; background: var(--surface-2); margin: .3rem 0; overflow: hidden; }
+    .goals .gtrack > i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+    .goals .gnote { font-size: var(--fs-s); overflow-wrap: anywhere; }
+    .goals .lvl-warn, .goals .lvl-risk { color: var(--lvl-warn); } .goals .lvl-over { color: var(--lvl-over); }
+    .goals .gtrack > i.lvl-warn, .goals .gtrack > i.lvl-risk { background: var(--lvl-warn); } .goals .gtrack > i.lvl-over { background: var(--lvl-over); }
+    #plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .7rem; align-items: start; }
+    #plan details { margin: 0; border: 0; box-shadow: var(--shadow); background: var(--surface); border-radius: var(--r-m); padding: .7rem 1rem; max-width: none; }
+    #plan details[open] { grid-column: 1 / -1; }
+    #subs .sbig { font-size: var(--fs-xl); line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
+    #subs .scard { border: 0; box-shadow: var(--shadow); background: var(--surface); border-radius: var(--r-m); padding: .7rem 1rem; margin: 0 0 .7rem; }
+    #subs h3 { margin: 1rem 0 .4rem; font-size: var(--fs-m); }
+    #subs .slist { list-style: none; margin: 0; padding: 0; }
+    #subs .slist li { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; padding: .45rem 0; border-top: 1px solid var(--line); }
+    #subs .slist li:first-child { border-top: 0; }
+    #subs .sname .catchip { display: flex; margin-top: .2rem; font-size: var(--fs-s); }
+    .pie .lname .catchip { font-size: .9rem; }
+    #subs .sname { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+    #subs .swhen { color: var(--muted); font-size: var(--fs-s); }
+    #subs .samount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #subs .samount .syr { display: block; font-size: var(--fs-xs); text-align: right; }   /* годовая цена под суммой платежа */
+    #plan summary { cursor: pointer; font-weight: 600; list-style: none; min-height: 44px; }
+    #plan summary::-webkit-details-marker { display: none; }
+    #plan .pbig { display: block; font-size: var(--fs-xl); line-height: 1.2; font-weight: 700; }
+    #plan .pcap { display: block; font-weight: 400; color: var(--muted); font-size: var(--fs-s); }
+    #plan .pact { display: inline-flex; align-items: center; gap: .35rem; margin-top: .45rem; font-size: var(--fs-s); font-weight: 600; color: var(--accent); }
+    #plan .pact::after { content: ""; width: .42rem; height: .42rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform .18s ease; }
+    #plan details[open] > summary .pact { font-size: 0; }
+    #plan details[open] > summary .pact::before { content: attr(data-open); font-size: var(--fs-s); }
+    #plan details[open] > summary .pact::after { transform: rotate(-135deg) translateY(-2px); }
+    #plan summary:hover .pact { text-decoration: underline; }

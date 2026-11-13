@@ -63,7 +63,7 @@ function clickButton(root, label) {
   return false;
 }
 
-const html = fs.readFileSync(path.join(__dirname, "..", "analyzer.html"), "utf8");
+const html = require("../page.js").readPage();
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
 const ctx = vm.createContext({
