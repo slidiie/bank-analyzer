@@ -164,8 +164,12 @@
       } else if (ctx.current > 0 && !coverageNote(months[ctx.current]) && !coverageNote(months[ctx.current - 1])) {
         const t = cmp(ctx.current, ctx.current - 1, ""); if (t) facts.push(t);
       }
-      const top = st.rows.find(([c]) => !REVIEW_CATS.has(c));
-      if (top) facts.push(`Больше всего: ${top[0]}, ${Math.round(top[1] / st.total * 100)}%`);
+      // «Больше всего» совпадает с первой строкой списка «Траты по категориям»: переводы называем прямо (с оговоркой),
+      // а если впереди корзины ЕРИП/интернет-банк, говорим «из разобранного», чтобы человек не искал несовпадение
+      { const pct = r => Math.round(r[1] / st.total * 100), first = st.rows[0];
+        if (first && first[0] === TR_BUCKET) facts.push(`Больше всего: ${first[0]}, ${pct(first)}% (часть может быть на ваши же счета)`);
+        else if (first && !inReviewSlice(first[0])) facts.push(`Больше всего: ${first[0]}, ${pct(first)}%`);
+        else { const top = st.rows.find(([c]) => !REVIEW_CATS.has(c)); if (top) facts.push(`Больше всего из разобранного: ${top[0]}, ${pct(top)}%`); } }
       const biggest = spendList(all).reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
       if (biggest) facts.push(`Самая крупная трата: ${fmt(-biggest.amount)} ${CUR}${biggest.date ? ", " + shortDate(biggest.date) : ""}`);
       // Пришло: поступления без переводов между своими счетами и без возвратов (возврат уменьшает траты, а не доход)
@@ -187,7 +191,7 @@
         const cs = statements.map(x => x.check).filter(c => c && c.headerIncome != null);
         if (cs.length && cs.length === statements.length) {
           const bal = Math.round(cs.reduce((a, c) => a + c.headerIncome - c.headerExpense, 0) * 100) / 100;
-          if (Math.abs(bal) >= 1 && (bal >= 0) !== (diff >= 0)) balNote = `Почему «Разница» ${diff >= 0 ? "плюс" : "минус"}, а на счетах денег ${bal >= 0 ? "стало больше" : "стало меньше"} на ${fmt(Math.abs(bal))} ${CUR}: в «Пришло» не входят переводы между своими счетами и возвраты, поэтому выписки и «Разница» считают немного по-разному.`;
+          if (Math.abs(bal) >= 1 && (bal >= 0) !== (diff >= 0)) balNote = `По выпискам на счетах денег ${bal >= 0 ? "стало больше" : "стало меньше"} на ${fmt(Math.abs(bal))} ${CUR}. «Разница» другая, потому что не считает переводы между своими счетами и возвраты.`;
         }
       }
       const tiles = income > 0
@@ -352,7 +356,7 @@
         items, income, fullMonths: full, month: full.includes(activeTab) ? activeTab : undefined,
         period: recapPeriod(dates),
         unsorted: [...REVIEW_CATS], fixed: ["Аренда и жильё", "Комиссии банка", "Здоровье", "Образование", "Наличные", Cat.GAMBLING, Cat.P2P],
-        regular, subsCats: ["Связь и подписки"], nice: softCase, unit: CUR,
+        regular, subsCats: ["Связь и подписки"], nice: softCase, unit: CUR, transferCat: TR_BUCKET,
       });
       if (!r || !r.lines.length) return null;
       const sub = r.month ? (r.compared ? `Сравнение со средним за ${r.compared === 1 ? "прошлый месяц" : r.compared + " прошлых месяца"}` : "Для сравнения загрузите выписку и за прошлые месяцы")
@@ -375,7 +379,7 @@
       const weak = r.sortedShare < 0.6;
       return h("section", { class: "ocard recap", "aria-label": r.title },
         h("h3", {}, r.title), h("div", { class: "muted" }, sub),
-        r.note ? h("p", { class: "rnote" + (weak ? " rweak" : " muted") }, r.note, " ", goReview) : "",
+        r.note ? h("p", { class: "rnote" + (weak || r.trNote ? " rweak" : " muted") }, r.note, " ", goReview) : "",
         r.save && !weak ? h("div", { class: "rsave" }, `+${Recap.money(r.save)} ${CUR}`, h("small", {}, "можно было бы сохранить, если бы выросшие траты были на обычном уровне")) : "",
         h("ul", {}, r.lines.filter(l => l.kind !== "save" || !r.save).map(l => h("li", { class: "k-" + l.kind }, l.text))),
         shareData && shareData.bar.length && !readProblems().length && !guessed().length ? h("div", { class: "rshare" }, h("button", { type: "button", onclick: ev => openShare(ev.currentTarget) }, "Поделиться итогом")) : "");

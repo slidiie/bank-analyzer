@@ -104,6 +104,11 @@
     if (total < 1) return null;
     const sortedSum = [...cur].filter(([c]) => !unsorted.has(c)).reduce((a, [, v]) => a + v, 0);
     const sortedShare = sortedSum / total;
+    // Переводы на карты и счета входят в «Всего потрачено», но часть из них может быть на свои же карты: тогда это не траты.
+    // Если их заметная доля, оговорка идёт ДО громких выводов, а не мелко после них
+    const trSum = o.transferCat ? (cur.get(o.transferCat) || 0) : 0;
+    const trShare = trSum / total;
+    const trNote = trShare >= 0.1 ? `${money(trSum)} ${U} (${Math.round(trShare * 100)}% трат) это переводы на карты и счета. Если часть из них на ваши же карты, это не траты: отметьте такие переводы в «Уточнить», и сравнение станет точнее.` : "";
 
     // «Обычно»: среднее по предыдущим полным месяцам (до трёх), только идущим подряд перед этим месяцем
     let base = [], baseYms = [];
@@ -136,7 +141,7 @@
     if (month && base.length && usualTotal > 0) {
       const d = (total - usualTotal) / usualTotal;
       const how = Math.abs(d) < 0.03 ? "почти как обычно" : `на ${Math.round(Math.abs(d) * 100)}% ${d > 0 ? "больше" : "меньше"}${usualWord}`;
-      lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} ${U}: ${how}`, short: `Траты: ${how}` });
+      lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} ${U}${trNote ? " вместе с переводами на карты" : ""}: ${how}`, short: `Траты: ${how}` });
     } else if (month) {
       lines.push({ kind: "total", value: total, text: `Всего потрачено ${money(total)} ${U}, в среднем ${money(total / days)} ${U} в день` });
     } else {
@@ -266,7 +271,8 @@
       compared: base.length,
       title: month ? `Итог ${monthGen(month)}` : `Итог за ${days} ${plural(days, "день", "дня", "дней")}`,
       thin: !!thinNote,
-      note: (thinNote ? thinNote + " " : "") + (sortedShare < SORTED_OK ? `Разобрано ${Math.round(sortedShare * 100)}% трат ${month ? "месяца" : "периода"}, выводы по ним. Остальное можно уточнить, и итог станет точнее.` : ""),
+      trNote,
+      note: (thinNote ? thinNote + " " : "") + (trNote ? trNote + " " : "") + (sortedShare < SORTED_OK ? `Разобрано ${Math.round(sortedShare * 100)}% трат ${month ? "месяца" : "периода"}, выводы по ним. Остальное можно уточнить, и итог станет точнее.` : ""),
       lines: lines.slice(0, 5),
     };
   }

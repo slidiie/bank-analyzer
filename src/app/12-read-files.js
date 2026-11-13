@@ -204,6 +204,7 @@
       if (!files.length) return;
       leaveDemo();
       const notes = [];
+      let failedFile = false;   // какой-то файл не прочитался: строку состояния выделяем
       await deviceReady;
       unpark();
       if (!txs.length && keepOnDevice && deviceSnap) {      // новая выписка добавляется к той, что хранится на устройстве (повторы пропускаются)
@@ -223,7 +224,7 @@
           notes.push(`${f.name}: ${res.bank.name}${res.uni ? (res.bank.name === Banks.OTHER.name ? "" : " (банка нет в списке)") + (res.uni.proof === "totals" || res.uni.proof === "balance" ? ", суммы проверены" : res.uni.proof === "mismatch" ? ", суммы не сошлись" : res.uni.proof === "accounts" ? ", в файле несколько счетов" : ", прочитано по догадке") : ""}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
           const curNote = Merge.currencyNote(res.header, rates); if (curNote) notes.push(curNote);
         } catch (err) {
-          notes.push(`${f.name}: ${String(err.message).replace(/\.$/, "")}.`);
+          notes.push(`${f.name}: ${String(err.message).replace(/\.$/, "")}.`); failedFile = true;
           if (err && err.unsupported) unsupportedFile = f;
         }
       }
@@ -246,7 +247,7 @@
         $("backupMsg").textContent = backupSummary();
         try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
       }
-      setStatus(notes.join("\n"));
+      setStatus(notes.join("\n"), failedFile);
       $("file").value = "";
     });
 

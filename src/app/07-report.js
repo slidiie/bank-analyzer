@@ -512,7 +512,7 @@
         const sw = h("span", { class: sl.review ? "sw review" : "sw" });
         if (!sl.review) sw.style.background = sl.color;
         const head = sl.group
-          ? h("div", {}, sw, h("b", {}, sl.review ? "Не разобрано" : "Мелкие категории"), ` · ${fmt(sl.sum)} ${CUR} · ${pct}%`)
+          ? h("div", {}, sw, h("b", {}, sl.review ? "Нужно разобрать" : "Мелкие категории"), ` · ${fmt(sl.sum)} ${CUR} · ${pct}%`)
           : h("div", {}, sw, iconEl(iconKey(sl.cats[0][0])), h("b", {}, sl.cats[0][0]), ` · ${fmt(sl.sum)} ${CUR} · ${pct}%`);
         const nodes = [head];
         if (sl.group) nodes.push(h("div", { class: "muted" }, sl.cats.map(([c, v]) => `${c}: ${fmt(v)}`).join("; ")));
@@ -533,12 +533,35 @@
       wrap.append(left);
 
       const legend = h("div", { class: "legend" });
-      st.rows.forEach(([cat, sum], i) => {
+      // Доля «Нужно разобрать» на кольце склеена из нескольких корзин (ЕРИП, интернет-банк): в списке над ними строка с той же суммой и процентом,
+      // чтобы число на кольце (например 29%) находилось и в списке, а корзины шли под ней, без разброса по списку
+      const reviewIdx = slices.findIndex(sl => sl.review);
+      const legendRows = [];
+      if (reviewIdx >= 0 && review.length > 1) {
+        let put = false;
+        st.rows.forEach(r => {
+          if (!inReviewSlice(r[0])) { legendRows.push(r); return; }
+          if (put) return;
+          put = true; legendRows.push({ head: true });
+          review.forEach(x => legendRows.push(Object.assign([x[0], x[1]], { sub: true })));
+        });
+      } else st.rows.forEach(r => legendRows.push(r));
+      legendRows.forEach(item => {
+        if (item.head) {
+          const sw = h("span", { class: "sw review" });
+          const row = h("div", { class: "lrow lhead" }, h("span", { class: "lname" }, sw, h("b", {}, "Нужно разобрать")),
+            h("span", { class: "num" }, fmt(reviewSum) + " · " + pctText(reviewSum, st.total)));
+          row.addEventListener("mouseenter", () => { show(reviewIdx); markSlice(reviewIdx); });
+          row.addEventListener("mouseleave", () => { hideTip(); markSlice(defIdx); });
+          legend.append(row);
+          return;
+        }
+        const [cat, sum] = item;
         const si = sliceOf.get(cat);
         const sw = h("span", { class: slices[si].review ? "sw review" : "sw" });
         if (!slices[si].review) sw.style.background = slices[si].color;
         const oa = catOpenAttrs(cat, opts.onCat);
-        const row = h("div", { ...oa, class: "lrow" + (oa.class ? " " + oa.class : "") }, h("span", { class: "lname" }, catChip(cat)),
+        const row = h("div", { ...oa, class: "lrow" + (item.sub ? " lsub" : "") + (oa.class ? " " + oa.class : "") }, h("span", { class: "lname" }, catChip(cat)),
           h("span", { class: "num" }, fmt(sum) + " · " + pctText(sum, st.total)));
         row.addEventListener("mouseenter", () => { show(si); markSlice(si); });
         row.addEventListener("mouseleave", () => { hideTip(); markSlice(defIdx); });

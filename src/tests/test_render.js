@@ -686,7 +686,7 @@ vm.runInContext(`
   render(); renderSubs();
 `, ctx);
 const subsText = textOf(byId["subs"]);
-check("подписки: сумма в месяц и число платежей", /30,00\s*BYN/.test(subsText) && subsText.includes("BYN в месяц") && subsText.includes("Обязательные"));
+check("подписки: сумма в месяц и число платежей", /30,00\s*BYN/.test(subsText) && subsText.includes("BYN в месяц") && subsText.includes("Все регулярные: ≈ 30,00 BYN в месяц (1 платёж"));
 check("подписки: ближайшее списание 07.11", subsText.includes("Ближайшие списания") && subsText.includes("07.11"));
 check("подписки: есть полный список и оговорка про совпадение сумм", subsText.includes("Все регулярные платежи") && subsText.includes("по одинаковым суммам"));
 vm.runInContext(`txs = txs.slice(0, 2); header = { from: "2026-07-05", to: "2026-08-31" }; render(); renderSubs();`, ctx);

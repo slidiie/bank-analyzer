@@ -4,8 +4,13 @@
       if (Cat.isErip(tx)) return "ЕРИП";
       const rc = Cat.recipient(tx);
       if (rc) return "Счёт …" + rc.last4 + (rc.op ? " · " + rc.op : "");
+      // Банковский хвост «Списание по операции ПЦ покупка товара в …» убираем, иначе название обрезается раньше, чем начинается магазин
       const k = Cat.merchantKey(tx);
-      return k.slice(k.indexOf("|") + 1).slice(0, 40) || "без названия";
+      const raw = k.slice(k.indexOf("|") + 1).replace(/^списание по операции пц\s*/i, "").replace(/^(?:покупка товара|оплата товаров и услуг|оплата)\s+(?:в\s+)?/i, "").trim();
+      let pretty = "";
+      try { pretty = (typeof Merchants !== "undefined" && (Merchants.pretty(raw) || Merchants.clean(raw))) || ""; } catch (e) { /* без красивого названия */ }
+      const name = pretty || raw;
+      return (name.length > 40 ? name.slice(0, 39).replace(/\s+\S*$/, "") + "…" : name) || "без названия";
     }
     const PLAN_SKIP = [Cat.OWN, Cat.LOAN, Cat.SAVINGS, Cat.GAMBLING, "Наличные"];
     const ESSENTIAL_CATS = ["Продукты", "Транспорт", "Аренда и жильё", "Связь и подписки"];   // крупная трата тут «крупная покупка», а не «необычная»
@@ -67,8 +72,10 @@
       box.append(h("div", { class: "scard" },
         h("div", { class: "muted" }, "Связь, подписки и сервисы"),
         h("div", { class: "sbig" }, `≈ ${money(subsSum * 12)} ${CUR} в год`, h("span", { class: "syear" }, `${money(subsSum)} ${CUR} в месяц`)),
-        h("div", { class: "muted" }, nSubs ? `Найдено: ${nSubs}. Проверьте, всем ли вы пользуетесь.` : "Подписок среди регулярных платежей не нашлось."),
-        h("div", { class: "muted" }, `Обязательные (аренда, коммуналка, ЕРИП): ≈ ${money(mustSum * 12)} ${CUR} в год` + (otherSum ? ` · другие регулярные: ≈ ${money(otherSum * 12)} ${CUR}` : "") + (share != null ? ` · всего около ${share}% трат` : "")),
+        h("div", { class: "muted" }, nSubs ? `Найдено: ${nSubs}. Проверьте, всем ли вы пользуетесь.` : "Подписок с одинаковой суммой каждый месяц не нашлось. Траты на связь и подписки с разной суммой видны в категории «Связь и подписки»."),
+        // Все суммы в одной строке и в одних единицах (в месяц), чтобы они складывались и совпадали с «Регулярными платежами» в «Бюджете»
+        h("div", { class: "muted" }, `Все регулярные: ≈ ${money(sum)} ${CUR} в месяц (${regular.length} ${plur(regular.length, "платёж", "платежа", "платежей")}` + (share != null ? `, около ${share}% трат` : "") + `): ` +
+          [["связь и подписки", subsSum], ["обязательные (аренда, коммуналка, ЕРИП)", mustSum], ["другие", otherSum]].filter(([, v]) => v > 0).map(([k, v]) => `${k} ${money(v)}`).join(" + ") + "."),
         h("details", { class: "rwraw" }, h("summary", {}, "Как посчитано ›"),
           h("p", { class: "muted" }, `Год посчитан так: платёж, как в последние ${full.length} ${plur(full.length, "полный месяц", "полных месяца", "полных месяцев")} (${monthRange(full[0], full[full.length - 1])}), умножено на 12. Сюда входят связь (пополнение телефона, интернет) и онлайн-сервисы. Платежи найдены по одинаковым суммам: проверьте список сами.`))));
       const when = d => {
@@ -80,7 +87,9 @@
       if (upcoming.length) {
         box.append(h("ul", { class: "slist" }, upcoming.map(x => h("li", {},
           h("span", { class: "sname" }, softCase(x.r.name)), h("span", { class: "swhen" }, `${dmy(x.s.next)} · ${when(x.s.next)}`), h("span", { class: "samount" }, `${money(x.r.amount)} ${CUR}`)))));
-        box.append(h("p", { class: "muted" }, "Дата: последний платёж плюс обычный шаг между платежами. Если платёж не прошёл в срок, он ниже помечен."));
+        box.append(h("p", { class: "muted" }, "Дата: последний платёж плюс обычный шаг между платежами. Если платёж не прошёл в срок, он ниже помечен." +
+          (upcoming.length < regular.length ? ` Здесь ближайшие ${upcoming.length} из ${regular.length}, поэтому их сумма меньше «в месяц» выше.` : "") +
+          (regular.some(r => Math.abs(r.perMonth - r.amount) > 0.01) ? " Платёж чаще или реже раза в месяц пересчитан на месяц, поэтому «в месяц» не равно сумме одного платежа." : "")));
       } else box.append(h("p", { class: "muted" }, "Назвать ближайшие списания нельзя: у найденных платежей нет ровного срока или они не прошли в срок (ниже в списке)."));
       const stepName = s => s.kind === "month" ? "раз в месяц" : s.kind === "days" ? `каждые ${s.step} дн.` : "без чёткого срока";
       box.append(h("h3", {}, `Все регулярные платежи · ${rows.length}`));
@@ -332,6 +341,13 @@
       for (const k of ["obligations", "other"]) {
         d.append(h("div", { class: "prow" }, h("span", { class: "pname" }, labels[k]),
           numInput("calc:" + k, calc[k] != null ? calc[k] : Math.round(defs[k]), v => { if (v == null) delete calc[k]; else calc[k] = v; }, { "aria-label": labels[k] }), h("span", { class: "muted" }, calc[k] != null ? `${CUR}, введено вручную` : CUR)));
+      }
+      // Откуда число «Остальные траты»: человек сравнивает его с «Гибкими тратами» и средним в «Обзоре», поэтому говорим прямо, из чего оно и почему больше
+      if (calc.other == null && defs.other > 0) {
+        const base = x.fc ? x.fc.avg : x.avgSpend, nM = x.fc ? x.fc.n : x.n;
+        d.append(h("p", { class: "muted bhint" }, `Как посчитано: все траты в среднем за ${nM} ${plur(nM, "последний полный месяц", "последних полных месяца", "последних полных месяцев")} (${money(base)} ${CUR}) минус обязательные платежи (${money(x.regSum)} ${CUR}). ` +
+          "Сюда входят и переводы на карты, наличные, платежи ЕРИП, поэтому число больше суммы «Гибких трат»: там только разобранные категории. " +
+          "В «Обзоре» среднее за полный месяц считается по всем месяцам выписки, а здесь по последним, поэтому оно может отличаться."));
       }
       d.append(h("div", { class: "prow" }, h("span", { class: "pname" }, "А если жильё будет стоить…"),
         numInput("calc:rentNew", calc.rentNew != null ? calc.rentNew : "", v => { if (v == null) delete calc.rentNew; else calc.rentNew = v; }, { placeholder: "например, 600", "aria-label": "Новая стоимость жилья" }),

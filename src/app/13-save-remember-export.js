@@ -223,7 +223,10 @@
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
       saveJSON("ba_rules_v1", userRules); saveJSON("ba_cats_v1", customCats); saveJSON("ba_txrules_v1", txRules); saveJSON("ba_icons_v1", customIcons); saveJSON("ba_catcolors_v1", customColors);
+      // Сохранённая копия выписки и ответ на «Помнить выписку?» тоже стираются: после «Забыть» на устройстве не остаётся ничего, следующая загрузка снова спросит
+      keepOnDevice = false; $("keepDevice").checked = false; saveJSON("ba_keep_v1", false); saveJSON("ba_keep_asked_v1", false); forgetDeviceCopy();
+      $("deviceMsg").textContent = "";
       $("resetBox").hidden = true;
-      $("backupMsg").textContent = "Категории и выбор по операциям сброшены.";
+      $("backupMsg").textContent = "Готово: категории, выбор по операциям и сохранённая выписка стёрты с этого устройства.";
       if (txs.length) render(); else renderRules();
     });
