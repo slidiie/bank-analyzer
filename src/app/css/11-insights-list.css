@@ -4,7 +4,9 @@
     ul.insights > li + li { border-top: 1px solid var(--line); }
     ul.insights .wnone { padding: .9rem 1rem; color: var(--muted); }
     .whead { display: grid; grid-template-columns: minmax(5.5rem, 9rem) 1fr auto; gap: .2rem .9rem; align-items: center; width: 100%; text-align: left; background: transparent; color: var(--text); border: 0; border-radius: 0; box-shadow: none; padding: .8rem 1rem; font-size: .95rem; font-weight: 400; }
-    .whead:hover { background: var(--tab-bg); }
+    .whead { -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+    @media (hover: hover) and (pointer: fine) { .whead:hover { background: var(--surface-2); } }   /* на телефоне hover залипает после касания (белая плашка в Telegram/Safari) */
+    .whead:active { opacity: .72; }
     .whead .wsum { font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
     .whead .wtxt { min-width: 0; overflow-wrap: anywhere; }
     .whead .wgo { color: var(--muted); font-size: 1.3rem; line-height: 1; transition: transform var(--t, .2s); }
