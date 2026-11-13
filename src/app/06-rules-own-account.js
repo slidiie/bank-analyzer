@@ -112,8 +112,11 @@
     function renderUndo() { [$("undoBar"), $("undoBarTop")].forEach(b => { if (b) fillUndo(b); }); }
     function fillUndo(box) {
       box.replaceChildren();
+      // Плашек «Готово» могло набраться пять и закрыть экран: на виду только последняя, прежние свёрнуты в «Предыдущие выборы»
+      const older = h("details", { class: "ok", style: "margin:.4rem 0" }, h("summary", {}, `Предыдущие выборы (${Math.max(0, tailUndo.length - 1)}): можно отменить`));
       for (const e of tailUndo) {
-        box.append(h("div", { class: "ok", style: "margin:.4rem 0" },
+        const last = e === tailUndo[tailUndo.length - 1];
+        (last ? box : older).append(h("div", { class: "ok", style: "margin:.4rem 0" },
           e.label ? `✓ ${e.label} ` : `✓ ${e.groups} групп (${e.ops} ${opsWord(e.ops)}, ${fmt(e.sum)} ${CUR}) отправлены в «Прочее». `,
           h("button", { type: "button", onclick: () => {
             e.prev.forEach(([k, v]) => { if (v === undefined) delete userRules[k]; else userRules[k] = v; });
@@ -124,6 +127,7 @@
           } }, "Отменить"), " ",
           h("button", { type: "button", onclick: () => { tailUndo.splice(tailUndo.indexOf(e), 1); renderUndo(); } }, "Скрыть")));
       }
+      if (tailUndo.length > 1) box.replaceChildren(older, ...box.children);
       for (const e of otherUndo) {
         box.append(h("div", { class: "ok", style: "margin:.4rem 0" },
           `✓ ${e.n} ${opsWord(e.n)} возвращены в «Уточнить». `,
