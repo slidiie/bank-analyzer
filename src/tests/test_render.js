@@ -131,10 +131,26 @@ s = summaryText();
 check("октябрь без долга: итого 400", hasTotal(s, "400,00"));
 {
   const ins = textOf(byId["insights"]);
-  check("крупная трата: одна карточка с «Показать операцию»; у известной категории нет вопроса «Что это было?»", ins.includes("Самая крупная трата") && ins.includes("Показать операцию") && !ins.includes("Необычно крупная трата") && !ins.includes("Это не так, изменить категорию") && !ins.includes("Сайт определил категорию") && !ins.includes("null"));
-  clickButton(byId["insights"], "Показать операцию");
+  check("«Что заметно»: строка с суммой и фразой, без повторов верха («Больше всего», «Самая крупная») и без «null»", ins.includes("Комиссии банка") && !ins.includes("Больше всего ушло") && !ins.includes("Самая крупная трата") && !ins.includes("Подробнее о тратах") && !ins.includes("null"));
+  check("«Что заметно»: не больше 4 строк", byId["insights"].children.length <= 4);
+  vm.runInContext(`showTx(txs.find(t => t.amount < 0))`, ctx);
   check("«Показать операцию» открывает «Все операции» с поиском по дате и сумме", vm.runInContext(`bottomTab`, ctx) === "all" && /^\d\d\.\d\d\.\d{4} \d+,\d\d$/.test(vm.runInContext(`allFilt.query`, ctx)));
   vm.runInContext(`allFilt = Filters.empty(); bottomTab = null;`, ctx);
+}
+
+// «Что это было?»: ответ запоминается для получателя (следующие выписки тоже), «Только эта операция» пишет одну операцию
+{
+  const setup = `(() => { const t = txs.find(x => x.amount < 0 && !/\\|\\s*$/.test(Cat.merchantKey(x))); globalThis.__t = t; globalThis.__k = Cat.merchantKey(t); globalThis.__w = whatWasIt([t], ""); })()`;
+  vm.runInContext(setup, ctx);
+  clickButton(vm.runInContext(`__w`, ctx), "Аренда");
+  check("ответ в «Что заметно» запоминается для получателя (userRules)", vm.runInContext(`userRules[__k]`, ctx) === "Аренда и жильё" && !vm.runInContext(`txRules[txId(__t)]`, ctx));
+  vm.runInContext(`delete userRules[__k]; render();`, ctx);
+  vm.runInContext(setup, ctx);
+  const w2 = vm.runInContext(`__w`, ctx);
+  clickButton(w2, "Только эта операция");
+  clickButton(w2, "Аренда");
+  check("«Только эта операция»: пишется одна операция, правила для получателя нет", vm.runInContext(`txRules[txId(__t)]`, ctx) === "Аренда и жильё" && !vm.runInContext(`userRules[__k]`, ctx));
+  vm.runInContext(`delete txRules[txId(__t)]; render();`, ctx);
 }
 
 check("нажатие на вкладку «Ноябрь»", clickButton(byId["summary"], "Ноябрь 2026"));

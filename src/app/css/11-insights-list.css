@@ -1,0 +1,22 @@
+    /* «Что заметно»: список из строк в одной карточке (слева сумма, справа фраза, ›); подробности раскрываются на месте */
+    ul.insights { list-style: none; padding: 0; margin: 0; background: var(--surface); box-shadow: var(--shadow); border-radius: var(--r-m); overflow: hidden; }
+    ul.insights > li { margin: 0; }
+    ul.insights > li + li { border-top: 1px solid var(--line); }
+    ul.insights .wnone { padding: .9rem 1rem; color: var(--muted); }
+    .whead { display: grid; grid-template-columns: minmax(5.5rem, 9rem) 1fr auto; gap: .2rem .9rem; align-items: center; width: 100%; text-align: left; background: transparent; color: var(--text); border: 0; border-radius: 0; box-shadow: none; padding: .8rem 1rem; font-size: .95rem; font-weight: 400; }
+    .whead:hover { background: var(--tab-bg); }
+    .whead .wsum { font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .whead .wtxt { min-width: 0; overflow-wrap: anywhere; }
+    .whead .wgo { color: var(--muted); font-size: 1.3rem; line-height: 1; transition: transform var(--t, .2s); }
+    .whead[aria-expanded="true"] .wgo { transform: rotate(90deg); }
+    .wbody { padding: 0 1rem .9rem; } .wbody[hidden] { display: none; }
+    .wbody p { margin: .3rem 0; }
+    .wgroup { padding: .35rem 0; border-top: 1px solid var(--line); }
+    .wgroup:first-of-type { margin-top: .4rem; }
+    .wgline { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; }
+    .wgname { flex: 1 1 8rem; min-width: 0; overflow-wrap: anywhere; }
+    .wgsum { font-variant-numeric: tabular-nums; font-weight: 600; }
+    @media (max-width: 30rem) {
+      .whead { grid-template-columns: 1fr auto; }
+      .whead .wsum { grid-column: 1; } .whead .wtxt { grid-column: 1; grid-row: 2; color: var(--muted); font-size: var(--fs-s); } .whead .wgo { grid-column: 2; grid-row: 1 / span 2; }
+    }

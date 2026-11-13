@@ -32,12 +32,6 @@
     .toprow .tname .muted { flex: none; white-space: nowrap; }
     .tbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); }
     .tbar > i { display: block; height: 100%; border-radius: 3px; }
-    .icard { background: var(--surface); border: 0; box-shadow: var(--shadow); border-radius: var(--r-m); padding: .8rem 1rem; }
-    .ibig { font-size: var(--fs-xl); line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
-    .ilabel { margin-top: .15rem; }
-    .icard details { border: 0; padding: 0; margin: .4rem 0 0; }
-    .icard details > summary { font-weight: 400; color: var(--accent); font-size: .9rem; }
-    .icard details > p { margin: .35rem 0 0; }
     .goals { margin: 0 0 1.5rem; }
     .goals h3 { margin: 0 0 .2rem; }
     .goals .grow { padding: .55rem 0; border-top: 1px solid var(--line); }
