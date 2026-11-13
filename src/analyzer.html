@@ -2158,6 +2158,7 @@
     const isIncome = tx => tx.amount > 0 && ![Cat.OWN, Cat.SAVINGS, Cat.LOAN].includes(displayCat(tx)) && !isRefund(tx);
     // Откуда взялась категория: подпись «почему здесь» под выбором категории
     function whyCat(tx) {
+      if (tx.feePart) return txRules[txId(tx)] || txRules[tx.splitOf] ? "выбрано вами" : "комиссия за перевод между своими счетами";
       if (tx.part) return "часть разделённой операции";
       if (txRules[txId(tx)]) return "выбрано вами";
       if (tx.pair) return "пришло и сразу ушло";
@@ -2167,7 +2168,8 @@
       if (r[0]) return r[1];
       return Cat.bucket(tx) ? "не определено" : "";
     }
-    const categoryOf = tx => tx.splitCat || txRules[txId(tx)] || (tx.pair ? Cat.OWN : null) || userRules[Cat.merchantKey(tx)] || ((CondRules.firstMatch(condRules, tx) || {}).c) || Cat.categorize(tx);
+    // Комиссия перевода между своими (feePart): идёт за выбором человека для самой комиссии или для всего перевода, иначе «Комиссии банка»
+    const categoryOf = tx => (tx.feePart && (txRules[txId(tx)] || txRules[tx.splitOf])) || tx.splitCat || txRules[txId(tx)] || (tx.pair ? Cat.OWN : null) || userRules[Cat.merchantKey(tx)] || ((CondRules.firstMatch(condRules, tx) || {}).c) || Cat.categorize(tx);
 
     // Регулярные платежи: одна и та же сумма в разные месяцы (аренда, связь, подписки, коммуналка).
     // Суммы меньше 10 BYN не учитываем: мелкие одинаковые суммы встречаются слишком часто.
@@ -4064,7 +4066,7 @@
       box.append(h("h3", {}, `Все регулярные платежи · ${rows.length}`));
       const liOf = x => h("li", {},
         h("span", { class: "sname" }, softCase(x.r.name), " ", catChip(x.r.cat)),
-        h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
+        h("span", { class: "swhen" }, `${stepName(x.s)} · последний ${dmy(x.s.last)}` + (x.r.prev ? ` · раньше ${money(x.r.prev)} ${CUR}` : "") + (x.s.skipped ? ` · ожидали ${dmy(x.s.next)}, не прошёл: возможно, отменён` : "")),
         h("span", { class: "samount" }, `${money(x.r.amount)} ${CUR}`, h("small", { class: "syr muted" }, `≈ ${money(x.r.perMonth * 12)} в год`)));
       const solid = rows.filter(x => x.s.kind === "month" || x.s.kind === "days"), loose = rows.filter(x => !(x.s.kind === "month" || x.s.kind === "days"));
       // Платёж без ровного срока не называем «обязательным» или «подпиской»: это скорее частая покупка на одну сумму
@@ -4963,7 +4965,7 @@
             h("td", { class: "num" }, (tx.amount > 0 ? "+" : "") + fmt(tx.amount), tx.rate && !tx.splitOf ? h("div", { class: "muted why" }, `${fmt(tx.orig)} ${tx.cur}, курс ${String(tx.rate).replace(".", ",")}`) : ""),
             h("td", { class: "ccat" },
               h("div", { class: "catview" }, h("span", { class: "dt" }, dShort(tx.date) || tx.date || ""), cat ? catChip(cat) : h("span", { class: "muted" }, "Без категории")),
-              h("div", { class: "catedit" }, catButton(cat, v => v && (tx.part ? setPartCat(tx, v) : setTxRule(tx, v)), `Категория операции ${tx.date || ""}, ${fmt(tx.amount)} ${CUR}`, { title: "Категория операции" }),
+              h("div", { class: "catedit" }, catButton(cat, v => v && (tx.part && !tx.feePart ? setPartCat(tx, v) : setTxRule(tx, v)), `Категория операции ${tx.date || ""}, ${fmt(tx.amount)} ${CUR}`, { title: "Категория операции" }),
                 h("div", { class: "muted why" }, whyCat(tx)))),
             h("td", { class: "details" },
               h("div", { class: "dtext" },
@@ -5124,6 +5126,14 @@
       throw new Error("в этой таблице не нашлось колонок с датой и суммой. Попробуйте скачать выписку из банка в PDF (где его взять, написано на главной)");
     }
     // Читает один файл и возвращает { bank, header, txs, check } или бросает ошибку с понятным текстом
+    // Чтение PDF не должно висеть вечно: испорченный файл может «зациклить» читалку. Ждём шаг не дольше минуты и говорим об этом прямо
+    const PDF_MAX_PAGES = 3000, PDF_MAX_PIECES = 600000, PDF_STEP_MS = 60000;
+    const STUCK_MSG = "файл читается слишком долго: похоже, он повреждён. Попробуйте скачать выписку заново";
+    function notForever(promise, ms) {
+      let timer;
+      const stop = new Promise((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error(STUCK_MSG), { stuck: true })), ms || PDF_STEP_MS); });
+      return Promise.race([promise, stop]).finally(() => clearTimeout(timer));
+    }
     async function readStatement(file, label) {
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
       const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
@@ -5131,12 +5141,13 @@
       if (/\.(xlsx|xlsm|xls)$/i.test(file.name) || /spreadsheet|ms-excel/.test(file.type || "")) return readSheet(file, label);
       if (!isPdf) throw new Error("формат не поддерживается. Нужна выписка из интернет-банка: PDF, CSV или Excel (.xlsx). Word и картинки не читаются");
       let pdf;
+      if (file.size > 20 * 1024 * 1024) throw new Error("файл слишком большой для выписки");
       setStatus(`${label}Открываю PDF…`);
       const bytes = new Uint8Array(await file.arrayBuffer());
       let password = null;
       for (let attempt = 0; ; attempt++) {
         try {
-          pdf = await openPdf(bytes, password);
+          pdf = await notForever(openPdf(bytes, password));
           break;
         } catch (err) {
           if (err && err.name === "PasswordException") {
@@ -5149,15 +5160,22 @@
             setStatus(`${label}Открываю PDF с паролем…`);
             continue;
           }
+          if (err && err.stuck) throw new Error(STUCK_MSG);
           throw new Error("файл не открывается: он повреждён или это не настоящий PDF. Попробуйте скачать выписку заново");
         }
       }
+      // Пределы для испорченных и нарочно раздутых файлов: настоящая выписка за несколько лет это сотни страниц, а не тысячи
+      if (pdf.numPages > PDF_MAX_PAGES) throw new Error(`в файле ${pdf.numPages} страниц: для выписки это слишком много. Скачайте выписку за меньший период`);
       const pages = [];
+      let pieces = 0;
       for (let p = 1; p <= pdf.numPages; p++) {
         setStatus(`${label}Читаю страницу ${p} из ${pdf.numPages}…`);
-        const page = await pdf.getPage(p);
+        let page, content;
+        try { page = await notForever(pdf.getPage(p)); content = await notForever(page.getTextContent()); }
+        catch (err) { throw new Error(err && err.stuck ? STUCK_MSG : `страница ${p} не читается: файл повреждён. Попробуйте скачать выписку заново`); }
         const t = page.getViewport({ scale: 1 }).transform;   // учитывает поворот страницы (выписка ВТБ альбомная)
-        const content = await page.getTextContent();
+        pieces += content.items.length;
+        if (pieces > PDF_MAX_PIECES) throw new Error("в файле слишком много текста для выписки. Скачайте выписку за меньший период");
         pages.push(content.items.map(i => {
           const x = i.transform[4], y = i.transform[5];
           return { x, y, vx: t[0] * x + t[2] * y + t[4], vy: t[1] * x + t[3] * y + t[5], w: i.width, text: i.str };
@@ -5661,12 +5679,13 @@
         if (isCsv) {
           model = Anon.fromCsvText(PriorCsvParser.decode(new Uint8Array(await f.arrayBuffer())));
         } else {
-          const pdf = await openPdf(new Uint8Array(await f.arrayBuffer()));
+          const pdf = await notForever(openPdf(new Uint8Array(await f.arrayBuffer())));
+          if (pdf.numPages > PDF_MAX_PAGES) throw new Error("в файле слишком много страниц для выписки");
           const pages = [];
           for (let p = 1; p <= pdf.numPages; p++) {
-            const page = await pdf.getPage(p);
+            const page = await notForever(pdf.getPage(p));
             const t = page.getViewport({ scale: 1 }).transform;
-            const content = await page.getTextContent();
+            const content = await notForever(page.getTextContent());
             pages.push(content.items.map(i => {
               const x = i.transform[4], y = i.transform[5];
               return { x: r2(x), y: r2(y), vx: r2(t[0] * x + t[2] * y + t[4]), vy: r2(t[1] * x + t[3] * y + t[5]), text: i.str };

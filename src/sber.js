@@ -106,7 +106,7 @@
   function parse(pages) {
     const header = parseHeader(pages);
     const all = [];
-    clean(pages).forEach(items => all.push(...pageOps(items, header.currency)));
+    clean(pages).forEach(items => { for (const o of pageOps(items, header.currency)) all.push(o); });
     // Служебные строки с нулевой суммой (капитализация процентов) расходом и доходом не являются
     const txs = all.filter(t => t.amount !== 0);
     header.zeroSkipped = all.length - txs.length;

@@ -239,6 +239,8 @@
   // а название однозначно говорит, за что платёж. «VPN*» это префикс платёжного шлюза.
   const SUBS_RE = /\b(?:vpn\b|proton ?(vpn|mail|drive)?\b|nord ?(vpn|pass|layer)|surfshark|mullvad|express ?vpn|windscribe|ipvanish|cyberghost|hide\.?me|tunnelbear|amnezia|1password|bitwarden|lastpass|dropbox|icloud|google ?one|spotify|netflix|youtube ?(premium|music)|chatgpt|openai|anthropic|claude\.ai|midjourney|github|telegram ?premium|notion|figma|canva|adobe|microsoft ?\*? ?(365|office)|apple\.com\/bill|itunes)/i;
 
+  const LOAN_REPAY_RE = /погашени\S*\s+(?:основного долга|кредит|задолженности по (?:кредит|карт|овердрафт)|овердрафт)|в сч[её]т погашения (?:кредит|овердрафт|задолженности по (?:кредит|карт|овердрафт))/i;
+
   // Возвращает [категория или null, причина]: «why» для подписи «почему здесь»
   function resolve(tx) {
     const d = tx.details || "";
@@ -261,6 +263,9 @@
     if (tx.amount > 0) {
       if (GAMBLING_RE.test(d)) return [GAMBLING, "название игровой площадки"];
       if (/возврат/i.test(d) && tx.mcc && MCC[tx.mcc]) return [MCC[tx.mcc], "возврат по коду MCC " + tx.mcc];
+      // Загружена только выписка кредитки: пополнение, которым человек гасит долг, это не доход.
+      // Только явные слова банка про кредит или овердрафт («погашение задолженности по зарплате» сюда не попадает)
+      if (LOAN_REPAY_RE.test(d)) return [OWN, "погашение кредита: это не доход"];
       return [INCOME, "поступление"];
     }
     // Платёж через ЕРИП: по выписке не видно, за что именно заплачено, поэтому его разбирает пользователь

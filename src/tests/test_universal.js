@@ -223,5 +223,14 @@ const rM = U.guess(U.gridFromPages([[it(40, 20, "Lesbank N.V."), it(40, 140, "Da
   ...rowM(160, "02.03.2026", "SHOP", "-218,55 €"), ...rowM(174, "03.03.2026", "SALARY", "1.624,95 €"), ...rowM(188, "04.03.2026", "CAFE", "-14,57 €"), ...rowM(202, "05.03.2026", "TAXI", "-6,90 €")]]));
 check("сумма со значком €: прочитана, валюта EUR, а не BYN", rM && rM.txs.length === 4 && sum(rM.txs, 1) === 1624.95 && sum(rM.txs, -1) === 240.02 && rM.header.currency === "EUR");
 
+// Проверка 13.11: очень длинная выписка (36 000 строк на 800 страницах). До исправления чтение падало с «Maximum call stack size exceeded»
+{
+  const bigRow = (y, k) => [it(30, y, `0${1 + (k % 9)}.10.2026`), it(110, y, "Покупка SHOP " + k), it(400, y, "-" + (10 + k % 90) + ",50"), it(500, y, String(50000 - k) + ",00")];
+  const bigHead = y => [it(30, y, "Дата"), it(110, y, "Описание операции"), it(400, y, "Сумма"), it(500, y, "Остаток")];
+  const bigPages = Array.from({ length: 800 }, (_, p) => [...bigHead(20), ...Array.from({ length: 45 }, (_, i) => bigRow(40 + i * 16, p * 45 + i)).flat()]);
+  let n = -1; const t0 = Date.now();
+  try { const g = U.gridFromPages(bigPages); const r = g && U.guess(g); n = r ? r.txs.length : 0; } catch (e) { n = -1; }
+  check("выписка на 800 страниц читается и не падает (операций " + n + ")", n >= 35990 && Date.now() - t0 < 20000);
+}
 console.log(failed ? `\nОШИБКА: не прошло проверок: ${failed}` : "\nВсе проверки пройдены");
 process.exit(failed ? 1 : 0);

@@ -11,6 +11,10 @@
   "use strict";
 
   const cents = n => Math.round(n * 100);
+  // Наибольшее и наименьшее без раскрытия массива в аргументы: Math.max(...a) на десятках тысяч чисел роняет чтение («Maximum call stack size exceeded»)
+  const maxOf = a => { let m = -Infinity; for (const v of a) if (v > m) m = v; return m; };
+  const minOf = a => { let m = Infinity; for (const v of a) if (v < m) m = v; return m; };
+  const pushAll = (to, from) => { for (const v of from) to.push(v); };
   const squash = s => String(s == null ? "" : s).replace(/[\s  ]+/g, " ").trim();
 
   // ---------- Даты и числа ----------
@@ -124,7 +128,7 @@
     if (dates.length < 2) return null;
     const cl = [];
     dates.slice().sort((a, b) => a.i.x - b.i.x).forEach(d => { const c = cl[cl.length - 1]; if (c && d.i.x - c.x <= 6) { c.n++; c.x = d.i.x; c.set.add(d.i); } else cl.push({ x: d.i.x, x0: d.i.x, n: 1, set: new Set([d.i]) }); });
-    const maxN = Math.max(...cl.map(c => c.n));
+    const maxN = maxOf(cl.map(c => c.n));
     const anchorCol = cl.find(c => c.n >= 0.6 * maxN);
     const L = P.map(items => { const ls = linesOf(items, 2.5); ls.forEach(l => { l.anchor = l.items.some(i => anchorCol.set.has(i)); }); return ls; });
     // Колонтитулы и водяные знаки: длинная фраза без цифр на одном и том же месте на всех страницах, хотя бы на одной из них далеко от операций.
@@ -158,13 +162,13 @@
         const idx = []; for (let i = b.from; i <= b.to; i++) idx.push(i);
         const an = idx.filter(i => ls[i].anchor);
         // «Ничей» блок вплотную под операцией: её продолжение. Стоит отдельно (итоги раздела, подписи): в операции не идёт.
-        if (!an.length) { const prev = pageOps[pageOps.length - 1]; if (prev && ls[b.from].y - ls[Math.max(...prev.idx)].y <= 1.5 * T + 1) prev.idx.push(...idx); return; }
+        if (!an.length) { const prev = pageOps[pageOps.length - 1]; if (prev && ls[b.from].y - ls[maxOf(prev.idx)].y <= 1.5 * T + 1) pushAll(prev.idx, idx); return; }
         const made = an.map(a => ({ p, a, idx: [] }));
         idx.forEach(i => { let k = 0; made.forEach((m, j) => { if (Math.abs(ls[i].y - ls[m.a].y) < Math.abs(ls[i].y - ls[made[k].a].y)) k = j; }); made[k].idx.push(i); });
-        pageOps.push(...made);
+        pushAll(pageOps, made);
       });
-      pageOps.forEach((o, k) => { if (k > 0 && k < pageOps.length - 1) { ups.push(ls[o.a].y - ls[Math.min(...o.idx)].y); downs.push(ls[Math.max(...o.idx)].y - ls[o.a].y); } });
-      ops.push(...pageOps);
+      pageOps.forEach((o, k) => { if (k > 0 && k < pageOps.length - 1) { ups.push(ls[o.a].y - ls[minOf(o.idx)].y); downs.push(ls[maxOf(o.idx)].y - ls[o.a].y); } });
+      pushAll(ops, pageOps);
     });
     if (!ups.length) { ups = [0]; downs = [0]; }
     // Шапка таблицы: ближайшая над первой датой строка со словами «дата», «сумма», «описание»… и соседние строки вплотную к ней.
@@ -181,7 +185,7 @@
       for (let i = lo; i <= hi; i++) head.push(fl[i]);
     }
     const headSet = new Set(head.map(lineText)), isHead = (p, i) => (p === f.p && head.includes(L[p][i])) || headSet.has(lineText(L[p][i]));
-    const upMax = Math.max(...ups) + 1, downMax = Math.max(...downs) + 1;
+    const upMax = maxOf(ups) + 1, downMax = maxOf(downs) + 1;
     // Первая и последняя операция страницы: добираем их строки над первой датой и под последней (в пределах обычного размаха)
     const byPage = new Map(); ops.forEach(o => { if (!byPage.has(o.p)) byPage.set(o.p, []); byPage.get(o.p).push(o); });
     byPage.forEach((list, p) => {
@@ -192,7 +196,7 @@
     const used = L.map(() => new Set());
     ops.forEach(o => { o.idx = o.idx.filter(i => L[o.p][i].anchor || !isHead(o.p, i)); o.idx.forEach(i => used[o.p].add(i)); o.items = o.idx.flatMap(i => L[o.p][i].items); });
     // Колонки: вертикальные полосы, где текст операций есть, разделённые пустыми просветами
-    const W = Math.ceil(Math.max(...ops.flatMap(o => o.items.map(i => i.x + i.w)))) + 2;
+    const W = Math.ceil(maxOf(ops.flatMap(o => o.items.map(i => i.x + i.w)))) + 2;
     const cov = new Int32Array(W), stamp = new Int32Array(W).fill(-1);
     ops.forEach((o, k) => o.items.forEach(i => { for (let x = Math.max(0, Math.floor(i.x)); x < Math.min(W, Math.ceil(i.x + i.w)); x++) if (stamp[x] !== k) { stamp[x] = k; cov[x]++; } }));
     const floor = Math.floor(ops.length * 0.015);   // редкий выступ длинного текста колонкой не считается
@@ -211,7 +215,7 @@
       cols.forEach((c, j) => { const d = i.x > c.x1 ? i.x - c.x1 : c.x0 > i.x + i.w ? c.x0 - (i.x + i.w) : 0; if (d < bd) { bd = d; k = j; } }); return k; };
     const cellsOf = items => { const by = cols.map(() => []); items.forEach(i => by[colOf(i)].push(i)); return by.map(list => linesOf(list, 2.5).map(lineText)); };
     const rows = ops.map(o => cellsOf(o.items));
-    const fresh = ops.map((o, k) => { if (!k) return false; const q = ops[k - 1]; if (q.p !== o.p) return true; for (let i = Math.max(...q.idx) + 1; i < o.a; i++) if (isHead(o.p, i)) return true; return false; });
+    const fresh = ops.map((o, k) => { if (!k) return false; const q = ops[k - 1]; if (q.p !== o.p) return true; for (let i = maxOf(q.idx) + 1; i < o.a; i++) if (isHead(o.p, i)) return true; return false; });
     const titles = cellsOf(head.flatMap(l => l.items)).map(c => squash(c.join(" ")));
     const meta = []; L.forEach((ls, p) => ls.forEach((l, i) => { if (!used[p].has(i)) meta.push(lineText(l)); }));
     return { source: "pdf", cols: cols.map((c, j) => ({ title: titles[j] || "" })), rows, meta, fresh };
@@ -223,7 +227,7 @@
     const isData = r => r.some(c => DATE_TOKEN.test(c) && dateOf(c)) && r.some(c => !dateOf(c) && Number.isFinite(num(c)));
     const first = T.findIndex(isData);
     if (first < 0) return null;
-    const n = Math.max(...T.map(r => r.length));
+    const n = maxOf(T.map(r => r.length));
     let head = null;
     for (let i = first - 1; i >= 0 && i >= first - 4; i--) if (T[i].filter(c => c && !dateOf(c) && !Number.isFinite(num(c))).length >= 2) { head = T[i]; break; }
     const rows = [], meta = [];
