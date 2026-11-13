@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Анализ расходов по выписке БНБ-Банка: категории, подписки, итог месяца</title>
+<meta name="description" content="Анализ расходов по выписке БНБ-Банка: сайт пробует прочитать выписку сам и показывает траты по категориям, подписки и регулярные платежи. Бесплатно, без регистрации, файл остаётся в браузере.">
+<link rel="canonical" href="https://fernwood.by/banks/bnb-bank/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:title" content="Анализ расходов по выписке БНБ-Банка: категории, подписки, итог месяца">
+<meta property="og:description" content="Анализ расходов по выписке БНБ-Банка: сайт пробует прочитать выписку сам и показывает траты по категориям, подписки и регулярные платежи. Бесплатно, без регистрации, файл остаётся в браузере.">
+<meta property="og:url" content="https://fernwood.by/banks/bnb-bank/">
+<meta property="og:image" content="https://fernwood.by/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<style>
+:root{--bg:#fff;--text:#16171a;--muted:#5b5e66;--line:#e1e3e8;--card:#f5f6f8;--accent:#16171a;--on:#fff;--lime:#b7e34a}
+@media (prefers-color-scheme:dark){:root{--bg:#111112;--text:#f2f2f3;--muted:#9a9ba2;--line:#323236;--card:#1a1a1c;--accent:#f2f2f3;--on:#111112}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 56px}
+header.top{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+.logo{display:inline-flex;align-items:center;gap:10px;font-weight:650;color:var(--text);text-decoration:none}
+.logo i{width:26px;height:26px;border-radius:7px;background:#16171a;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
+.logo i::after{content:"";width:12px;height:12px;border-radius:50%;border:3px solid var(--lime);border-right-color:transparent}
+h1{font-size:clamp(1.55rem,5.5vw,2.1rem);line-height:1.2;margin:.6rem 0 .8rem;letter-spacing:-.01em}
+h2{font-size:1.2rem;margin:2rem 0 .6rem}
+p,li{margin:.4rem 0}
+.lead{color:var(--muted);font-size:1.05rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:1.2rem 0}
+.btn{display:inline-block;background:var(--accent);color:var(--on);text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px;min-height:44px}
+.btn.alt{background:transparent;color:var(--text);border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:1rem 0}
+ul,ol{padding-left:1.3rem}
+.muted{color:var(--muted);font-size:.92rem}
+a{color:var(--text);text-underline-offset:3px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0}
+.chips a{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:8px 14px;text-decoration:none;min-height:40px}
+h3{font-size:1.02rem;margin:1.1rem 0 .2rem}
+.note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+footer{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Нужно ли регистрироваться?","acceptedAnswer":{"@type":"Answer","text":"Нет. Откройте сайт, выберите файл выписки и сразу получите разбор. Бесплатно, без аккаунта."}},{"@type":"Question","name":"Куда уходит моя выписка?","acceptedAnswer":{"@type":"Answer","text":"Никуда. Файл разбирается в вашем браузере, на сервер он не отправляется. Проверить можно так: отключите интернет после открытия страницы, разбор всё равно сработает."}},{"@type":"Question","name":"Какую выписку БНБ-Банка загружать?","acceptedAnswer":{"@type":"Answer","text":"Файл PDF, который вы скачали в приложении или интернет-банке. Чем длиннее период (лучше несколько месяцев), тем точнее видно, что выросло против обычного."}}]}</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><a class="logo" href="/"><i aria-hidden="true"></i>Fernwood</a><a href="/banks/">Банки</a></header>
+<main>
+
+<h1>Анализ расходов по выписке БНБ-Банка</h1>
+<p class="lead">Выписка БНБ-Банка — это сотни строк вроде «оплата в магазине». Fernwood превращает их в картину месяца. Выписки этого банка сайт отдельно пока не разбирает, но пробует прочитать файл сам и показывает, как понял колонки и сошлись ли суммы.</p>
+<div class="row"><a class="btn" href="/">Загрузить выписку</a><a class="btn alt" href="/#demo">Посмотреть на примере</a></div>
+<div class="card"><p style="margin:0"><b>Честно о поддержке.</b> Формат выписки БНБ-Банка мы ещё не изучали, поэтому чтение может не получиться или быть неточным. Загрузите файл: если не выйдет, напишите нам из сайта, и мы добавим банк.</p></div>
+<h2>Что вы увидите</h2>
+<ul>
+<li><b>Итог месяца</b> простыми словами: какие траты выросли, что уменьшилось, сколько могло остаться.</li>
+<li><b>Траты по категориям</b>: продукты, кафе, транспорт, подписки, переводы. Категории определяются правилами, не нейросетью, и их можно поправить.</li>
+<li><b>Подписки и регулярные платежи</b>: сколько уходит в месяц и в год.</li>
+<li><b>Мелкие покупки</b>, которые по одной незаметны, а за месяц складываются в сумму.</li>
+<li><b>Лимиты по категориям</b> и выгрузка в Excel, если хочется считать дальше самому.</li>
+</ul>
+<h2>Как это работает</h2>
+<ol>
+<li>Скачайте выписку БНБ-Банка (<a href="/kak-poluchit-vypisku/bnb-bank/">как получить выписку БНБ-Банка</a>).</li>
+<li>Откройте <a href="/">fernwood.by</a> и выберите файл.</li>
+<li>Посмотрите итог. Операции, которые сайт не опознал, разбираются в пару нажатий, а выбор запоминается для следующих выписок.</li>
+</ol>
+<p class="muted">Файл разбирается в вашем браузере и никуда не отправляется. Сайт не даёт финансовых советов: он показывает, куда ушли деньги, а решаете вы.</p>
+<h2>Где взять выписку БНБ-Банк</h2>
+<h3>В мобильном приложении</h3><ul><li>Приложение «Искра»: «Продукты» → карта → «Выписка по карте», период и тип операций (все, доходы, расходы), затем «Сформировать».</li><li>Выписку можно посмотреть или отправить на e-mail.</li></ul>
+<h3>Другие способы</h3><ul><li>Приложение «Искра»: «Продукты» → карта → «Выписка по карте», задайте период и тип операций (все, доходы, расходы), нажмите «Сформировать».</li><li>Выписку можно посмотреть или отправить на e-mail. По словам банка, она получает печать и статус официального документа.</li><li>Раздел «История»: операции по всем продуктам с фильтрами по периоду, сумме, валюте.</li></ul>
+<p><b>Сколько ждать.</b> Сразу, в приложении.</p>
+<p class="muted">Сведения собраны из открытых материалов банка и опыта пользователей (ноябрь 2026), названия пунктов меню могут отличаться. Источник: <a href="https://bnb.by/o-lichnom/faq/nastrojki-i-vozmozhnosti-karty-1-2-3/" rel="noopener nofollow">БНБ-Банк: настройки и возможности карты 1-2-3</a>.</p>
+<h2>Частые вопросы</h2><h3 style="font-size:1.02rem;margin:1.1rem 0 .2rem">Нужно ли регистрироваться?</h3><p>Нет. Откройте сайт, выберите файл выписки и сразу получите разбор. Бесплатно, без аккаунта.</p><h3 style="font-size:1.02rem;margin:1.1rem 0 .2rem">Куда уходит моя выписка?</h3><p>Никуда. Файл разбирается в вашем браузере, на сервер он не отправляется. Проверить можно так: отключите интернет после открытия страницы, разбор всё равно сработает.</p><h3 style="font-size:1.02rem;margin:1.1rem 0 .2rem">Какую выписку БНБ-Банка загружать?</h3><p>Файл PDF, который вы скачали в приложении или интернет-банке. Чем длиннее период (лучше несколько месяцев), тем точнее видно, что выросло против обычного.</p>
+<div class="card">
+<h2 style="margin-top:0">Готово? Загрузите выписку</h2>
+<p>Бесплатно, без регистрации, за минуту.</p>
+<div class="row"><a class="btn" href="/">Загрузить выписку</a><a class="btn alt" href="/analiz-lichnogo-byudzheta/">Как анализировать бюджет</a></div>
+</div>
+<h2>Выписки других банков</h2>
+<ul class="chips"><li><a href="/banks/belarusbank/">Беларусбанк</a></li><li><a href="/banks/priorbank/">Приорбанк</a></li><li><a href="/banks/mtbank/">МТБанк</a></li><li><a href="/banks/alfa-bank/">Альфа-Банк</a></li><li><a href="/banks/sber-bank/">Сбер Банк</a></li><li><a href="/banks/vtb/">ВТБ (Беларусь)</a></li><li><a href="/banks/belagroprombank/">Белагропромбанк</a></li><li><a href="/banks/belgazprombank/">Белгазпромбанк</a></li><li><a href="/banks/belinvestbank/">Белинвестбанк</a></li><li><a href="/banks/reshenie/">Банк «Решение»</a></li><li><a href="/banks/paritetbank/">Паритетбанк</a></li><li><a href="/banks/belveb/">Банк БелВЭБ</a></li><li><a href="/banks/bsb-bank/">БСБ Банк</a></li><li><a href="/banks/technobank/">Технобанк</a></li><li><a href="/banks/dabrabyt/">Банк Дабрабыт</a></li></ul>
+</main>
+<footer class="muted">
+<p>Fernwood: анализ выписки. Файл читается в вашем браузере и никуда не отправляется. Это не сайт банка и не финансовый советник.</p>
+<p><a href="/">fernwood.by</a></p>
+</footer>
+</div>
+</body>
+</html>
