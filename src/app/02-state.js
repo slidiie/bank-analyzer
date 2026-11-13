@@ -200,7 +200,8 @@
     // Шторки «Приватность» и «Как получить выписку»: Esc, клик по фону и кнопка «Понятно» закрывают, фокус возвращается на кнопку
     const SHEETS = ["privSheet", "howSheet", "anonSheet", "fbSheet", "faqSheet", "shareSheet", "catSheet", "newCatSheet"];
     let sheetOpener = null;
-    function setStatus(t) { $("status").textContent = t; $("landStatus").textContent = t; }
+    // warn: в сообщении есть файл, который не прочитался. Тогда строка выделена рамкой, чтобы её не пропустили
+    function setStatus(t, warn) { ["status", "landStatus"].forEach(id => { $(id).textContent = t; if ($(id).classList) $(id).classList.toggle("stwarn", !!warn && !!t); }); }
     function openSheet(id, opener) { sheetOpener = opener; $(id).hidden = false; try { $(id).querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ } }
     function closeSheets() { SHEETS.forEach(id => { $(id).hidden = true; }); try { if (sheetOpener) sheetOpener.focus(); } catch (e) { /* без фокуса */ } sheetOpener = null; }
     $("importLand").addEventListener("click", () => $("importBtn").click());
