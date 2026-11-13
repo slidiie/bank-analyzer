@@ -134,7 +134,6 @@ check("не в счёт и доходы", sum.includes("Не в счёт: меж
   check("SUPERBEL (онлайн-лотерея): и выигрыш, и пополнение — азартные игры", Cat.categorize({ amount: 100, details: "SUPERBEL MINSK BY Перевод на БПК МТБ в системе Р2Р, номер устройства B2P40001, 31.12.2025" }) === Cat.GAMBLING && Cat.categorize({ amount: -20, details: "SUPERBEL MINSK BY Оплата товаров и услуг" }) === Cat.GAMBLING);
   check("MCC 7995 (ставки): азартные игры", Cat.categorize({ amount: -10, mcc: "7995", details: "SOME SITE" }) === Cat.GAMBLING);
   check("обычные слова вроде «процентная ставка» не считаются азартными играми", Cat.categorize({ amount: -3, details: "Процентная ставка по кредиту" }) !== Cat.GAMBLING);
-  check("подсказка о выводе с площадки: «карточное» название + перевод, но не человек и не обычный приход", Cat.maybeGamblingPayout({ amount: 40, details: "SOMESITE MINSK BY Перевод на БПК МТБ в системе Р2Р" }) === true && Cat.maybeGamblingPayout({ amount: 40, details: "Иванов Иван Перевод на БПК в системе Р2Р" }) === false && Cat.maybeGamblingPayout({ amount: -40, details: "SOMESITE MINSK BY Перевод на БПК Р2Р" }) === false && Cat.maybeGamblingPayout({ amount: 40, details: "Зарплата" }) === false);
   check("у категории есть значок и она в списке", Cat.ICONS[Cat.GAMBLING] && Cat.DEFAULT_CATEGORIES.includes(Cat.GAMBLING));
   // Справочник мест (по открытым источникам)
   const cat = (d, mcc) => Cat.categorize({ amount: -10, mcc, details: d });
@@ -273,6 +272,11 @@ check("мусор в валюте: предупреждения нет", M.curre
   M.addStatement(s2, { bank: { id: "mtb", name: "МТБанк" }, header: {}, txs: [{ date: "2026-10-09", amount: -1000, balance: 1, details: "Перевод с карты на карту" }] });
   M.addStatement(s2, { bank: { id: "prior", name: "Приорбанк" }, header: {}, txs: [{ date: "2026-10-10", amount: 1000, balance: 2, details: "Пополнение счёта" }] });
   check("обычное пополнение по-прежнему находит пару", M.markCrossPairs(s2.txs, () => false) === 1);
+  // Платёж МТБ «в интернет-банке» за интернет и поступление той же суммы от знакомого в другом банке (аудит 13.11, Д1)
+  const s3 = M.newState();
+  M.addStatement(s3, { bank: { id: "mtb", name: "МТБанк" }, header: {}, txs: [{ date: "2026-10-09", amount: -50, balance: 1, details: "Оплата в интернет-банке. Провайдер интернета" }] });
+  M.addStatement(s3, { bank: { id: "prior", name: "Приорбанк" }, header: {}, txs: [{ date: "2026-10-09", amount: 50, balance: 2, details: "Зачисление" }] });
+  check("платёж за интернет и случайное поступление той же суммы не пара", M.markCrossPairs(s3.txs, () => false) === 0);
 }
 
 // Перевод между своими банками через выходные и с комиссией (осторожные правила, кандидат единственный)

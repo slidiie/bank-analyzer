@@ -72,6 +72,8 @@
     }
     // Строка «Всего в данной валюте» и под ней четыре числа: зачислено, списано, комиссия/Money-back, конечный баланс
     const k = all.findIndex(l => /Всего в данной валюте/.test(lineText(l)));
+    // Несколько разделов «Всего в данной валюте» = несколько валют в одном файле: итоги взяты по первой, сверка не сойдётся
+    h.accounts = Math.max(1, all.filter(l => /Всего в данной валюте/.test(lineText(l))).length);
     if (k >= 0) {
       for (let j = k + 1; j < Math.min(all.length, k + 4); j++) {
         const nums = (lineText(all[j]).match(NUMS_IN_LINE) || []).map(money);

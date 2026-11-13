@@ -199,5 +199,13 @@ check("сверка итогов", [v.incomeOk, v.expenseOk, v.ok], [true, true,
   check("без непроведённых поля pending нет", v3.pending, undefined);
 }
 
+// Сумма с пробелом в тысячах («1 150.00»): операция не теряется (аудит 13.11, Б1)
+{
+  const spaced = PAGE3.split("425:150.00").join("425:1 150.00");
+  const t2 = SP.parseTransactions(toLines(spaced));
+  check("сумма «1 150.00»: операций столько же", t2.length, 7);
+  check("сумма «1 150.00» прочитана целиком", t2[2].amount, 1150);
+}
+
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

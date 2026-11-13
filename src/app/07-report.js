@@ -122,16 +122,21 @@
         });
         base.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); base.blur(); } });
         const rows = (e.at || []).map((x, i) => {
-          const d = h("input", { type: "date", value: x.d, "aria-label": `${code}: курс действует с даты` });
+          // Дата текстом «ДД.ММ.ГГГГ»: системный календарь браузера не в стиле сайта
+          const isoToRu = s => s.split("-").reverse().join(".");
+          const ruToIso = s => { const m = /^\s*(\d{1,2})[./-](\d{1,2})[./-](\d{4})\s*$/.exec(s); if (!m) return ""; const iso = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`; const t = new Date(iso + "T00:00:00Z"); return !isNaN(t) && t.toISOString().slice(0, 10) === iso ? iso : ""; };
+          const d = h("input", { type: "text", inputmode: "numeric", autocomplete: "off", placeholder: "ДД.ММ.ГГГГ", maxlength: "10", class: "datein", value: isoToRu(x.d), "aria-label": `${code}: курс действует с даты (ДД.ММ.ГГГГ)` });
           const r = h("input", { type: "text", inputmode: "decimal", autocomplete: "off", value: String(x.r).replace(".", ","), "aria-label": `${code}: курс с ${x.d}` });
           const upd = () => {
-            const v = Rates.toNum(r.value), next = copy();
-            if (!(v > 0 && v <= 1e6) || !/^\d{4}-\d{2}-\d{2}$/.test(d.value)) return bad(code);
-            if (d.value !== x.d && next[code].at.some(y => y.d === d.value)) return msg(`На дату ${d.value} курс ${code} уже есть.`);
-            next[code].at[i] = { d: d.value, r: v };
+            const v = Rates.toNum(r.value), next = copy(), day = ruToIso(d.value);
+            if (!day) return msg("Дата курса: введите в виде ДД.ММ.ГГГГ, например 05.10.2026.");
+            if (!(v > 0 && v <= 1e6)) return bad(code);
+            if (day !== x.d && next[code].at.some(y => y.d === day)) return msg(`На дату ${d.value} курс ${code} уже есть.`);
+            next[code].at[i] = { d: day, r: v };
             commit(next, "Курс с даты сохранён, суммы пересчитаны.");
           };
           d.addEventListener("change", upd); r.addEventListener("change", upd);
+          d.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); d.blur(); } });
           const del = h("button", { type: "button", class: "wizx", "aria-label": `Убрать курс ${code} с ${x.d}`, onclick: () => { const next = copy(); next[code].at.splice(i, 1); commit(next, "Курс с даты убран."); } }, "✕");
           return h("div", { class: "condform" }, h("label", {}, "с ", d), h("label", {}, ` 1 ${code} = `, r, " BYN"), del);
         });
@@ -239,7 +244,7 @@
           t += `Поступления: по выписке ${fmt(c.headerIncome)}, найдено ${fmt(c.income)} ${c.incomeOk ? "✓" : "✗"}. `;
           t += `Списания: по выписке ${fmt(c.headerExpense)}, найдено ${fmt(c.expense)} ${c.expenseOk ? "✓" : "✗"}.`;
           if (c.pending) t += ` Ещё не проведено банком: ${c.pending} ${opsWord(c.pending)}. Они учтены в тратах и не входят в итоги выписки; после проведения банк покажет их в следующей выписке.`;
-          if (!c.ok) { ok = false; t += " Суммы не сошлись: часть операций прочитана неверно или пропущена (подробности вверху раздела)."; }
+          if (!c.ok) { ok = false; t += c.accounts > 1 ? " Суммы не сошлись: в файле несколько счетов или валют, их операции сложены вместе ✗." : " Суммы не сошлись: часть операций прочитана неверно или пропущена (подробности вверху раздела)."; }
         } else if (st.universal && st.proof === "balance") t += "Суммы сходятся с остатком после каждой операции ✓.";
         else if (st.universal && st.proof === "totals") t += "Остаток на начало, операции и остаток на конец сходятся ✓.";
         else if (st.universal && st.proof === "mismatch") { ok = false; t += "Остатки на начало и конец не сходятся с операциями ✗."; }
@@ -290,7 +295,8 @@
           };
           const diffs = [part("поступлениях", c.headerIncome, c.income), part("списаниях", c.headerExpense, c.expense)].filter(Boolean);
           let t = `Суммы не совпали с итогами выписки: ${diffs.join(", ")}.`;
-          if (c.gapFrom) t += ` Пропуск где-то ${c.gapFrom === c.gapTo ? fmtDate(c.gapFrom) : `между ${fmtDate(c.gapFrom)} и ${fmtDate(c.gapTo)}`}: сверьте эти дни с приложением банка.`;
+          if (c.accounts > 1) t += " В этом файле несколько счетов или валют, и их операции сложены вместе, поэтому итоги не сходятся. Надёжнее скачать в банке выписку по каждому счёту (каждой валюте) отдельным файлом и загрузить их по одной.";
+          else if (c.gapFrom) t += ` Пропуск где-то ${c.gapFrom === c.gapTo ? fmtDate(c.gapFrom) : `между ${fmtDate(c.gapFrom)} и ${fmtDate(c.gapTo)}`}: сверьте эти дни с приложением банка.`;
           else t += " Скорее всего, одна или несколько операций не прочитаны или прочитаны с ошибкой.";
           items.push(h("div", {}, t));
         }

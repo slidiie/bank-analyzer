@@ -25,7 +25,9 @@
     name: "МТБанк",
     detect(pages) {
       const text = pages.slice(0, 2).map(p => p.map(i => i.text).join(" ")).join(" ");
-      return /Транзакции по счету|Период выписки|Входящий остаток:/i.test(text);
+      // «Период выписки» и «Входящий остаток» бывают и у других банков: нужно два признака из трёх или название банка
+      const signs = [/Транзакции по счету/i, /Период выписки/i, /Входящий остаток:/i].filter(re => re.test(text)).length;
+      return signs >= 2 || (signs === 1 && /МТБанк|MTBank|mtbank\.by|Транзакции по счету/i.test(text));
     },
     parse(pages) {
       let header = {};

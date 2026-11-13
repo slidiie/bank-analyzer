@@ -16,5 +16,8 @@ check("копейки не плывут", (() => { const e = S.expand([op("a", -
 check("свёртка возвращает исходные объекты", (() => { const o = op("a", -100); const back = S.collapse(S.expand([o, op("b", -7)], { a: parts }, idFn)); return back.length === 2 && back[0] === o; })());
 check("повторный разворот не удваивает", (() => { const o = op("a", -100); const e = S.expand(S.collapse(S.expand([o], { a: parts }, idFn)), { a: parts }, idFn); return e.length === 2; })());
 check("без разделений список тот же", S.expand([op("a", -1)], {}, idFn).length === 1);
+// Комиссия, которую указал сам банк (Белинвестбанк): перевод остаётся переводом, в «Комиссии банка» только комиссия (аудит 13.11, А3)
+check("комиссия банка у обычной операции отделяется", (() => { const o = Object.assign(op("f", -101.5), { fee: 1.5 }); const e = S.expand([o], {}, idFn); return e.length === 2 && e[0].amount === -100 && e[1].amount === -1.5 && e[1].splitCat === "Комиссии банка" && e[1].feePart; })());
+check("комиссия больше суммы не отделяется", S.expand([Object.assign(op("g", -1), { fee: 5 })], {}, idFn).length === 1);
 if (!bad) console.log("Все проверки пройдены");
 process.exit(bad ? 1 : 0);

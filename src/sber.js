@@ -17,7 +17,7 @@
   const MAX_DY = 70;      // насколько ниже строки с датой может стоять строка её описания
   const DATE_RE = /^\d{2}\.\d{2}\.\d{4}$/;
   const TIME_RE = /^\d{2}:\d{2}:\d{2}$/;
-  const NUM_RE = /^-?\d+\.\d{2}$/;
+  const NUM_RE = /^-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2}$/;
   const FOOT_RE = /остаток|обороты|поступило|списано|ответственный/i;
 
   const inCol = (x, c) => x >= c[0] && x < c[1];
@@ -94,12 +94,12 @@
       regDate: toIso(g.a.text),
       time: time && time.text !== "00:00:00" ? time.text : null,
       type: null,
-      amount: parseFloat(acc.text),
+      amount: num(acc.text),
       currency: currency || (cur && cur.text) || "BYN",
       mcc: null,
       details: desc,
     };
-    if (opAmt && cur && cur.text !== tx.currency) { tx.origAmount = parseFloat(opAmt.text); tx.details += ` (${opAmt.text} ${cur.text})`; }
+    if (opAmt && cur && cur.text !== tx.currency) { tx.origAmount = Math.abs(num(opAmt.text)); tx.details += ` (${opAmt.text} ${cur.text})`; }
     return tx;
   }
 

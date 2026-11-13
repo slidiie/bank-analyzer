@@ -220,7 +220,7 @@
     const isIncome = tx => tx.amount > 0 && ![Cat.OWN, Cat.SAVINGS, Cat.LOAN].includes(displayCat(tx)) && !isRefund(tx);
     // Откуда взялась категория: подпись «почему здесь» под выбором категории
     function whyCat(tx) {
-      if (tx.feePart) return txRules[txId(tx)] || txRules[tx.splitOf] ? "выбрано вами" : "комиссия за перевод между своими счетами";
+      if (tx.feePart) return txRules[txId(tx)] || txRules[tx.splitOf] ? "выбрано вами" : tx._o && tx._o.pair ? "комиссия за перевод между своими счетами" : "комиссия банка по этой операции";
       if (tx.part) return "часть разделённой операции";
       if (txRules[txId(tx)]) return "выбрано вами";
       if (tx.pair) return "пришло и сразу ушло";

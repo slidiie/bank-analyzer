@@ -44,7 +44,9 @@
     return canSplit(tx) && parts && parts.length > 0 && parts.length <= MAX_PARTS && remainder(tx, parts) >= 0;
   }
   const FEE_CAT = "Комиссии банка";
-  const feeCents = tx => (tx.pair && tx.amount < 0 && typeof tx.pfee === "number" && tx.pfee >= 0.01 && cents(tx.pfee) < cents(-tx.amount) ? cents(tx.pfee) : 0);
+  // Комиссия: у пары между своими её находит merge.js (pfee), у обычной операции её пишет сам банк (fee, Белинвестбанк)
+  const feeOf = tx => (tx.pair ? tx.pfee : tx.fee);
+  const feeCents = tx => { const f = feeOf(tx); return tx.amount < 0 && typeof f === "number" && f >= 0.01 && cents(f) < cents(-tx.amount) ? cents(f) : 0; };
   function expand(txs, splits, idFn) {
     splits = splits || {};
     const out = [];

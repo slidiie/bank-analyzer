@@ -14,7 +14,7 @@
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
-        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
+        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok, accounts: res.header.accounts || 1 };
       addGap(res);
       return res;
     }
@@ -75,6 +75,21 @@
         try { $("uniSheet").querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ }
       });
     }
+    // Пароль от PDF: своё окно в стиле сайта вместо системного window.prompt. Возвращает пароль или null (отмена).
+    let pwFinish = null;
+    function askPassword(text) {
+      return new Promise(resolve => {
+        pwFinish = v => { pwFinish = null; $("pwSheet").hidden = true; $("pwInput").value = ""; resolve(v); };
+        $("pwText").textContent = text;
+        $("pwInput").value = "";
+        $("pwSheet").hidden = false;
+        try { $("pwInput").focus(); } catch (e) { /* без фокуса */ }
+      });
+    }
+    $("pwForm").addEventListener("submit", e => { e.preventDefault(); if (pwFinish) pwFinish($("pwInput").value || null); });
+    $("pwCancel").addEventListener("click", () => { if (pwFinish) pwFinish(null); });
+    $("pwSheet").addEventListener("click", e => { if (e.target === $("pwSheet") && pwFinish) pwFinish(null); });
+    if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape" && pwFinish) pwFinish(null); });
     $("uniOk").addEventListener("click", () => { if (uniFinish) uniFinish(true); });
     $("uniCancel").addEventListener("click", () => { if (uniFinish) uniFinish(false); });
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape" && uniFinish) uniFinish(false); });
@@ -136,7 +151,7 @@
             const ask = attempt === 0
               ? `Файл «${file.name}» защищён паролем. Введите пароль от выписки (обычно он в письме или SMS от банка). Пароль используется только здесь, в вашем браузере, и нигде не сохраняется.`
               : "Пароль не подошёл. Попробуйте ещё раз:";
-            password = typeof window.prompt === "function" ? window.prompt(ask, "") : null;
+            password = await askPassword(ask);
             if (!password) throw new Error("PDF защищён паролем. Загрузите файл ещё раз и введите пароль, или скачайте выписку без пароля");
             setStatus(`${label}Открываю PDF с паролем…`);
             continue;
@@ -178,7 +193,7 @@
       if (!res.txs.length) throw new Error("выписка " + res.bank.name + " распознана, но операций в ней не нашлось. Возможно, за выбранный период их не было, или банк изменил формат файла");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null ? null :
-        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
+        { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok, accounts: res.header.accounts || 1 };
       addGap(res);
       return res;
     }

@@ -259,7 +259,7 @@
       return null;
     }
     const FOCUSABLE = 'summary, a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const openModal = () => ["uniSheet", ...SHEETS, "resetBox"].map(id => $(id)).find(el => el && !el.hidden) || null;
+    const openModal = () => ["uniSheet", "pwSheet", ...SHEETS, "resetBox"].map(id => $(id)).find(el => el && !el.hidden) || null;
     if (document.addEventListener) document.addEventListener("keydown", e => {
       if (e.key !== "Tab") return;
       const m = openModal();
@@ -277,7 +277,7 @@
     }
     function printRestore() { printOpened.forEach(d => d.removeAttribute("open")); printOpened = []; document.querySelectorAll(".printval").forEach(e => e.remove()); }
     if (typeof window !== "undefined" && window.addEventListener) { window.addEventListener("beforeprint", printPrepare); window.addEventListener("afterprint", printRestore); }
-    $("printBtn").addEventListener("click", () => { try { window.print(); } catch (e) { alert("Не удалось открыть печать. Нажмите Ctrl+P (на телефоне: меню браузера → «Печать»)."); } });
+    $("printBtn").addEventListener("click", () => { try { window.print(); } catch (e) { setStatus("Не удалось открыть печать. Нажмите Ctrl+P (на телефоне: меню браузера → «Печать»)."); } });
     $("clearBtn").addEventListener("click", () => {
       txs = []; parked = []; curPick = null; header = {}; statements = [];
       bottomTab = null; allCat = "all"; allFilt = Filters.empty(); activeTab = "all";

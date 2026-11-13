@@ -12,9 +12,14 @@
   const stamp = t => t.date + " " + (t.time || "00:00:00");
   const dayDiff = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / DAY);
 
+  // Зарплата, пенсия, пособие: это доход. В пару «пришло и ушло» берём только если ровно та же сумма
+  // ушла в тот же или на следующий день (автопересылка на свою карту), а не через неделю (аренда, долг).
+  const INCOME_LIKE = /заработн|зарплат|пенси|стипенд|пособи|отпускны/i;
+
   // isOut(tx) решает, может ли списание быть «пересылкой» (для каждого банка своё правило).
   // Каждое списание входит максимум в одну пару. Возвращает число найденных пар.
-  function mark(txs, isOut, maxDays = 10) {
+  // Окно 3 дня: дальше совпадение суммы чаще случайное (пришло 1500, через неделю 1500 ушло за квартиру).
+  function mark(txs, isOut, maxDays = 3) {
     txs.forEach(t => { delete t.pair; });
     const order = txs.map((t, i) => i).sort((a, b) => (stamp(txs[a]) < stamp(txs[b]) ? -1 : stamp(txs[a]) > stamp(txs[b]) ? 1 : a - b));
     const used = new Set();
@@ -22,9 +27,10 @@
     for (const i of order) {
       const cr = txs[i];
       if (!(cr.amount > 0) || /возврат/i.test(cr.details || "")) continue;
+      const limit = INCOME_LIKE.test(cr.details || "") ? Math.min(1, maxDays) : maxDays;
       const j = order.find(k => !used.has(k) && k !== i && isOut(txs[k]) &&
         cents(-txs[k].amount) === cents(cr.amount) && stamp(txs[k]) >= stamp(cr) &&
-        dayDiff(cr.date, txs[k].date) <= maxDays);
+        dayDiff(cr.date, txs[k].date) <= limit);
       if (j === undefined) continue;
       used.add(j);
       n++;
