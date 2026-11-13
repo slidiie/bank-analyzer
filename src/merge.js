@@ -17,6 +17,9 @@
   // Слова, по которым операция похожа на перевод между счетами. Покупки и наличные сюда не входят.
   const TRANSFERISH = /перевод|p2p|пополнен|интернет-банк|internetbank|ерип|erip|между своими|своего счёта|своего счета/i;
   // Зарплата, пенсия, пособие приходят от работодателя или государства: парой к чужому переводу на ту же сумму они быть не могут
+  // Сильные слова (прямо «перевод», «пополнение»). «Интернет-банк» и «ЕРИП» слабые: так начинается почти любой платёж
+  // МТБ за интернет или связь. Если на перевод похожа только одна сторона и только слабым словом, это не пара.
+  const STRONG_TRANSFER = /перевод|p2p|пополнен|между своими|своего счёта|своего счета/i;
   const NOT_TRANSFER = /покупка товара|выдача наличных|снятие наличных|заработн|зарплат|пенси|стипенд|пособи|отпускны/i;
 
   const newState = () => ({ txs: [], statements: [] });
@@ -169,6 +172,8 @@
       for (const d of free) {
         if (d.pair || d.amount >= 0 || (d.src === c.src && !allowSame) || cents(-d.amount) !== cents(c.amount)) continue;
         if (!TRANSFERISH.test(c.details || "") && !TRANSFERISH.test(d.details || "")) continue;
+        if (!(TRANSFERISH.test(c.details || "") && TRANSFERISH.test(d.details || "")) &&
+            !STRONG_TRANSFER.test(c.details || "") && !STRONG_TRANSFER.test(d.details || "")) continue;
         if (allowSame && d.src === c.src && !(TRANSFERISH.test(c.details || "") && TRANSFERISH.test(d.details || ""))) continue;   // внутри одной выписки: перевод туда и обратно, обе стороны похожи на перевод
         // МТБ пишет в пополнении «за ДД.ММ.ГГГГ»: настоящая дата перевода (зачисление бывает позже, например через выходные)
         const gap = Math.min(

@@ -20,8 +20,10 @@
     balance: [515, 580],   // Остаток на счёте
   };
 
-  const AMOUNT_RE = /^\d+\.\d{2}$/;
-  const BALANCE_RE = /^-?\d+\.\d{2}$/;
+  const AMOUNT_RE = /^(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2}$/;
+  const BALANCE_RE = /^-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2}$/;
+  // Сумма может быть записана с пробелами в тысячах («1 234.56»): пробелы убираем перед разбором
+  const money = s => parseFloat(String(s).replace(/[\s\u00a0\u202f]/g, ""));
   const DATE_RE = /^\d{2}\.\d{2}\.\d{4}$/;
   const TIME_RE = /^\d{2}:\d{2}:\d{2}$/;
   const MASKED_CARD_RE = /\*{3,}/;
@@ -53,10 +55,10 @@
     for (const line of lines) {
       const text = line.map(i => i.text).join(" ");
       let m;
-      if ((m = text.match(/Входящий остаток:?\s*(-?\d+\.\d{2})/))) h.opening = parseFloat(m[1]);
-      if ((m = text.match(/Исходящий остаток:?\s*(-?\d+\.\d{2})/))) h.closing = parseFloat(m[1]);
-      if ((m = text.match(/Поступило:?\s*(\d+\.\d{2})/))) h.income = parseFloat(m[1]);
-      if ((m = text.match(/Списано:?\s*(\d+\.\d{2})/))) h.expense = parseFloat(m[1]);
+      if ((m = text.match(/Входящий остаток:?\s*(-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.opening = money(m[1]);
+      if ((m = text.match(/Исходящий остаток:?\s*(-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.closing = money(m[1]);
+      if ((m = text.match(/Поступило:?\s*((?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.income = money(m[1]);
+      if ((m = text.match(/Списано:?\s*((?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.expense = money(m[1]);
       if ((m = text.match(/Период выписки:?\s*с\s*(\d{2}\.\d{2}\.\d{4}).*?по\s*(\d{2}\.\d{2}\.\d{4})/))) {
         h.from = toIso(m[1]);
         h.to = toIso(m[2]);
@@ -98,7 +100,7 @@
 
     // Первая сумма: в валюте операции, вторая (если есть): в валюте счёта.
     // Для операций в BYN они совпадают. Для валютных операций берём вторую.
-    const accountAmount = parseFloat((amounts[1] || amounts[0]).text);
+    const accountAmount = money((amounts[1] || amounts[0]).text);
     const amount = signItem.text === "-" ? -accountAmount : accountAmount;
 
     const regDate = find(COL.reg, DATE_RE);
@@ -130,7 +132,7 @@
       mcc: mcc ? mcc.text : null,
       card: card ? card.text : null,
       details,
-      balance: bal ? parseFloat(bal.text) : null,
+      balance: bal ? money(bal.text) : null,
       ...(pending ? { pending: true } : {}),
     };
   }

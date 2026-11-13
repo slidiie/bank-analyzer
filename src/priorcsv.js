@@ -74,6 +74,8 @@
       }
     }
     if (h.gross != null && h.moneyBack != null) h.expense = Math.round((h.gross - h.moneyBack) * 100) / 100;
+    // Несколько разделов «Всего в данной валюте» = несколько валют в одном файле (сверка покажет, что итоги сложены вместе)
+    h.accounts = Math.max(1, ls.filter(l => /^Всего в данной валюте/.test(l)).length);
     return h;
   }
 

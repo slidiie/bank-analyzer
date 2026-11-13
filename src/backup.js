@@ -62,6 +62,8 @@
     }
     // Комиссия перевода между своими: только у пары, положительная и меньше самой суммы
     { const v = num(t.pfee); if (v !== null && o.pair && amount < 0 && v >= 0.01 && v < -amount) o.pfee = v; }
+    // Комиссия, которую банк указал в самой операции (Белинвестбанк): так же, положительная и меньше суммы
+    { const v = num(t.fee); if (v !== null && amount < 0 && v >= 0.01 && v < -amount) o.fee = v; }
     return o;
   }
   function cleanStatement(s) {

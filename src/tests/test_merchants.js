@@ -99,5 +99,34 @@ eq(M.clean(null), null, "null");
 const key = Cat.merchantKey({ amount: -10, mcc: "5411", details: "SHOP EVROOPT G MINSK BY ОПЛАТА ТОВАРОВ И УСЛУГ 123" });
 eq(M.pretty(key.slice(key.indexOf("|") + 1)), "Евроопт", "через merchantKey");
 
+// Аудит 13.11, раздел Г: название места не путает категорию (выдуманные названия)
+{
+  const C = require("../categories.js");
+  const cat = (d, a = -10) => C.resolve({ details: d, amount: a })[0];
+  const t = (d, want, a) => { const got = cat(d, a); if (got !== want) { fails++; console.log("ОШИБКА категория: " + d + " → " + got + ", ждали " + want); } };
+  t("ZOOBAZAR MINSK BY", "Здоровье");
+  t("AVTOSALON MINSK", null);
+  t("SALON MEBELI MINSK", "Товары для дома");
+  t("INTERNET-MAGAZIN TEHNIKA", null);
+  t("АРЕНДА АВТО МИНСК", "Транспорт");
+  t("КОМИССИОНКА НА ЛЕНИНА", null);
+  t("PINUP BARBERSHOP", "Красота и уход");
+  t("CASINO ROYALE CAFE", "Кафе и рестораны");
+  t("АНАЛИЗ РЫНКА", null);
+  t("GREEN CITY FITNESS", "Развлечения");
+  t("KORONA TRAVEL", "Путешествия");
+  t("МЕТРОЛОГИЯ", null);
+  t("МТСБАНК ПЕРЕВОД", null);
+  t("КОТЕЛЬНАЯ", null);
+  t("Возврат покупки WILDBERRIES", "Одежда и покупки", 40);
+  t("Поступление SOMESITE", C.INCOME, 40);
+  t("BETERA MINSK", C.GAMBLING);
+  t("PIN-UP.BY", C.GAMBLING);
+  t("Комиссия за перевод", "Комиссии банка", -1);
+  t("Аренда квартиры", "Аренда и жильё", -300);
+  t("MAGAZIN N5", "Продукты");
+  t("GREEN MINSK", "Продукты");
+}
+
 if (fails) { console.log(fails + " ОШИБОК"); process.exit(1); }
 console.log("merchants: все проверки пройдены (" + (KNOWN.length + FOREIGN.length) + " названий + очистка)");

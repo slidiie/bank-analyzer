@@ -119,7 +119,9 @@
       details: [type, place].filter(Boolean).join(" · "),
       balance: bal ? num(bal.text.match(AMT_RE)[1]) : null,
     };
-    if (feeAbs) { tx.fee = feeAbs; tx.details += ` (комиссия ${feeAbs.toFixed(2)})`; }
+    // Комиссию держим отдельным полем, а не словом в описании: иначе вся операция ушла бы в «Комиссии банка».
+    // При показе splits.js отделяет её в «Комиссии банка», остальная сумма остаётся в своей категории.
+    if (feeAbs) tx.fee = feeAbs;
     if (erip) tx.erip = erip;
     if (status && !/^ПРОВЕДЕН/i.test(status)) { tx.status = status; tx.pending = true; }
     // Операция в другой валюте: показываем и исходную сумму

@@ -177,6 +177,15 @@
       <p class="muted">Файл никуда не отправляется: всё происходит в браузере.</p>
     </div>
   </div>
+  <div id="pwSheet" class="modal sheet" hidden>
+    <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="pwTitle" tabindex="-1">
+      <h2 id="pwTitle" style="margin-top:0">Выписка с паролем</h2>
+      <p id="pwText" class="muted"></p>
+      <form id="pwForm" autocomplete="off"><input id="pwInput" type="password" autocomplete="off" aria-labelledby="pwTitle" class="pwinput">
+        <div class="modalbtns"><button id="pwOk" type="submit">Открыть</button> <button id="pwCancel" type="button">Отмена</button></div>
+      </form>
+    </div>
+  </div>
   <div id="fbSheet" class="modal sheet" hidden>
     <div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="fbTitle" tabindex="-1">
       <h2 id="fbTitle" style="margin-top:0">Что-то не так?</h2>

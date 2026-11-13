@@ -84,6 +84,11 @@ const bad = CSV.replace("-15,00;BYN;24.10.2026;0,00;-15,00", "-15,00;BYN;24.10.2
 const rb = Banks.parseCsv(bad);
 check("повреждённая сумма считается в «не удалось разобрать»", rb.header.broken === 1 && rb.txs.length === 7 && rb.bank.validate(rb.txs, rb.header).ok === false);
 
+// Две валюты в одном файле: сайт знает, что счетов несколько (аудит 13.11, А5)
+check("одна валюта: один счёт", res.header.accounts === 1);
+const two = CSV.replace("Заблокированные суммы", "Всего в данной валюте;Зачислено;Списано;Комиссия/Money-back;Конечный баланс;\r\n;0,00;0,00;0,00;0,00;\r\n\r\nЗаблокированные суммы");
+check("две строки «Всего в данной валюте»: счетов два", Banks.parseCsv(two).header.accounts === 2);
+
 // Тот же период из CSV и из PDF не задваивается: идентификатор операции совпадает
 const state = Merge.newState();
 const a1 = Merge.addStatement(state, { ...res, check: null });

@@ -17,7 +17,9 @@
   "use strict";
 
   const DATE_RE = /^\d{2}\.\d{2}\.\d{4}$/;
-  const AMT_RE = /^(-?\d+(?:\.\d+)?)\s*([A-Z]{3})$/;
+  const AMT_RE = /^(-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)(?:\.\d+)?)\s*([A-Z]{3})$/;
+  // Сумма может быть записана с пробелами в тысячах («1 234.56»): пробелы убираем перед разбором
+  const money = s => parseFloat(String(s).replace(/[\s\u00a0\u202f]/g, ""));
   const COL = { date: [0, 100], note: [88, 440], acc: [440, 500], op: [500, 560] };
   const MAX_DY = 14;      // насколько выше или ниже строки с датой может стоять строка её примечания
   const HEAD_GAP = 12;    // сколько ниже слова «Примечание» заканчивается шапка таблицы
@@ -53,7 +55,7 @@
     if (s.includes("операцияпредоставлениятранша")) return ["tranche", "Операция предоставления транша по кредиту"];
     if (s.includes("погашениеосновногодолга")) return ["principal", "Погашение основного долга по кредиту"];
     if (s.includes("погашениепроцентов")) return ["interest", "Погашение процентов по кредиту"];
-    if (s.includes("зачислениесредств")) return ["erip", "Зачисление на счёт кредита через ЕРИП (Приорбанк)"];
+    if (s.includes("зачислениесредств")) return ["erip", "Зачисление на счёт кредита через ЕРИП"];
     if (s.includes("вознаграждениезаобс")) return ["fee", "Вознаграждение за обслуживание кредитной карты"];
     // Операция по карте: примечание начинается с даты покупки (8 цифр). Слова «Покупка товара / получение услуг» есть не всегда (оплата связи и т. п.)
     if (s.includes("покупкатовара") || /^\s*\d{8}\s/.test(note)) {
@@ -120,7 +122,7 @@
       const a = amt.text.match(AMT_RE);
       const label = sign > 0 ? "Получение средств" : "Отправление средств";
       const details = [label, colText(g.items, CARD.place), colText(g.items, CARD.detail)].filter(Boolean).join(" · ");
-      txs.push({ date: date.text, time: time ? time.text : null, type: null, amount: sign * parseFloat(a[1]), currency: a[2], mcc: null, details, kind: sign > 0 ? "card_in" : "card_out" });
+      txs.push({ date: date.text, time: time ? time.text : null, type: null, amount: sign * money(a[1]), currency: a[2], mcc: null, details, kind: sign > 0 ? "card_in" : "card_out" });
     }));
     header.broken = broken;
     header.notCompleted = skipped;
@@ -141,12 +143,12 @@
       const a = r.acc.text.match(AMT_RE);
       const tx = {
         date: toIso(r.d.text), time: null, type: null,
-        amount: parseFloat(a[1]), currency: a[2], mcc: null,
+        amount: money(a[1]), currency: a[2], mcc: null,
         details, kind,
       };
       if (opDate) tx.opDate = `${opDate.slice(0, 4)}-${opDate.slice(4, 6)}-${opDate.slice(6, 8)}`;
       const o = r.op && r.op.text.match(AMT_RE);
-      if (o && o[2] !== a[2]) { tx.origAmount = parseFloat(o[1]); tx.details += ` (${o[1]} ${o[2]})`; }
+      if (o && o[2] !== a[2]) { tx.origAmount = money(o[1]); tx.details += ` (${o[1]} ${o[2]})`; }
       if (kind !== "unknown") txs.push(tx);
     }));
     header.broken = broken;

@@ -164,14 +164,12 @@
 
   // Банки без MCC-кодов (ВТБ): смотрим на название места или магазина в описании
   // Названия букмекеров и казино, которые встречаются прямо в описании операции
-  const GAMBLING_RE = /maxline|superbel|belbet|betera|1xbet|1хбет|fonbet|marathon ?bet|parimatch|winline|melbet|pin-?up|mostbet|betboom|1win|betwinner|bet365|vulkan ?(bet|vegas)|casino|казино|букмекер|bookmaker/i;
-  // Подсказка: поступление с названием площадки в «карточном» виде («NAME CITY BY … Перевод на БПК … Р2Р / Пополнение тек. счет»),
-  // которое сайт не опознал. Это может быть вывод выигрыша; категорию назначает сам человек.
-  const PAYOUT_RE = /пополнение тек|р2р|p2p|перевод на бпк/i, PLACE_PREFIX_RE = /^[A-Z0-9][A-Z0-9 .\-_*]+ (BY|RU|CY|MT|GB|LT|IE|EE)\b/;
-  function maybeGamblingPayout(tx) {
-    const d = String((tx && tx.details) || "").trim();
-    return !!tx && tx.amount > 0 && PAYOUT_RE.test(d) && PLACE_PREFIX_RE.test(d);
-  }
+  // Только явные признаки (решение владельца 12.11): точные названия площадок с границами слова.
+  // Общие слова «casino», «казино» не считаются, если рядом кафе, бар, ресторан или отель («CASINO ROYALE CAFE»).
+  const GAMBLING_BRAND_RE = /\b(?:maxline|superbel|belbet|betera|1xbet|fonbet|marathon ?bet|parimatch|winline|melbet|pin-?up ?(?:bet|casino)|mostbet|betboom|1win|betwinner|bet365|vulkan ?(?:bet|vegas))\b|\bpin-?up\.(?:by|bet|com)|1хбет|букмекер|bookmaker/i;
+  const CASINO_WORD_RE = /\bcasino\b|(?:^|[^а-яё])казино(?![а-яё])/i;
+  const VENUE_RE = /cafe|кафе|\bkafe\b|restoran|ресторан|\bbar\b|(?:^|[^а-яё])бар(?![а-яё])|hotel|отел|barber|барбер/i;
+  const GAMBLING_RE = { test: d => GAMBLING_BRAND_RE.test(d) || (CASINO_WORD_RE.test(d) && !VENUE_RE.test(d)) };
   // Игры и игровые покупки: сильнее MCC 7372 («программное обеспечение»), под которым Google Play пишет и игры, и подписки
   const GAME_RE = /hustle castle|supercell|clash of|roblox|steam|playstation|xbox|nintendo|epic games|wargaming|world of tanks|genshin|mobile legends|brawl|pubg|dota|valorant|riot games|blizzard/i;
   // Правила по названию места. Сведения о сетях собраны вручную по открытым источникам (см. MERCHANTS.md).
@@ -182,17 +180,17 @@
     // Садоводческие магазины банк часто ведёт под MCC 5992 («цветы»): название места сильнее кода
     ["Товары для дома", GARDEN_RE],
     ["Подарки", /flowwow|rozi\.?bel|rozibel|florist|цвет[ыов]|букет|flowers|\bc?tsvety\b|\bcvety\b|buket|podarki|сувенир|souvenir/i],
-    ["Путешествия", /belavia|белавиа|airline|airways|ryanair|wizz ?air|turkish air|aeroflot|аэрофлот|booking\.com|airbnb|agoda|hostel|hotel|отель|гостиниц|ostrovok|tutu\.ru|aviasales|ржд|rzd|белорусская железная дорога|\bbzd\b|бжд|bus ?for|ecolines|lux ?express/i],
-    ["Продукты", /kopeechk|копеечк|universam|универсам|evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b|korona|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты|\bprodukty\b|e-?dostavka|е-?доставка|svetofor|светофор|hit ?ekspress|хит ?экспресс|groshyk|minimarket|минимаркет|gastronom|гастроном|supermarket|супермаркет|pekarn|пекарн|bakery|konditer|кондитер|myasn|мясн|ovoshi|овощ|bellakt|vinoteka|винотек|alkomarket|алкомаркет|\bmayak\b|маяк/i],
+    ["Путешествия", /belavia|белавиа|airline|airways|ryanair|wizz ?air|turkish air|aeroflot|аэрофлот|booking\.com|airbnb|agoda|hostel|hotel|(?:^|[^а-яё])отел[ьяеи]|гостиниц|travel|ostrovok|tutu\.ru|aviasales|ржд|rzd|белорусская железная дорога|\bbzd\b|бжд|bus ?for|ecolines|lux ?express/i],
+    ["Продукты", /kopeechk|копеечк|universam|универсам|evroopt|euroopt|евроопт|groshyk|грошык|gippo|gipermarket|hippo|belmarket|белмаркет|sosedi|соседи|prostore|\bsanta\b|санта ритейл|\bgreen\b(?!.*fitnes)|korona(?!.*travel)|корона|\balmi\b|алми|zakrama|закрама|\bspar\b|vitalur|виталюр|dobronom|доброном|belkoopsoyuz|белкоопсоюз|sem[ -]?pyatnits|семь пятниц|магазин продукт|продукты|\bprodukty\b|e-?dostavka|е-?доставка|svetofor|светофор|hit ?ekspress|хит ?экспресс|groshyk|minimarket|минимаркет|gastronom|гастроном|supermarket|супермаркет|pekarn|пекарн|bakery|konditer|кондитер|myasn|мясн|ovoshi|овощ|bellakt|vinoteka|винотек|alkomarket|алкомаркет|\bmayak\b|маяк/i],
     ["Кафе и рестораны", /kofejn|кофейн|burger king|mcdonald|\bkfc\b|pizza|пицц|coffee|кофе|cafe|\bkafe\b|кафе|\bkofe\b|restoran|ресторан|sushi|суши|shaurm|шаурм|bistro|mak\.by|вкусно|vkusno|ksb ?v|dodo|додо|papa ?john|папа джонс|vasilki|васильки|темпо|sushivesla|сушивесла|yandex[. ]?eda|яндекс[. ]?еда|rostic|ростикс|starbucks|кофейн|бургер|burger|столов[аa]я|canteen|stolovaya|\bpzz\b|crispy|taro ?babl|bubble ?tea|cofix|cinnabon|kafeteri|\bvarka\b|smakata|papa ?doner|doner|kebab|shawarma|\bgrill\b|\bpub\b|пивн|ramen|рамен|chajnaya|чайная|donuts|пончик|morozhenoe|мороженое|ice ?cream|pitstsa|pizzeriya|pizzeria|steak|стейк/i],
-    ["Транспорт", /\bmetro\b|метро|minsktrans|минсктранс|taxi|такси|yandex[. ]?go|яндекс[. ]?go|\buber\b|\bmaxim\b|\bbolt\b|belorusneft|белоруснефть|\ba-?100\b|lukoil|лукойл|gazpromneft|газпромнефть|rosneft|роснефть|\btriple\b|трайпл|\bazs\b|\bазс\b|парковк|parking|carsharing|каршеринг|paybycard|trolleybus|троллейбус|avtobus|автобус|tramvay|трамвай|whoosh|avtomoyka|автомойка|moyka|шиномонтаж|shinomontazh/i],
-    ["Здоровье", /apteka|аптек|pharm|фармаци|planeta zdorov|планета здоровья|lyubimaya apt|любимая аптека|ostrov zdorov|остров здоровья|zabotliv|заботлив|belfarm|белфарм|optika|оптик|klinik|клиник|clinic|stomatolog|стоматолог|dental|медицин|medcentr|медцентр|laborator|лаборатор|анализ|veterin|ветеринар|zoomag|зоомагазин|ortoped|ортопед|dermat|логопед|medsi|медси|synlab|синлаб/i],
-    ["Красота и уход", /salon|салон красот|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж|gold ?apple|zolotoe ?yabloko|золотое яблоко|parfum|parfyum|парфюм|nogti|ногтев|\bnails?\b|brow ?bar|podruzhka|подружка|letual|летуаль|sephora|cosmetic|kosmetika|epilyaci|эпиляц|tattoo|ресниц/i],
+    ["Транспорт", /\bmetro\b|метро(?!лог)|minsktrans|минсктранс|taxi|такси|yandex[. ]?go|яндекс[. ]?go|\buber\b|\bmaxim\b|\bbolt\b|belorusneft|белоруснефть|\ba-?100\b|lukoil|лукойл|gazpromneft|газпромнефть|rosneft|роснефть|\btriple\b|трайпл|\bazs\b|\bазс\b|парковк|parking|carsharing|каршеринг|paybycard|trolleybus|троллейбус|avtobus|автобус|tramvay|трамвай|whoosh|avtomoyka|автомойка|moyka|шиномонтаж|shinomontazh/i],
+    ["Здоровье", /apteka|аптек|pharm|фармаци|planeta zdorov|планета здоровья|lyubimaya apt|любимая аптека|ostrov zdorov|остров здоровья|zabotliv|заботлив|belfarm|белфарм|optika|оптик|klinik|клиник|clinic|stomatolog|стоматолог|dental|медицин|medcentr|медцентр|laborator|лаборатор|анализы|veterin|ветеринар|zoomag|зоомагазин|zoo ?bazar|zootovar|зоотовар|pet ?shop|ortoped|ортопед|dermat|логопед|medsi|медси|synlab|синлаб/i],
+    ["Красота и уход", /\bsalon\b(?!\s*(?:mebel|мебел|obuv|обув|optik|оптик|svyaz|связ|avto|авто))|салон красот|beauty ?salon|barber|барбершоп|парикмахер|beauty|маникюр|manicure|kosmetik|косметик|rive ?gauche|ривгош|belita|белита|vitex|витэкс|\bspa\b|солярий|massage|массаж|gold ?apple|zolotoe ?yabloko|золотое яблоко|parfum|parfyum|парфюм|nogti|ногтев|\bnails?\b|brow ?bar|podruzhka|подружка|letual|летуаль|sephora|cosmetic|kosmetika|epilyaci|эпиляц|tattoo|ресниц/i],
     ["Образование", /udemy|coursera|skillbox|skyeng|duolingo|школа|school|универс|universit|лицей|гимназ|детский сад|kindergarten|repetitor|репетитор|kursy|курсы|academy|академия|логопед|razvivayush|развивающ/i],
     ["Товары для дома", /fix ?price|фикс ?прайс|три цены|tri ?ceny|tri ?tseny|ikea|икеа|leroy|леруа|castorama|касторама|\bobi\b|domovoy|домовой|hoff|хофф|domovenok|santehnika|сантехник|stroitel|строитель|\bstroy|mebel|мебел|elektrotovar|электротовар|hozyajstvenn|хозяйственн|bauhaus|baucenter|posuda|посуда|tekstil|текстиль/i],
     ["Одежда и покупки", /wildberries|verally|\bwb\b|\bozon\b|озон|lamoda|aliexpress|алиэкспресс|21vek|21 век|onliner|\bemall\b|kufar|куфар|deal\.by|shop\.by|delivio|5element|5 элемент|5 element|electrosila|электросила|\bmila\b|\bмила\b|megatop|мегатоп|\bmarko\b|belwest|белвест|formelle|\bconte\b|милавица|milavitsa|zara|bershka|oodji|o'?stin|остин|lc ?waikiki|sinsay|reserved|deichmann|белпочта|belpost|evropochta|европочта|moda ?maks|\bmodi\b|mooon|moooon|\btvoe\b|\bтвое\b|gloria ?jeans|obuv|обув|odezhd|одежд|trikotazh|трикотаж|detskiy ?mir|детский мир|knigi|книги|knizhn|книжн|kanctovar|канцтовар|kancelyar|канцеляр|igrushk|игрушк|zapchast|запчаст|avtotovar|автотовар|avtomagazin|автомагазин/i],
-    ["Связь и подписки", /\ba1\b|a1\.by|\bmts\b|мтс|\blife[:)]|beltelecom|белтелеком|byfly|байфлай|\bzala\b|атлант телеком|velcom|google ?\*? ?(youtube|one|play)|yandex ?(plus|music)|яндекс ?(плюс|музыка)|spotify|netflix|itunes|apple\.com\/bill|icloud|okko|kinopoisk|кинопоиск|megogo|boosty|patreon|openai|chatgpt|telegram premium|подписка|subscription|telegram|\bmts ?money|\blife ?:\)|a1 ?\.?by|beltelecom|интернет-провайдер|provider/i],
-    ["Развлечения", /fitnes|fitness|фитнес|world ?class|kino|кино|cinema|театр|\bsport|(?:^|[^а-яё])спорт|бассейн|aquapark|аквапарк|bowling|боулинг|квест|музей|museum|zoo|зоопарк/i],
+    ["Связь и подписки", /\ba1\b|a1\.by|\bmts\b(?! ?bank)|мтс(?!-? ?банк)|\blife[:)]|beltelecom|белтелеком|byfly|байфлай|\bzala\b|атлант телеком|velcom|google ?\*? ?(youtube|one|play)|yandex ?(plus|music)|яндекс ?(плюс|музыка)|spotify|netflix|itunes|apple\.com\/bill|icloud|okko|kinopoisk|кинопоиск|megogo|boosty|patreon|openai|chatgpt|telegram premium|подписка|subscription|telegram|\bmts ?money|\blife ?:\)|a1 ?\.?by|beltelecom|интернет-провайдер|provider/i],
+    ["Развлечения", /fitnes|fitness|фитнес|world ?class|kino|кино|cinema|театр|\bsport|(?:^|[^а-яё])спорт|бассейн|aquapark|аквапарк|bowling|боулинг|квест|музей|museum|\bzoo\b|зоопарк/i],
   ];
 
 
@@ -257,12 +255,17 @@
     if (/On-line пополнение тек\.счета\/ вклада/i.test(d)) return [OWN, "пополнение своего вклада"];
     // В выписке встречается слово «комиссии» с латинскими буквами «c», поэтому [сc]
     // «Комиссионный магазин» это магазин, а не плата банку
-    if (/ком[иi][сc]{2}(?![иi][оo]нн\S* магазин)/i.test(d)) return [FEES, "в названии есть «комиссия»"];
+    if (/ком[иi][сc]{2}(?![иi][оo]нн\S* магазин|[иi][оo]нк)/i.test(d)) return [FEES, "в названии есть «комиссия»"];
     if (/(^|\s)плата за (перевод|обслуживани|смс|sms|уведомлен|выпуск|перевыпуск|снят)/i.test(d)) return [FEES, "плата банку за услугу"];
     if (/в рамках одного клиента/i.test(d)) return [OWN, "перевод в рамках одного клиента"];
     if (tx.amount > 0) {
       if (GAMBLING_RE.test(d)) return [GAMBLING, "название игровой площадки"];
       if (/возврат/i.test(d) && tx.mcc && MCC[tx.mcc]) return [MCC[tx.mcc], "возврат по коду MCC " + tx.mcc];
+      // Возврат покупки без кода MCC (PDF Приорбанка, ВТБ, Сбер): уменьшает трату в категории магазина, а не считается доходом
+      if (/возврат/i.test(d) && !tx.mcc) {
+        if (SUBS_RE.test(d)) return ["Связь и подписки", "возврат: название онлайн-сервиса"];
+        for (const [cat, re] of PLACE_RULES) if (cat !== GAMBLING && re.test(d)) return [cat, "возврат: название места"];
+      }
       // Загружена только выписка кредитки: пополнение, которым человек гасит долг, это не доход.
       // Только явные слова банка про кредит или овердрафт («погашение задолженности по зарплате» сюда не попадает)
       if (LOAN_REPAY_RE.test(d)) return [OWN, "погашение кредита: это не доход"];
@@ -272,6 +275,7 @@
     const erip = /erip|коммунальных, почтовых/i.test(d);
     // ЕРИП с кодом 4900: код означает «коммунальные услуги», но через ЕРИП платят за что угодно, поэтому решает пользователь
     if (erip && tx.mcc === "4900") return [null, ""];
+    if (/(?:аренд|прокат)\S*\s+(?:авто|машин)|rent ?a ?car|car ?rental/i.test(d)) return ["Транспорт", "аренда автомобиля"];
     if (!erip && RENT_RE.test(d)) return ["Аренда и жильё", "в названии есть аренда"];
     if (GAME_RE.test(d)) return ["Развлечения", "название игровой площадки"];
     if (!erip && SUBS_RE.test(d)) return ["Связь и подписки", "название подписки или онлайн-сервиса"];
@@ -283,7 +287,7 @@
     if (bc) return [bc, "категория банка «" + tx.bankCat + "»"];
     // Нет кода MCC (PDF Приорбанка): безымянный «магазин» или «торговый объект» почти всегда продуктовый у дома.
     // Только последним шагом, когда ни одно правило не сработало (в CSV те же покупки узнаются по коду MCC)
-    if (!erip && !tx.mcc && tx.amount < 0 && /\b(magazin|shop n ?\d+|torg\.? ?ob\.?|магазин)\b/i.test(d)) return ["Продукты", "похоже на магазин у дома"];
+    if (!erip && !tx.mcc && tx.amount < 0 && !/internet-? ?magazin|интернет-? ?магазин/i.test(d) && /\b(magazin|shop n ?\d+|torg\.? ?ob\.?|магазин)\b/i.test(d)) return ["Продукты", "похоже на магазин у дома"];
     return [null, ""];
   }
   const categorize = tx => resolve(tx)[0];
@@ -293,7 +297,7 @@
   const INITIALS_RE = /(?:[А-ЯЁ][а-яё]+|[A-ZА-ЯЁ]{3,})\s+[A-ZА-ЯЁ]\.\s?[A-ZА-ЯЁ]\./;
   const looksLikePerson = text => { const t = String(text || ""); return PATRONYMIC_RE.test(t) || INITIALS_RE.test(t); };
 
-  const api = { P2P, looksLikePerson, maybeGamblingPayout, resolve, SUBS_RE, OWN, INCOME, FEES, LOAN, SAVINGS, GAMBLING, DEFAULT_CATEGORIES, ICONS, MCC, BUCKETS, canonical, merchantKey, categorize, bucket, isErip, recipient };
+  const api = { P2P, looksLikePerson, resolve, SUBS_RE, OWN, INCOME, FEES, LOAN, SAVINGS, GAMBLING, DEFAULT_CATEGORIES, ICONS, MCC, BUCKETS, canonical, merchantKey, categorize, bucket, isErip, recipient };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Categories = api;
 })(typeof self !== "undefined" ? self : this);

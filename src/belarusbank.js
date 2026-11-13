@@ -31,7 +31,9 @@
   const DATE_RE = /^\d{2}\.\d{2}\.\d{4}$/;
   const TIME_RE = /^\d{2}:\d{2}$/;
   const CUR_RE = /^[A-Z]{3}$/;
-  const NUM_RE = /^-?\d+\.\d{2}$/;
+  const NUM_RE = /^-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2}$/;
+  // Сумма может быть записана с пробелами в тысячах («1 234.56»): пробелы убираем перед разбором
+  const money = s => parseFloat(String(s).replace(/[\s\u00a0\u202f]/g, ""));
   // Подписи шапки таблицы (повторяется на каждой странице)
   const HEAD_RE = /^(Дата|и время|Место|Валюта|Приход\/|Приход\/ ?Расход|Номер карты|Наименование операции|МСС|MCC)$/;
 
@@ -68,10 +70,10 @@
     for (const line of first) {
       if ((m = line.match(/за период\s+(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/i))) { h.from = toIso(m[1]); h.to = toIso(m[2]); }
       if ((m = line.match(/Валюта счета:?\s*([A-Z]{3})/))) h.currency = m[1];
-      if ((m = line.match(/Остаток на начало периода:?\s*(-?\d+\.\d{2})/))) h.opening = parseFloat(m[1]);
-      if ((m = line.match(/Остаток на конец периода:?\s*(-?\d+\.\d{2})/))) h.closing = parseFloat(m[1]);
-      if ((m = line.match(/Зачислено за период:?\s*(\d+\.\d{2})/))) h.income = parseFloat(m[1]);
-      if ((m = line.match(/Сумма расходных операций за период:?\s*(\d+\.\d{2})/))) h.expense = parseFloat(m[1]);
+      if ((m = line.match(/Остаток на начало периода:?\s*(-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.opening = money(m[1]);
+      if ((m = line.match(/Остаток на конец периода:?\s*(-?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.closing = money(m[1]);
+      if ((m = line.match(/Зачислено за период:?\s*((?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.income = money(m[1]);
+      if ((m = line.match(/Сумма расходных операций за период:?\s*((?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)\.\d{2})/))) h.expense = money(m[1]);
     }
     return h;
   }
@@ -111,7 +113,7 @@
     const purpose = joinCol(it, COL.name);
     const place = joinCol(it, COL.place);
     const card = joinCol(it, COL.card);
-    const abs = parseFloat(accItem.text);
+    const abs = money(accItem.text);
     const sign = dirItem.text === "Приход" ? 1 : -1;
     const opCur = g.a.text;
     const tx = {
@@ -125,11 +127,11 @@
       card: card || null,
       purpose, place,
       details: [purpose, place].filter(Boolean).join(" · "),
-      balance: balItem ? parseFloat(balItem.text) : null,
+      balance: balItem ? money(balItem.text) : null,
     };
     // Валютная операция: показываем и исходную сумму
     if (opItem && opCur !== (currency || opCur)) {
-      tx.origAmount = parseFloat(opItem.text);
+      tx.origAmount = money(opItem.text);
       tx.details += ` (${opItem.text} ${opCur})`;
     }
     return tx;

@@ -152,6 +152,20 @@ const n = T.mark(small, t => t.amount < 0 && /ERIP/.test(t.details));
 check("пара берётся один к одному и только с ближайшим расходом", n === 1 && small[1].pair === 1 && !small[2].pair);
 check("расход через месяц в пару не входит", !small[3].pair && !small[4].pair);
 
+// зарплата и перевод человеку через неделю: не пара (аудит 13.11, А1)
+const sal = [
+  { date: "2026-10-05", time: "10:00:00", amount: 1500, details: "Зачисление заработной платы" },
+  { date: "2026-10-11", time: "11:00:00", amount: -1500, details: "P2P перевод" },
+  { date: "2026-10-20", time: "10:00:00", amount: 300, details: "Пособие" },
+  { date: "2026-10-20", time: "12:00:00", amount: -300, details: "P2P перевод" },
+  { date: "2026-11-01", time: "10:00:00", amount: 80, details: "Зачисление" },
+  { date: "2026-11-08", time: "10:00:00", amount: -80, details: "P2P перевод" },
+];
+T.mark(sal, t => t.amount < 0 && /P2P/.test(t.details));
+check("зарплата и перевод через 6 дней остаются доходом и тратой", !sal[0].pair && !sal[1].pair);
+check("пособие, переслано в тот же день: пара", sal[2].pair && sal[2].pair === sal[3].pair);
+check("совпадение суммы через неделю не пара", !sal[4].pair && !sal[5].pair);
+
 // МТБ по-прежнему определяется отдельно
 const mtbPages = [[{ x: 10, y: 800, vx: 10, vy: 40, text: "Транзакции по счету с 01.09.2026г. по 02.11.2026г." }]];
 check("выписка МТБ не принимается за ВТБ", B.detect(mtbPages) && B.detect(mtbPages).id === "mtb");

@@ -186,11 +186,12 @@
 
     function savingsBlock(x, head) {
       const d = h("details", { class: "brow" }, head);
-      d.append(h("p", { class: "muted" }, `Откладывать удобнее первым делом, а не «что останется»: к концу месяца обычно не остаётся. Доход для расчёта: ${money(x.income)} ${CUR} (${calc.income != null ? "введён вами ниже" : x.incomeNote}).`));
-      const sel = h("select", { "aria-label": "Как задать накопления" }, h("option", { value: "pct" }, "% от дохода"), h("option", { value: "byn" }, `${CUR} в месяц`));
-      sel.value = x.mode;
-      sel.addEventListener("change", () => { calc.saveMode = sel.value; savePlan(); renderPlan("saveVal"); });
-      const val = numInput("saveVal", calc.saveVal, v => { if (v == null) delete calc.saveVal; else calc.saveVal = v; }, { placeholder: x.mode === "pct" ? "например, 10" : "например, 200", "aria-label": "Сколько откладывать" });
+      d.append(h("p", { class: "muted" }, `Доход для расчёта: ${money(x.income)} ${CUR} (${calc.income != null ? "введён вами ниже" : x.incomeNote}).`));
+      // Два варианта: переключатель-плашки в стиле сайта, а не системный выпадающий список
+      const modeBtn = (m, t) => h("button", { type: "button", class: "tab" + (x.mode === m ? " active" : ""), "aria-pressed": String(x.mode === m),
+        onclick: () => { if (x.mode === m) return; calc.saveMode = m; savePlan(); renderPlan("saveVal"); } }, t);
+      const sel = h("span", { class: "savemode", role: "group", "aria-label": "Как задать накопления" }, modeBtn("pct", "% от дохода"), modeBtn("byn", `${CUR} в месяц`));
+      const val = numInput("saveVal", calc.saveVal, v => { if (v == null) delete calc.saveVal; else calc.saveVal = v; }, { placeholder: x.mode === "pct" ? "процент" : `${CUR} в месяц`, "aria-label": "Сколько откладывать" });
       d.append(h("div", { class: "prow" }, h("span", { class: "pname" }, "Откладывать"), val, sel));
       if (!(x.plan.amount > 0)) {
         d.append(h("p", { class: "muted" }, "Пока не задано. Введите процент или сумму, и сайт покажет, сколько останется на жизнь."));
@@ -257,7 +258,7 @@
       const side = h("aside", { class: "bside" }, hero, month);
       const group = (title, sub, ...kids) => h("section", { class: "bgroup" }, h("div", { class: "bgtitle" }, h("h3", {}, title), sub ? h("span", { class: "muted" }, sub) : ""), h("div", { class: "blist" }, ...kids));
       const staticRow = (name, amt, note) => h("div", { class: "brow" }, h("div", { class: "bsum" }, h("div", { class: "btop" }, h("span", { class: "bname" }, name), h("span", { class: "bamt" }, amt)), h("div", { class: "bnote muted" }, note)));
-      d.append(group("Накопления", "платите себе первым", extra.save));
+      d.append(group("Накопления", "сколько вы откладываете", extra.save));
       d.append(group("Обязательные платежи", "лимит не нужен", extra.reg, ...fixedCats.map(c => staticRow(c, `${money(spentOf.get(c) || 0)} ${CUR}`, "обязательные платежи, лимит не нужен"))));
       if (!cats.length) { d.append(h("section", { class: "bgroup" }, h("div", { class: "bgtitle" }, h("h3", {}, "Гибкие траты")), h("p", { class: "muted" }, "Пока нет разобранных категорий."))); d.append(group("Расчёт", "", extra.calc)); return h("div", { class: "bgrid" }, d, side); }
       const list = h("div", { class: "blist" });
