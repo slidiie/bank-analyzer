@@ -305,14 +305,18 @@
       if (ctx && ctx.list) {
         let put = 0, got = 0;
         ctx.list.forEach(t => { if (categoryOf(t) !== Cat.GAMBLING) return; if (t.amount < 0) put -= t.amount; else got += t.amount; });
-        if (put > 0 || got > 0) {
-          const net = got - put;
+        // Карточку показываем, только когда потеря заметна: от 5% дохода за период (нет дохода: от 5% всех трат). Мелочь не выпячиваем
+        const net0 = got - put, inc = ctx.list.filter(t => isIncome(t) && categoryOf(t) !== Cat.GAMBLING).reduce((a, t) => a + t.amount, 0);
+        const base = inc > 0 ? inc : (ctx.stats && ctx.stats.total) || 0;
+        const share = base > 0 ? -net0 / base : 0;
+        if ((put > 0 || got > 0) && (!put || share >= 0.05)) {
+          const net = net0;
           if (!put) ul.append(icard(`${fmt(got)} ${CUR}`, "Азартные игры: поступления за период", `Расходов в этой категории нет, учтены только поступления, которые вы отметили сами. Внесено 0 ${CUR}.`));
           else {
             // Выводы сайт сам не угадывает: поступления без названия площадки могут быть чем угодно. Только нейтральная строка и кнопка
             const tail = got === 0 ? h("div", {}, h("p", {}, "Выводов в выписке не отмечено. Выписка не показывает, откуда пришли деньги: если вы выводили средства, отметьте эти поступления сами."),
               h("div", { class: "chips" }, qchip("Открыть поступления", () => openBottom("income"), "", "ghost"))) : null;
-            ul.append(icard(`${net < 0 ? "−" : "+"}${fmt(Math.abs(net))} ${CUR}`, "Азартные игры: итог за период", `Внесено ${fmt(put)} ${CUR}, выведено ${fmt(got)} ${CUR}.`, tail));
+            ul.append(icard(`${net < 0 ? "−" : "+"}${fmt(Math.abs(net))} ${CUR}`, "Азартные игры: итог за период", `Внесено ${fmt(put)} ${CUR}, выведено ${fmt(got)} ${CUR}. Это ${Math.round(share * 100)}% ${inc > 0 ? "дохода" : "всех трат"} за период.`, tail));
           }
         }
       }
