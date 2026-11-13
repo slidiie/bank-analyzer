@@ -132,7 +132,7 @@
     showHowList();
     // Банк заранее не выбран: человек выбирает свой, выбор запоминается в этом браузере (ba_bank_v1)
     function showHowInline(id, remember) {
-      const list = BANK_HELP.filter(x => x.reads);
+      const list = [...BANK_HELP.filter(x => x.reads), ...BANK_HELP.filter(x => !x.reads)]; // сначала банки, которые сайт читает, потом остальные
       const b = list.find(x => x.id === id) || null;
       if (b && remember) { try { localStorage.setItem("ba_bank_v1", b.id); } catch (e) { /* без запоминания */ } }
       $("howTabs").replaceChildren(...list.map(x => h("button", { type: "button", role: "tab", "aria-selected": b && x.id === b.id ? "true" : "false", onclick: () => showHowInline(x.id, true) }, x.name)));
@@ -140,6 +140,7 @@
       const kids = [...howBlocks(b, t => h("p", {}, h("b", {}, t))),
         h("p", {}, h("b", {}, "Другие способы")), h("ul", {}, b.how.map(t => h("li", {}, t))), h("p", { class: "muted" }, b.wait)];
       if (b.link) kids.push(h("p", {}, h("a", { href: b.link[0], target: "_blank", rel: "noopener noreferrer" }, "Инструкция на сайте банка ↗")));
+      if (!b.reads) kids.push(h("p", { class: "muted" }, "Выписки этого банка сайт отдельно пока не разбирает, но пробует прочитать файл сам и показывает, как понял колонки."));
       $("howPane").replaceChildren(...kids);
     }
     try { if (/Instagram|FBAN|FBAV|FB_IAB|Telegram|VKClient|\bLine\/|; wv\)/i.test(navigator.userAgent || "")) $("inAppNote").hidden = false; } catch (e) { /* без подсказки */ }
