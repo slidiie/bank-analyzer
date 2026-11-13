@@ -4,6 +4,7 @@
 // Проверяет главную, все вкладки демо и все окна на 320/390/768/1280 в светлой и тёмной теме:
 //   зоны нажатия (меньше 768 px: не меньше 44 px, иначе не меньше 32 px; ссылки внутри текста не считаются),
 //   контраст текста 4,5:1 (крупный 3:1; переходы цвета доводятся до конца перед замером),
+//   наведение мыши (от 768 px: настоящая мышь на каждый вид кнопок и строк, текст не сливается с фоном),
 //   страница не шире экрана, Tab и Shift+Tab по кругу внутри каждого окна (настоящие нажатия клавиш).
 // Печатает только нарушения и итог; код возврата 1, если нарушения есть.
 import { spawn } from 'node:child_process';
@@ -104,6 +105,56 @@ async function check(where, tag) {
   await wait(350);
   for (const [kind, text] of await ev(PAGE_CHECK)) note(where, kind, text, tag);
 }
+// Наведение мыши (только от 768 px): настоящая мышь на каждый ВИД элемента (тег + классы), контраст текста внутри при наведении
+const HOVER_LIST = `(() => {
+  window.__hseen = window.__hseen || new Set();
+  const dlg = [...document.querySelectorAll('.modal:not([hidden]) [role=dialog]')].pop() || document.body;
+  const sel = 'a[href], button, summary, [role=button], [role=tab], [role=switch], label, tr, .rowcard, .whead, .catbtn, .chip';
+  const out = [];
+  for (const el of dlg.querySelectorAll(sel)) {
+    if (!el.checkVisibility || !el.checkVisibility() || el.disabled) continue;
+    const sig = el.tagName + '#' + (el.id || '') + '.' + [...el.classList].join('.') + '|' + (el.parentElement ? el.parentElement.className : '');
+    if (window.__hseen.has(sig)) continue;
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
+    const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+    const top = document.elementFromPoint(x, y); if (!top || !(el === top || el.contains(top))) continue;
+    window.__hseen.add(sig); el.setAttribute('data-hov', out.length); out.push({ x, y });
+  }
+  return out;
+})()`;
+const HOVER_CHECK = i => `(() => {
+  const el = document.querySelector('[data-hov="${i}"]'); if (!el) return [];
+  document.getAnimations().forEach(a => { try { a.finish(); } catch (e) {} });
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+  const rgba = c => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+  const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+  const mix = (t, b) => [0, 1, 2].map(k => t[k] * t[3] + b[k] * (1 - t[3]));
+  const bgOf = e0 => { const L = []; for (let e = e0; e; e = e.parentElement) { const s = getComputedStyle(e); if (s.backgroundImage && s.backgroundImage !== 'none') return null; const c = rgba(s.backgroundColor); if (c[3] > 0) { L.push(c); if (c[3] >= 1) break; } } let b = [255, 255, 255]; for (const l of L.reverse()) b = mix(l, b); return b; };
+  const res = [];
+  for (const n of [el, ...el.querySelectorAll('*')]) {
+    if (n.closest('svg') || !n.checkVisibility || !n.checkVisibility()) continue;
+    if (![...n.childNodes].some(t => t.nodeType === 3 && /\\S/.test(t.textContent))) continue;
+    const s = getComputedStyle(n), bg = bgOf(n); if (!bg) continue;
+    const f = mix(rgba(s.color), bg), L1 = lum(f), L2 = lum(bg), ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    const px = parseFloat(s.fontSize), big = px >= 24 || (parseInt(s.fontWeight) >= 700 && px >= 18.66), need = big ? 3 : 4.5;
+    if (ratio < need - 0.01) { let nm = n.tagName.toLowerCase() + (n.classList.length ? '.' + [...n.classList].slice(0, 2).join('.') : ''); res.push(nm + ' ' + ratio.toFixed(2) + ':1 (нужно ' + need + ')'); break; }
+  }
+  // Фон при наведении без текста внутри тоже не должен «пустеть»: пустая белая плашка в тёмной теме (контраст фона строки с фоном страницы)
+  return res;
+})()`;
+async function hoverCheck(where, tag) {
+  if (WIDTHS.length && parseInt(tag) < 768) return;
+  await ev('window.__hseen = window.__hseen || new Set()');
+  const list = await ev(HOVER_LIST);
+  for (let i = 0; i < list.length; i++) {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: list[i].x, y: list[i].y });
+    await wait(60);
+    for (const t of await ev(HOVER_CHECK(i))) note(where, 'наведение', t, tag);
+  }
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+  await ev(`document.querySelectorAll('[data-hov]').forEach(e => e.removeAttribute('data-hov')); scrollTo(0, 0)`);
+}
 async function key(shift) {
   const p = { key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9, modifiers: shift ? 8 : 0 };
   await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...p }); await send('Input.dispatchKeyEvent', { type: 'keyUp', ...p });
@@ -164,7 +215,8 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   await send('Page.navigate', { url }); await wait(1400);
   await ev(`localStorage.setItem("ba_theme_v2", JSON.stringify("${theme}")); navigator.serviceWorker && navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())); location.reload()`).catch(() => {});
   await wait(1500);
-  await check('главная', tag);
+  await ev('window.__hseen = new Set()');
+  await check('главная', tag); await hoverCheck('главная', tag);
   await dialog('окно «Приватность»', tag, `document.getElementById("privRow").click()`);
   await dialog('окно «Как скачать»', tag, `document.getElementById("howRow").click()`);
   await dialog('карточка банка', tag, `document.getElementById("howRow").click(); setTimeout(() => document.querySelector("#howBanks .rowcard").click(), 100)`);
@@ -174,7 +226,7 @@ for (const w of WIDTHS) for (const theme of THEMES) {
   const tabs = await ev('[...document.querySelectorAll("#tabbar button")].map(b => b.innerText.replace(/\\s*\\d+$/, "").trim())');
   for (let i = 0; i < tabs.length; i++) {
     await ev(`document.querySelectorAll("#tabbar button")[${i}].click(); scrollTo(0, 0); document.querySelectorAll("details").forEach(d => d.open = true)`);
-    await check('демо: ' + tabs[i], tag);
+    await check('демо: ' + tabs[i], tag); await hoverCheck('демо: ' + tabs[i], tag);
   }
   await dialog('окно сброса', tag, `document.getElementById("reset").click()`);
 

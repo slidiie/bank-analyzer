@@ -44,7 +44,7 @@
     #tabbar .tabbadge { min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .72rem; font-weight: 700; line-height: 1.15rem; text-align: center; }
     #tabbar .l-s { display: none; }
     @media (max-width: 768px) {
-      #tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; gap: 0; background: var(--surface); border-top: 1px solid var(--line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+      #tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; gap: 0; background: var(--surface); border-top: 1px solid var(--line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform; }
       #tabbar button { flex: 1 1 0; flex-direction: column; justify-content: center; gap: .15rem; padding: .5rem .1rem .45rem; border-bottom: 0; font-size: .72rem; }
       #tabbar .l-s { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       #tabbar .tabbadge { position: absolute; top: .1rem; left: calc(50% + .15rem); min-width: 1.1rem; height: 1.1rem; line-height: 1.1rem; padding: 0 .25rem; font-size: .66rem; }

@@ -438,7 +438,7 @@
     #tabbar .tabbadge { min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .72rem; font-weight: 700; line-height: 1.15rem; text-align: center; }
     #tabbar .l-s { display: none; }
     @media (max-width: 768px) {
-      #tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; gap: 0; background: var(--surface); border-top: 1px solid var(--line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+      #tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; gap: 0; background: var(--surface); border-top: 1px solid var(--line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform; }
       #tabbar button { flex: 1 1 0; flex-direction: column; justify-content: center; gap: .15rem; padding: .5rem .1rem .45rem; border-bottom: 0; font-size: .72rem; }
       #tabbar .l-s { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       #tabbar .tabbadge { position: absolute; top: .1rem; left: calc(50% + .15rem); min-width: 1.1rem; height: 1.1rem; line-height: 1.1rem; padding: 0 .25rem; font-size: .66rem; }
@@ -1086,7 +1086,9 @@
     ul.insights > li + li { border-top: 1px solid var(--line); }
     ul.insights .wnone { padding: .9rem 1rem; color: var(--muted); }
     .whead { display: grid; grid-template-columns: minmax(5.5rem, 9rem) 1fr auto; gap: .2rem .9rem; align-items: center; width: 100%; text-align: left; background: transparent; color: var(--text); border: 0; border-radius: 0; box-shadow: none; padding: .8rem 1rem; font-size: .95rem; font-weight: 400; }
-    .whead:hover { background: var(--tab-bg); }
+    .whead { -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+    @media (hover: hover) and (pointer: fine) { .whead:hover { background: var(--surface-2); } }   /* на телефоне hover залипает после касания (белая плашка в Telegram/Safari) */
+    .whead:active { opacity: .72; }
     .whead .wsum { font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
     .whead .wtxt { min-width: 0; overflow-wrap: anywhere; }
     .whead .wgo { color: var(--muted); font-size: 1.3rem; line-height: 1; transition: transform var(--t, .2s); }
