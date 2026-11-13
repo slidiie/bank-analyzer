@@ -31,6 +31,9 @@
     }
     const need = Math.max(2, Math.ceil(allMonths.length * 0.6));
     const out = [];
+    const taken = new Set();
+    const put = (s, list) => { out.push(s); list.forEach(t => taken.add(t)); };
+    const dayGap = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
     // Серия платежей: нужные месяцы, не чаще 1,5 раза в месяц. Возвращает запись или null
     const series = (k, list) => {
       const months = new Set(list.map(t => t.date.slice(0, 7)));
@@ -42,6 +45,11 @@
         let gap = days[0] + 30 - days[days.length - 1];
         for (let i = 1; i < days.length; i++) gap = Math.max(gap, days[i] - days[i - 1]);
         if (30 - gap > 7) return null;
+        // 28 сентября и 2 октября по числу месяца «рядом», но между ними 4 дня: это две покупки подряд, а не платёж раз в месяц
+        const ds = list.map(t => t.date).sort();
+        const gaps = []; for (let i = 1; i < ds.length; i++) gaps.push(dayGap(ds[i - 1], ds[i]));
+        gaps.sort((a, b) => a - b);
+        if (gaps.length && gaps[Math.floor(gaps.length / 2)] < 15) return null;
       }
       return {
         amount: Number(k), count: list.length, months: months.size,
@@ -51,19 +59,62 @@
         name: top(list.map(t => t.name || "")), cat: top(list.map(t => t.cat)),
       };
     };
+    // Две подписки одной суммы у одного продавца (два номера одного оператора): в каждом месяце ровно два платежа,
+    // и первый, и второй держатся своих чисел. Тогда это два платежа, а не «слишком частая покупка».
+    const twin = (k, list) => {
+      const byM = new Map();
+      for (const t of list) { const m = t.date.slice(0, 7); if (!byM.has(m)) byM.set(m, []); byM.get(m).push(t); }
+      if (byM.size < need || [...byM.values()].some(l => l.length !== 2)) return null;
+      const a = [], b = [];
+      for (const l of byM.values()) { l.sort((x, y) => (x.date < y.date ? -1 : 1)); a.push(l[0]); b.push(l[1]); }
+      const sa = series(k, a), sb = series(k, b);
+      if (!sa || !sb) return null;
+      sa.twin = sb.twin = true;                  // расписание каждого считается по своим числам месяца (см. schedule)
+      return [[sa, a], [sb, b]];
+    };
+    const tryList = (k, list) => {
+      const s = series(k, list);
+      if (s) { put(s, list); return true; }
+      const named = list.length && list.every(t => (t.name || "").trim() && (t.name || "").trim().toLowerCase() === (list[0].name || "").trim().toLowerCase());
+      const tw = named ? twin(k, list) : null;
+      if (tw) { tw.forEach(([x, l]) => put(x, l)); return true; }
+      return false;
+    };
     for (const [k, list] of groups) {
       // Одна сумма у разных мест (кофейня и подписка по 11,71): серию ищем отдельно по каждому названию,
       // иначе чужая покупка попадает в подписку и «в месяц» не сходится с ценой
       const byName = new Map();
       for (const t of list) { const n = (t.name || "").trim().toLowerCase(); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(t); }
       const named = [...byName.entries()].filter(([n]) => n);
-      const used = new Set();
-      if (named.length > 1) for (const [, part] of named) { const s = series(k, part); if (s) { out.push(s); part.forEach(t => used.add(t)); } }
-      if (used.size) {
-        const rest = list.filter(t => !used.has(t));
-        const s = rest.length ? series(k, rest) : null;
-        if (s) out.push(s);
-      } else { const s = series(k, list); if (s) out.push(s); }
+      let any = false;
+      if (named.length > 1) for (const [, part] of named) if (tryList(k, part)) any = true;
+      if (any) {
+        const rest = list.filter(t => !taken.has(t));
+        if (rest.length) tryList(k, rest);
+      } else tryList(k, list);
+    }
+    // Подписка сменила цену (30 → 33): по отдельности ни старая, ни новая сумма не набирают нужных месяцев.
+    // Склеиваем только очевидное: одно название и категория, старая цена целиком раньше новой, разница не больше 20 %,
+    // в каждом месяце один платёж. «В месяц» считается по новой цене, старая остаётся в prev.
+    const loose = new Map();
+    for (const [k, list] of groups) for (const t of list) {
+      const n = (t.name || "").trim().toLowerCase();
+      if (!n || taken.has(t)) continue;
+      const key = n + "|" + t.cat;
+      if (!loose.has(key)) loose.set(key, new Map());
+      const m = loose.get(key); if (!m.has(k)) m.set(k, []); m.get(k).push(t);
+    }
+    for (const m of loose.values()) {
+      if (m.size !== 2) continue;
+      const span = l => { const d = l.map(t => t.date).sort(); return [d[0], d[d.length - 1]]; };
+      const [x, y] = [...m.entries()].map(([k, l]) => ({ k, l, s: span(l) })).sort((p, q) => (p.s[0] < q.s[0] ? -1 : 1));
+      if (!(x.s[1] < y.s[0]) || Math.abs(Number(x.k) - Number(y.k)) > 0.2 * Number(x.k)) continue;
+      const all = x.l.concat(y.l);
+      if (new Set(all.map(t => t.date.slice(0, 7))).size !== all.length) continue;
+      const s = series(y.k, all);
+      if (!s) continue;
+      s.perMonth = Number(y.k); s.prev = Number(x.k);
+      put(s, all);
     }
     return out.sort((a, b) => b.perMonth - a.perMonth);
   }
@@ -89,7 +140,10 @@
     const key = r.amount.toFixed(2);
     const set = new Set(r.dates || []);
     for (const t of items || []) {
-      if (t.amount < 0 && t.date && (-t.amount).toFixed(2) === key && !skip.includes(t.cat)) set.add(t.date);
+      if (!(t.amount < 0 && t.date && (-t.amount).toFixed(2) === key && !skip.includes(t.cat))) continue;
+      // Один из двух одинаковых платежей (два номера у оператора): чужие даты не берём, только рядом со своим числом месяца
+      if (r.twin) { const d = Math.abs(+t.date.slice(8, 10) - r.day); if (Math.min(d, 30 - d) > 7) continue; }
+      set.add(t.date);
     }
     const dates = [...set].sort();
     if (dates.length < 2) return null;

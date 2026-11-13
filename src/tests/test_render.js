@@ -892,5 +892,21 @@ check("азарт: нейтральная строка и никаких «по�
   vm.runInContext(`openCatPicker({ title: "Тест", current: "", onPick: c => {} });`, ctx);
   check("стиль: окно выбора категории: плитки и «＋ Создать»", /Продукты/.test(textOf(byId["cpBody"])) && /Создать/.test(textOf(byId["cpBody"])));
 }
+// ---- Аудит цифр 13.11: перевод между своими с комиссией ----
+{
+  const flat = n => textOf(n).replace(/ /g, " ").replace(/\s+/g, " ");
+  vm.runInContext(`userRules = {}; txRules = {}; splits = {}; budgets = {}; activeTab = "all"; allCat = "all"; summaryView = "table"; header = { from: "2026-10-01", to: "2026-10-31" };
+    statements = [{ bank: "mtb", from: "2026-10-01", to: "2026-10-31" }, { bank: "prior", from: "2026-10-01", to: "2026-10-31" }];
+    txs = [{ date: "2026-10-01", time: "10:00:00", amount: 1000, mcc: null, details: "Зачисление заработной платы", balance: 1, src: 0, bank: "mtb" },
+           { date: "2026-10-07", time: "10:00:00", amount: -505, mcc: null, details: "Перевод с карты на карту", balance: 2, src: 0, bank: "mtb" },
+           { date: "2026-10-07", time: "10:05:00", amount: 500, mcc: null, details: "Пополнение счёта", balance: 3, src: 1, bank: "prior" },
+           { date: "2026-10-09", time: "10:00:00", amount: -300, mcc: "5411", details: "SHOP A", balance: 4, src: 0, bank: "mtb" }];
+    Merge.markCrossPairs(txs, isRetail); applySplits(); render();`, ctx);
+  // До исправления: пары нет, «Пришло 1 500», а 505 ждут в «Уточнить»
+  check("аудит: перевод себе с комиссией: «Пришло» 1 000, между своими 500, комиссия 5 в тратах", vm.runInContext(`(() => { const st = statsFor(txs), m = new Map(st.rows); return txs.length === 5 && Math.abs(st.own - 500) < 1e-9 && Math.abs(m.get("Комиссии банка") - 5) < 1e-9 && Math.abs(st.total - 305) < 1e-9 && Math.abs(txs.filter(isIncome).reduce((a, t) => a + t.amount, 0) - 1000) < 1e-9; })()`, ctx));
+  check("аудит: комиссия перевода подписана и категорию можно сменить", vm.runInContext(`(() => { const f = txs.find(t => t.feePart); const w = whyCat(f); setTxRule(f, "Прочее"); const c = displayCat(txs.find(t => t.feePart)); delete txRules[txId(f)]; return /комиссия за перевод/.test(w) && c === "Прочее"; })()`, ctx));
+  check("аудит: человек назвал весь перевод арендой: комиссия идёт туда же", vm.runInContext(`(() => { const o = txs.find(t => t.splitOf && !t.part); setTxRule(o, "Аренда и жильё"); const m = new Map(statsFor(txs).rows); const ok = Math.abs(m.get("Аренда и жильё") - 505) < 1e-9; txRules = {}; return ok; })()`, ctx));
+  vm.runInContext(`txs = Splits.collapse(txs); txs.forEach(t => { delete t.pair; delete t.pfee; }); txRules = {}; applySplits(); render();`, ctx);
+}
 console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

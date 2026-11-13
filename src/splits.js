@@ -43,11 +43,21 @@
   function valid(tx, parts) {
     return canSplit(tx) && parts && parts.length > 0 && parts.length <= MAX_PARTS && remainder(tx, parts) >= 0;
   }
+  const FEE_CAT = "Комиссии банка";
+  const feeCents = tx => (tx.pair && tx.amount < 0 && typeof tx.pfee === "number" && tx.pfee >= 0.01 && cents(tx.pfee) < cents(-tx.amount) ? cents(tx.pfee) : 0);
   function expand(txs, splits, idFn) {
-    if (!splits) return txs.slice();
+    splits = splits || {};
     const out = [];
     for (const tx of txs) {
-      const id = idFn(tx), parts = Object.prototype.hasOwnProperty.call(splits, id) ? splits[id] : null;
+      const id = idFn(tx);
+      // Перевод между своими с комиссией (merge.js): между своими идёт пришедшая сумма, комиссия отдельной частью в «Комиссии банка»
+      const fee = feeCents(tx);
+      if (fee) {
+        out.push(Object.assign({}, tx, { amount: (cents(tx.amount) + fee) / 100, sid: id, splitOf: id, _o: tx }));
+        out.push(Object.assign({}, tx, { amount: -fee / 100, sid: id + "#fee", part: true, feePart: true, splitOf: id, splitCat: FEE_CAT, pair: 0, _o: tx }));
+        continue;
+      }
+      const parts = Object.prototype.hasOwnProperty.call(splits, id) ? splits[id] : null;
       if (!parts || !valid(tx, parts)) { out.push(tx); continue; }
       const rest = remainder(tx, parts);
       if (rest > 0) out.push(Object.assign({}, tx, { amount: -rest / 100, sid: id, splitOf: id, _o: tx }));

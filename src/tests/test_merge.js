@@ -68,6 +68,8 @@ check("внутри одной выписки перекрёстные пары 
 check("ячейка с точкой с запятой берётся в кавычки", E.cell("a;b") === '"a;b"');
 check("кавычки удваиваются", E.cell('say "hi"') === '"say ""hi"""');
 check("текст-формула получает апостроф", E.cell("=1+1", true) === "'=1+1" && E.cell("-5", true) === "'-5");
+check("полноширинные ＝ ＋ － ＠ и формула после пробела тоже получают апостроф", ["＝1+1", "＋1", "－1", "＠SUM(A1)", " =1+1", " @x"].every(v => E.cell(v, true) === "'" + v));
+check("обычный текст с пробелом в начале и минус в середине не трогаем", E.cell(" SHOP", true) === " SHOP" && E.cell("A-1", true) === "A-1");
 check("число с минусом в нетекстовой ячейке не трогаем", E.cell("-5,00", false) === "-5,00");
 
 const opts = { categoryOf: t => t.cat || null, ownCat: "Переводы между своими", loanCat: "Дал в долг", bankNames: { vtb: "ВТБ (Беларусь)" } };
@@ -273,5 +275,103 @@ check("мусор в валюте: предупреждения нет", M.curre
   check("обычное пополнение по-прежнему находит пару", M.markCrossPairs(s2.txs, () => false) === 1);
 }
 
+// Перевод между своими банками через выходные и с комиссией (осторожные правила, кандидат единственный)
+{
+  const S = require("../splits.js"), B = require("../backup.js");
+  const two = (a, b) => { const st = M.newState(); M.addStatement(st, { bank: { id: "mtb", name: "МТБанк" }, header: {}, txs: a }); M.addStatement(st, { bank: { id: "prior", name: "Приорбанк" }, header: {}, txs: b }); return st; };
+  const out = (date, amount, extra) => Object.assign({ date, amount, balance: 1, details: "Перевод с карты на карту" }, extra);
+  const inc = (date, amount, extra) => Object.assign({ date, amount, balance: 2, details: "Пополнение счёта" }, extra);
+  // 2026-10-09 пятница, 2026-10-12 понедельник
+  let st = two([out("2026-10-09", -700)], [inc("2026-10-12", 700)]);
+  check("ушло в пятницу, пришло в понедельник: пара", M.markCrossPairs(st.txs, () => false) === 1 && st.txs.every(t => t.pair) && !st.txs[0].pfee);
+  st = two([out("2026-10-10", -700)], [inc("2026-10-12", 700)]);
+  check("ушло в субботу, пришло в понедельник: пара", M.markCrossPairs(st.txs, () => false) === 1);
+  st = two([out("2026-10-06", -700)], [inc("2026-10-08", 700)]);
+  check("вторник и четверг (между ними будний день): не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-12", -700)], [inc("2026-10-09", 700)]);
+  check("пришло раньше, чем ушло, через выходные: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-09", -700), out("2026-10-10", -700, { balance: 5 })], [inc("2026-10-12", 700)]);
+  check("через выходные два подходящих списания: не выбираем ни одного", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-09", -700, { details: "Оплата в магазине" })], [inc("2026-10-12", 700)]);
+  check("через выходные одна сторона не похожа на перевод: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-09", -700)], [inc("2026-10-12", 700, { details: "Зачисление заработной платы" })]);
+  check("зарплата в понедельник и перевод в пятницу: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+
+  st = two([out("2026-10-07", -505)], [inc("2026-10-07", 500)]);
+  check("ушло 505, пришло 500 в тот же день: пара, комиссия 5", M.markCrossPairs(st.txs, () => false) === 1 && st.txs[0].pair === st.txs[1].pair && st.txs[0].pfee === 5);
+  const id = t => t.sid || M.txId(t);
+  const ex = S.expand(st.txs, {}, id);
+  check("комиссия отделена: между своими 500, «Комиссии банка» 5", ex.length === 3 && ex[0].amount === -500 && ex[0].pair && ex[1].amount === -5 && ex[1].feePart && !ex[1].pair && ex[1].splitCat === "Комиссии банка" && ex[2].amount === 500);
+  check("свёртка возвращает исходную операцию 505", S.collapse(ex).length === 2 && S.collapse(ex)[0] === st.txs[0] && st.txs[0].amount === -505);
+  const saved = B.sanitize({ app: "bank-analyzer", txs: st.txs, statements: st.statements }).txs;
+  check("комиссия пары сохраняется в файле разбора", saved[0].pfee === 5 && saved[1].pfee === undefined);
+  check("в файле разбора комиссия без пары или больше суммы отбрасывается", B.sanitize({ app: "bank-analyzer", txs: [{ date: "2026-10-07", amount: -505, details: "x", pfee: 5 }, { date: "2026-10-07", amount: -5, details: "x", pair: 1, pfee: 9 }] }).txs.every(t => t.pfee === undefined));
+  st = two([out("2026-10-07", -550)], [inc("2026-10-07", 500)]);
+  check("разница 10 % это не комиссия: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -500)], [inc("2026-10-07", 505)]);
+  check("пришло больше, чем ушло: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -505), out("2026-10-07", -503, { balance: 7 })], [inc("2026-10-07", 500)]);
+  check("с комиссией два подходящих списания: не выбираем ни одного", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -505)], [inc("2026-10-07", 500), inc("2026-10-08", 501, { balance: 9 })]);
+  check("с комиссией два подходящих поступления: не выбираем ни одного", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -505)], [inc("2026-10-10", 500)]);
+  check("с комиссией через три дня: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -505, { details: "Покупка товара SHOP" })], [inc("2026-10-07", 500)]);
+  check("покупка 505 и пополнение 500: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -500.5, { fee: 0.5 })], [inc("2026-10-07", 500)]);
+  check("банк сам указал комиссию 0,50: пара с комиссией 0,50", M.markCrossPairs(st.txs, () => false) === 1 && st.txs[0].pfee === 0.5);
+  st = two([out("2026-10-07", -503, { fee: 0.5 })], [inc("2026-10-07", 500)]);
+  check("банк указал комиссию 0,50, а разница 3: не пара", M.markCrossPairs(st.txs, () => false) === 0);
+  st = two([out("2026-10-07", -505), out("2026-10-07", -500, { balance: 8 })], [inc("2026-10-07", 500)]);
+  check("есть точная пара: её и берём, 505 остаётся тратой", M.markCrossPairs(st.txs, () => false) === 1 && !st.txs[0].pair && st.txs[1].pair);
+}
+
+// Аудит цифр 13.11: загружена только выписка кредитки, пополнение-погашение не доход (до исправления: «Пополнения»)
+{
+  const C = require("../categories.js");
+  const cat = (details, amount) => C.categorize({ amount, mcc: null, details });
+  check("погашение кредита пополнением: между своими, а не доход", cat("Пополнение счёта. Погашение задолженности по кредитной карте", 300) === C.OWN && cat("Зачисление в счёт погашения кредита", 300) === C.OWN && cat("Погашение овердрафта", 300) === C.OWN);
+  check("«погашение задолженности по заработной плате» остаётся доходом", cat("Погашение задолженности по заработной плате", 300) === C.INCOME);
+  check("обычное пополнение остаётся доходом", cat("Пополнение счёта", 300) === C.INCOME);
+  check("списание «погашение кредита» правило для поступлений не трогает", cat("Погашение кредита по договору", -300) !== C.OWN);
+}
+// Аудит цифр 13.11: одна выписка в двух форматах (PDF и CSV одного банка). До исправления операции считались дважды
+{
+  const bank = { id: "prior", name: "Приорбанк" };
+  const pdf = [
+    { date: "2026-10-05", time: "10:00:00", amount: -25.5, balance: 974.5, details: "Покупка SHOP A" },
+    { date: "2026-10-05", time: "10:00:00", amount: -25.5, balance: 949, details: "Покупка SHOP A" },      // две одинаковые покупки в одну минуту
+    { date: "2026-10-06", time: "18:30:12", amount: -40, balance: 909, details: "Покупка CAFE" },
+    { date: "2026-10-07", amount: -7, balance: 902, details: "Плата за обслуживание" },                    // без времени
+  ];
+  const csv = [
+    { date: "2026-10-05", time: "10:00", amount: -25.5, details: "SHOP A" },
+    { date: "2026-10-05", time: "10:00", amount: -25.5, details: "SHOP A" },
+    { date: "2026-10-06", time: "18:30", amount: -40, details: "CAFE" },
+    { date: "2026-10-07", amount: -7, details: "Плата за обслуживание" },
+    { date: "2026-10-08", time: "09:15", amount: -12, details: "BAKERY" },
+  ];
+  let st = M.newState();
+  M.addStatement(st, { bank, header: {}, txs: pdf });
+  let r = M.addStatement(st, { bank, header: {}, txs: csv });
+  check("PDF, потом CSV того же банка: повторы со временем пропущены, новая операция добавлена", r.skipped === 3 && st.txs.filter(t => t.time).length === 4);
+  check("операция без времени свободно не сравнивается (остаётся, как раньше)", r.added === 2 && st.txs.filter(t => t.amount === -7).length === 2);
+  st = M.newState();
+  M.addStatement(st, { bank, header: {}, txs: csv });
+  r = M.addStatement(st, { bank, header: {}, txs: pdf });
+  check("CSV, потом PDF: то же самое в обратном порядке", r.skipped === 3 && r.added === 1);
+  st = M.newState();
+  M.addStatement(st, { bank, header: {}, txs: [pdf[0]] });
+  r = M.addStatement(st, { bank, header: {}, txs: [csv[0], csv[1]] });
+  check("в первом файле покупка одна, во втором две: вторая не теряется", r.skipped === 1 && r.added === 1);
+  st = M.newState();
+  M.addStatement(st, { bank, header: {}, txs: [pdf[2]] });
+  r = M.addStatement(st, { bank, header: {}, txs: [{ date: "2026-10-06", time: "18:30:47", amount: -40, balance: 800, details: "Покупка CAFE" }, { date: "2026-10-06", time: "18:30", amount: -40, balance: 500, details: "CAFE" }] });
+  check("другие секунды или другой остаток: это другая операция", r.skipped === 0 && r.added === 2);
+  st = M.newState();
+  M.addStatement(st, { bank, header: {}, txs: [pdf[2]] });
+  r = M.addStatement(st, { bank: { id: "mtb", name: "МТБанк" }, header: {}, txs: [csv[2]] });
+  check("другой банк: не повтор", r.skipped === 0);
+}
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
 process.exit(failed ? 1 : 0);

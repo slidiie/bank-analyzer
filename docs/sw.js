@@ -3,7 +3,7 @@
 // При установке файлы берутся мимо HTTP-кэша браузера (cache: "reload"), иначе в новый кэш мог лечь старый index.html.
 // Версию (метку в имени кэша) подставляет build.py (хэш готовой страницы): новая сборка = новый кэш, старый удаляется.
 "use strict";
-const CACHE = "bank-analyzer-30a76ab57a4d";
+const CACHE = "bank-analyzer-c7e1f2498495";
 const FILES = ["./", "index.html", "manifest.webmanifest", "pdfjs/lib.js", "pdfjs/worker.js", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

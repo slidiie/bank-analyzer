@@ -60,6 +60,8 @@
     for (const k of ["balance", "origAmount", "orig", "src", "pair"]) {
       const v = num(t[k]); if (v !== null) o[k] = v;
     }
+    // Комиссия перевода между своими: только у пары, положительная и меньше самой суммы
+    { const v = num(t.pfee); if (v !== null && o.pair && amount < 0 && v >= 0.01 && v < -amount) o.pfee = v; }
     return o;
   }
   function cleanStatement(s) {
