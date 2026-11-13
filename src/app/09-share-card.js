@@ -243,11 +243,11 @@
       if (ctx && ctx.list) {
         let put = 0, got = 0;
         list.forEach(t => { if (categoryOf(t) !== Cat.GAMBLING) return; if (t.amount < 0) put -= t.amount; else got += t.amount; });
-        // Строку показываем, только когда потеря заметна: от 5% дохода за период (нет дохода: от 5% всех трат). Мелочь не выпячиваем
+        // Строку показываем, только когда потеря заметна: от 15% дохода за период (нет дохода: от 15% всех трат). Мелочь не выпячиваем
         const net0 = got - put, inc = list.filter(t => isIncome(t) && categoryOf(t) !== Cat.GAMBLING).reduce((a, t) => a + t.amount, 0);
         const base = inc > 0 ? inc : (ctx.stats && ctx.stats.total) || 0;
         const share = base > 0 ? -net0 / base : 0;
-        if ((put > 0 || got > 0) && (!put || share >= 0.05)) {
+        if ((put > 0 || got > 0) && (!put || share >= 0.15)) {
           if (!put) items.push({ p: 1, el: wrow(`${fmt(got)} ${CUR}`, "Азартные игры: поступления за период", h("p", { class: "muted" }, `Расходов в этой категории нет, учтены только поступления, которые вы отметили сами. Внесено 0 ${CUR}.`)) });
           else {
             // Выводы сайт сам не угадывает: поступления без названия площадки могут быть чем угодно. Только нейтральная строка и кнопка
