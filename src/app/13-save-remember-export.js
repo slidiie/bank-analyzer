@@ -150,6 +150,7 @@
       if (!f) return;
       // Сообщение и на главной: до загрузки выписки блок «Мой разбор» скрыт, и без этого ответа не видно
       const say = t => { $("backupMsg").textContent = t; $("landStatus").textContent = t; };
+      if (f.size > 20 * 1024 * 1024) { say("Файл слишком большой для файла разбора (больше 20 МБ)."); e.target.value = ""; return; }
       try {
         applyBackup(JSON.parse(await f.text()));
         say("Разбор загружен. " + backupSummary());

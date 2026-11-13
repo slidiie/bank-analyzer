@@ -1,3 +1,16 @@
+    // Защита от встраивания во фрейм на чужом сайте (GitHub Pages не даёт заголовок frame-ancestors):
+    // внутри чужой страницы приложение не показываем, только ссылку «открыть сайт отдельно».
+    try {
+      if (window.top !== window.self) {
+        document.documentElement.innerHTML = "";
+        const a = document.createElement("a");
+        a.href = "https://fernwood.by/"; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "Открыть Fernwood в отдельном окне";
+        a.style.cssText = "display:block;margin:2rem;font:1.1rem sans-serif";
+        document.body.append(a);
+        throw new Error("embedded");
+      }
+    } catch (e) { if (e.message === "embedded") throw e; }
     // Чтение PDF: библиотека pdf.js лежит рядом со страницей (pdfjs/lib.js и pdfjs/worker.js, кладёт build.py),
     // грузится только когда нужна (страница открывается быстрее), с того же сайта; после первого визита её держит sw.js.
     // Читаем в отдельном потоке (Worker); если браузер или «песочница» его не даёт, читаем в основном потоке.
