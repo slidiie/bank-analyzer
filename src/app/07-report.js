@@ -230,13 +230,25 @@
       box.replaceChildren(...names.map(n => h("span", { class: "bankchip" },
         h("span", { class: "mono", "aria-hidden": "true" }, n.trim().charAt(0).toUpperCase()), n)));
     }
+    function readQuality(st) {
+      if (st.proof === "accounts" || (st.check && !st.check.ok && st.check.accounts > 1))
+        return { level: "warn", label: "Несколько счетов или валют в файле" };
+      if (st.proof === "mismatch" || (st.check && st.check.headerIncome != null && !st.check.ok))
+        return { level: "warn", label: "Суммы не сошлись" };
+      if ((st.unread && st.unread.length) || st.proof === "partial")
+        return { level: "warn", label: "Прочитана только часть операций" };
+      if (st.proof === "balance" || st.proof === "totals" || (st.check && st.check.headerIncome != null && st.check.ok))
+        return { level: "ok", label: "Суммы сверены" };
+      return { level: "note", label: "Сверить суммы не удалось" };
+    }
     function renderCheck() {
       const box = $("check");
       renderBankChips();
       if (demoMode) { box.className = ""; box.replaceChildren(); renderReadWarn(); return; }
       let ok = true, unchecked = [];
       const lines = statements.map(st => {
-        let t = `${st.bankName}${st.universal && st.bankName !== Banks.OTHER.name ? " (банка нет в списке, прочитано по колонкам)" : ""}: ${st.count} операций` + (st.from ? ` за период ${fmtDate(st.from)} — ${fmtDate(st.to)}` : "");
+        const quality = readQuality(st);
+        let t = `${st.bankName}${st.universal && st.bankName !== Banks.OTHER.name ? " (прочитано по колонкам)" : ""}: ${st.count} операций` + (st.from ? ` за период ${fmtDate(st.from)} — ${fmtDate(st.to)}` : "");
         if (st.skipped) t += `, повторов пропущено: ${st.skipped}`;
         t += ". ";
         const c = st.check;
@@ -249,9 +261,11 @@
         else if (st.universal && st.proof === "totals") t += "Остаток на начало, операции и остаток на конец сходятся ✓.";
         else if (st.universal && st.proof === "mismatch") { ok = false; t += "Остатки на начало и конец не сходятся с операциями ✗."; }
         else if (st.universal && st.proof === "accounts") { ok = false; t += "В файле несколько счетов, их операции сложены вместе ✗."; }
-        else { unchecked.push(st.bankName); t += st.universal ? "Этого банка нет в списке: прочитано по догадке, сверить не с чем." : "Итоговых сумм в этой выписке нет, сверить не с чем."; }
-        if (st.unread && st.unread.length) ok = false;
-        return h("div", {}, t);
+        else if (st.proof === "partial") t += "Прочитана только часть строк с датами.";
+        else t += "Полноту разбора не удалось подтвердить по итогам или остаткам.";
+        if (quality.level === "note") unchecked.push(st.bankName);
+        if (quality.level === "warn") ok = false;
+        return h("div", {}, h("b", {}, quality.label + ". "), t);
       });
       if (statements.length > 1) lines.push(h("div", {}, `Всего операций: ${txs.length}.`));
       const pairs = Merge.pairCount(txs);
@@ -261,7 +275,7 @@
       // Сверка свёрнута: если всё сошлось, хватает одной строки; при расхождении раскрыта сразу.
       // Нет итогов в выписке (бывает у Альфа-Банка): честно «сверить не с чем», а не «всё сходится ✓»
       const sum = !ok ? "Сверка итогов с выпиской: есть расхождения ✗"
-        : allUnchecked ? `Сверка: в выписке нет итоговых сумм, сверить не с чем (операций: ${txs.length})`
+        : allUnchecked ? `Сверить суммы не удалось (операций: ${txs.length})`
         : `Сверка итогов с выпиской: всё сходится ✓ (выписок: ${statements.length - unchecked.length}${unchecked.length ? `, без итогов: ${unchecked.length}` : ""}, операций: ${txs.length})`;
       const det = h("details", ok ? {} : { open: "" }, h("summary", { style: "cursor:pointer" }, sum), ...lines);
       // Банки, у которых мало образцов: честно предупреждаем, что возможны ошибки
@@ -304,19 +318,21 @@
           items.push(h("div", {}, "Остаток на начало и на конец выписки не сходится с прочитанными операциями: часть операций пропущена или сумма взята не из той колонки."));
         if (st.universal && st.proof === "accounts")
           items.push(h("div", {}, "В этом файле несколько счетов (остаток несколько раз начинается заново), и их операции сложены вместе. Если счета в разных валютах, итоги неверны. Надёжнее загрузить выписку по каждому счёту отдельным файлом."));
+        if (st.proof === "partial")
+          items.push(h("div", {}, "Прочитана только часть строк с датами. Сравните операции с выпиской."));
         if (items.length) out.push(h("div", { class: "rwbank" }, statements.length > 1 ? h("b", {}, st.bankName + ". ") : "", ...items));
       });
       return out;
     }
     // Выписки банков не из списка, которые нечем проверить (нет итогов и остатков): «прочитано по догадке»
-    const guessed = () => demoMode ? [] : statements.filter(st => st.universal && st.proof !== "totals" && st.proof !== "balance" && st.proof !== "mismatch" && st.proof !== "accounts");
+    const guessed = () => demoMode ? [] : statements.filter(st => st.universal && readQuality(st).level === "note");
     function renderReadWarn() {
       const box = $("readWarn");
       if (!box) return;
       const probs = readProblems(), gs = guessed();
       box.hidden = !probs.length && !gs.length;
       if (!probs.length && !gs.length) { box.replaceChildren(); return; }
-      const gnote = gs.length ? h("p", {}, (gs.length === 1 ? (gs[0].bankName === Banks.OTHER.name ? "Этого банка" : "Банка «" + gs[0].bankName + "»") + " нет в списке" : "Части банков нет в списке") + ", а в выписке нет итогов и остатков, чтобы проверить суммы. Сверьте итог и две-три операции с приложением банка.") : null;
+      const gnote = gs.length ? h("p", {}, "Полноту разбора не удалось подтвердить по итогам или остаткам. Сверьте итог и две-три операции с приложением банка.") : null;
       if (!probs.length) {
         box.className = "note readwarn";
         box.replaceChildren(h("b", {}, "Прочитано по догадке"), gnote,

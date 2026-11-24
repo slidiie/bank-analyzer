@@ -62,6 +62,18 @@ function zip(files) {
   check("XLSX: строка внутри ячейки и &amp;", t[2][1] === "Зарплата & премия");
   const r = U.guess(U.gridFromTable(t));
   check("XLSX → те же операции, что из PDF и CSV", r && r.txs.length === 3 && r.txs[0].date === "2026-02-01" && r.txs[0].amount === -12.5 && r.txs[1].amount === 1000.1 && r.txs[1].time === "12:00:00");
+  const workbook = zip([
+    ["xl/worksheets/sheet1.xml", sheet], ["xl/worksheets/sheet2.xml", "<worksheet/>"],
+    ["xl/workbook.xml", '<workbook><sheets><sheet name="Справка" r:id="rId2"/><sheet name="Октябрь &amp; ноябрь" r:id="rId1"/></sheets></workbook>'],
+    ["xl/_rels/workbook.xml.rels", '<Relationships><Relationship Id="rId1" Target="/xl/worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/></Relationships>'],
+    ["xl/sharedStrings.xml", shared], ["xl/styles.xml", styles],
+  ]);
+  const named = await S.readTables(workbook);
+  check("XLSX: названия и порядок листов берутся из книги", named.workbook && named.total === 2 &&
+    named.tables.map(entry => entry.name).join("|") === "Справка|Октябрь & ноябрь" &&
+    named.tables[0].rows.length === 0 && named.tables[1].rows.length === 4);
+  const longBook = await S.readTables(zip(Array.from({ length: 7 }, (_, i) => [`xl/worksheets/sheet${i + 1}.xml`, sheet])));
+  check("XLSX: число проверенных листов не скрывает общее число", longBook.total === 7 && longBook.tables.length === 6);
 
   // ---------- HTML под видом .xls и старый .xls ----------
   const html = "<html><body><table><tr><th>Дата</th><th>Описание</th><th>Сумма</th></tr><tr><td>01.02.2026</td><td>Кафе&nbsp;<b>ТЕСТ</b></td><td>-7,20</td></tr></table></body></html>";

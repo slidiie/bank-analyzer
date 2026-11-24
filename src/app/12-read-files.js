@@ -28,19 +28,21 @@
     // Показывает первые операции, как их прочитал сайт, и колонки файла с подписями; подпись колонки можно поменять.
     // Возвращает результат Universal.guess (с правками человека) или null, если человек отказался.
     let uniFinish = null;
-    function askUniversal(grid, first) {
+    function askUniversal(choices, fileName, book) {
       return new Promise(resolve => {
-        let cur = first, roles = first.roles.slice(), stuck = false;
-        const sample = Universal.preview(grid, 3);
+        let selected = choices[0], cur, roles, stuck, sample;
+        const tab = $("uniTab");
         const UNIQUE = ["date", "amount", "expense", "income", "balance", "currency", "sign"];
         const draw = () => {
+          const { grid } = selected;
           const p = cur.proof;
-          $("uniProof").className = "uniproof" + (stuck || p === "mismatch" || p === "accounts" ? " bad" : p === "totals" || p === "balance" ? " ok" : "");
+          $("uniProof").className = "uniproof" + (stuck || p === "mismatch" || p === "accounts" || p === "partial" ? " bad" : p === "totals" || p === "balance" ? " ok" : "");
           $("uniProof").textContent = stuck ? "Так прочитать не получается: нужна колонка с датой и колонка с суммой (или «Расход» и «Приход»)."
             : p === "totals" ? "Проверено: суммы сошлись с итогами в самой выписке ✓"
             : p === "balance" ? "Проверено: суммы сходятся с остатком после каждой операции ✓"
             : p === "accounts" ? "Похоже, в файле несколько счетов: остаток несколько раз начинается заново. Операции всех счетов будут сложены вместе; если счета в разных валютах, итог получится неверным. Надёжнее загрузить выписку по каждому счёту отдельно."
             : p === "mismatch" ? "Суммы не сошлись с итогами выписки ✗. Посмотрите колонки ниже: возможно, сумма взята не из той."
+            : p === "partial" ? "Прочитана только часть строк с датами. Проверьте колонки и сравните результат с выпиской."
             : "Прочитано по догадке: в выписке нет итогов и остатков, проверить суммы нечем. Сверьте операции ниже со своей выпиской.";
           const c = cur.header.currency || "BYN";
           $("uniOps").replaceChildren(...cur.txs.slice(0, 5).map(t => h("div", { class: "uniop" },
@@ -67,10 +69,31 @@
           }).filter(Boolean));
           $("uniOk").disabled = stuck;
         };
-        uniFinish = ok => { uniFinish = null; $("uniSheet").hidden = true; resolve(ok && !stuck ? cur : null); };
-        $("uniReset").onclick = () => { cur = first; roles = first.roles.slice(); stuck = false; draw(); };
-        $("uniColsBox").open = first.proof === "mismatch";
-        draw();
+        const reset = () => {
+          cur = selected.first; roles = cur.roles.slice(); stuck = false;
+          sample = Universal.preview(selected.grid, 3);
+          $("uniColsBox").open = cur.proof === "mismatch" || cur.proof === "partial";
+          draw();
+        };
+        uniFinish = ok => {
+          uniFinish = null; tab.onchange = null; $("uniReset").onclick = null;
+          $("uniSheet").hidden = true;
+          resolve(ok && !stuck ? { result: cur, sheetName: selected.name } : null);
+        };
+        $("uniTitle").textContent = book ? "Как прочитан Excel" : "Этого банка нет в списке. Так читаем?";
+        $("uniFile").textContent = fileName;
+        $("uniWorkbook").hidden = !book;
+        $("uniSheetLabel").hidden = choices.length < 2;
+        tab.replaceChildren(...(book ? choices.map((item, i) => h("option", { value: String(i) }, item.name)) : []));
+        tab.value = "0";
+        if (book) {
+          const unchecked = book.tables.length < book.total ? ` Проверены первые ${book.tables.length} из ${book.total} листов.` : "";
+          $("uniSheetNote").textContent = (choices.length > 1 ? "Будут добавлены операции только выбранного листа."
+            : `Будет добавлен лист «${selected.name}».`) + unchecked;
+        }
+        tab.onchange = () => { selected = choices[Number(tab.value)]; reset(); };
+        $("uniReset").onclick = reset;
+        reset();
         $("uniSheet").hidden = false;
         try { $("uniSheet").querySelector(".modalcard").focus(); } catch (e) { /* без фокуса */ }
       });
@@ -94,19 +117,30 @@
     $("uniCancel").addEventListener("click", () => { if (uniFinish) uniFinish(false); });
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape" && uniFinish) uniFinish(false); });
     // Банк не узнан: пробуем прочитать по колонкам и спрашиваем человека. null: прочитать не вышло (дальше обычная ошибка).
-    async function readUnknown(grid, file, label) {
+    function tryReading(grid, name = "") {
       let first = null;
       try { first = grid ? Universal.guess(grid) : null; } catch (e) { first = null; }
-      if (!first || !first.txs.some(t => Number.isFinite(t.amount) && Banks.realDate(t.date))) return null;
-      setStatus(`${label}Этого банка нет в списке: проверьте, верно ли прочитано…`);
-      const g = await askUniversal(grid, first);
-      if (!g) throw Object.assign(new Error("чтение отменено"), { unsupported: /\.(pdf|csv)$/i.test(file.name) });
+      return first && first.txs.some(t => Number.isFinite(t.amount) && Banks.realDate(t.date)) ? { grid, first, name } : null;
+    }
+    async function readUnknown(grid, file, label) {
+      const choice = tryReading(grid);
+      return choice ? confirmReading([choice], file, label) : null;
+    }
+    async function confirmReading(choices, file, label, book) {
+      setStatus(`${label}Проверьте, верно ли прочитано…`);
+      const chosen = await askUniversal(choices, file.name, book);
+      if (!chosen) throw new Error("чтение отменено");
+      const g = chosen.result;
       const res = Banks.fromUniversal(g);
       if (!res.txs.length) throw new Error("операций в файле не нашлось");
       const v = res.bank.validate(res.txs, res.header);
       res.check = res.header.income == null || res.header.expense == null ? null :
         { headerIncome: res.header.income, headerExpense: res.header.expense, income: v.income, expense: v.expense, pending: v.pending || 0, incomeOk: v.incomeOk, expenseOk: v.expenseOk, ok: v.ok };
       res.uni = { proof: g.proof === "accounts" ? "accounts" : res.check && !res.check.ok ? "mismatch" : g.proof };
+      if (book) {
+        res.sheetName = chosen.sheetName;
+        if (book.tables.length < book.total) res.sheetLimit = `Проверены первые ${book.tables.length} из ${book.total} листов.`;
+      }
       addGap(res);
       statsPing("другой-банк");
       return res;
@@ -115,10 +149,12 @@
     async function readSheet(file, label) {
       if (file.size > 20 * 1024 * 1024) throw new Error("файл слишком большой для выписки");
       setStatus(`${label}Открываю таблицу…`);
-      const tables = await Sheets.read(new Uint8Array(await file.arrayBuffer()), file.name);
-      const grids = tables.map(t => { try { return Universal.gridFromTable(t); } catch (e) { return null; } }).filter(Boolean).sort((a, b) => b.rows.length - a.rows.length);
-      const u = await readUnknown(grids[0] || null, file, label);
-      if (u) return u;
+      const book = await Sheets.readTables(new Uint8Array(await file.arrayBuffer()));
+      const choices = book.tables.map(({ rows, name }) => {
+        try { return tryReading(Universal.gridFromTable(rows), name); } catch (e) { return null; }
+      }).filter(Boolean);
+      if (choices.length) return confirmReading(choices, file, label, book.workbook ? book : null);
+      if (book.tables.length < book.total) throw new Error(`в первых ${book.tables.length} листах из ${book.total} не найдены операции. Сохраните нужный лист отдельным файлом`);
       throw new Error("в этой таблице не нашлось колонок с датой и суммой. Попробуйте скачать выписку из банка в PDF (где его взять, написано на главной)");
     }
     // Читает один файл и возвращает { bank, header, txs, check } или бросает ошибку с понятным текстом
@@ -220,8 +256,13 @@
           const st = { txs, statements };
           const r = Merge.addStatement(st, res);
           loaded++;
-          if (res.uni) Object.assign(statements[r.index], { universal: true, proof: res.uni.proof });
-          notes.push(`${f.name}: ${res.bank.name}${res.uni ? (res.bank.name === Banks.OTHER.name ? "" : " (банка нет в списке)") + (res.uni.proof === "totals" || res.uni.proof === "balance" ? ", суммы проверены" : res.uni.proof === "mismatch" ? ", суммы не сошлись" : res.uni.proof === "accounts" ? ", в файле несколько счетов" : ", прочитано по догадке") : ""}, операций ${res.txs.length}, новых ${r.added}` + (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + (res.header.broken ? `, не удалось прочитать операций: ${res.header.broken} (проверьте, что файл целый)` : "") + ".");
+          const statement = statements[r.index];
+          if (res.uni) Object.assign(statement, { universal: true, proof: res.uni.proof });
+          const quality = readQuality(statement);
+          if (quality.level === "warn") failedFile = true;
+          const sheet = res.sheetName ? `, лист «${res.sheetName}»` : "";
+          notes.push(`${f.name}${sheet}: ${quality.label}. ${res.bank.name}, операций ${res.txs.length}, новых ${r.added}` +
+            (r.skipped ? `, повторов пропущено ${r.skipped}` : "") + "." + (res.sheetLimit ? " " + res.sheetLimit : ""));
           const curNote = Merge.currencyNote(res.header, rates); if (curNote) notes.push(curNote);
         } catch (err) {
           notes.push(`${f.name}: ${String(err.message).replace(/\.$/, "")}.`); failedFile = true;

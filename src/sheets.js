@@ -148,17 +148,27 @@
   // Номер колонки из адреса ячейки («C7» → 2). Адрес дальше MAX_COLS даёт -2: такую ячейку пропускаем
   // (раньше «ZZZZZZ1» заставлял строить строку из сотен миллионов пустых ячеек: 2 ГБ памяти и падение вкладки).
   const colIndex = ref => { let n = 0; for (const ch of ref) { if (ch < "A" || ch > "Z") break; n = n * 26 + ch.charCodeAt(0) - 64; if (n > MAX_COLS) return -2; } return n - 1; };
-  async function readXlsx(bytes) {
+  async function readXlsxTables(bytes) {
     const files = unzip(bytes), get = async name => files.has(name) ? files.get(name)() : "";
     const shared = []; eachTag(await get("xl/sharedStrings.xml"), "si", (a, inner) => { shared.push(inner ? texts(inner) : ""); });
     const styles = await get("xl/styles.xml"), custom = new Map(), dateXf = [];
     eachTag(styles, "numFmt", m => { custom.set(+attr(m, "numFmtId"), attr(m, "formatCode") || ""); }, { openOnly: true });
     const xf0 = styles.indexOf("<cellXfs"), xf1 = xf0 < 0 ? -1 : styles.indexOf("</cellXfs>", xf0);
     if (xf1 > 0) eachTag(styles.slice(xf0, xf1), "xf", m => { const id = +attr(m, "numFmtId"), code = (custom.get(id) || "").replace(/"[^"]*"|\[[^\]]*\]|\\./g, ""); dateXf.push(BUILTIN_DATE.has(id) || /[dmyhs]/i.test(code)); }, { openOnly: true });
-    const names = [...files.keys()].filter(n => /^xl\/worksheets\/[^/]+\.xml$/.test(n)).sort((a, b) => a.length - b.length || (a < b ? -1 : 1)).slice(0, 6);
+    const paths = [...files.keys()].filter(n => /^xl\/worksheets\/[^/]+\.xml$/.test(n)).sort((a, b) => a.length - b.length || (a < b ? -1 : 1));
+    const relations = new Map(), names = new Map();
+    eachTag(await get("xl/_rels/workbook.xml.rels"), "Relationship", tag => {
+      const target = attr(tag, "Target");
+      if (target) relations.set(attr(tag, "Id"), target.startsWith("/") ? target.slice(1) : "xl/" + target);
+    }, { openOnly: true });
+    eachTag(await get("xl/workbook.xml"), "sheet", tag => {
+      const path = relations.get(attr(tag, "r:id"));
+      if (path && /^xl\/worksheets\/[^/]+\.xml$/.test(path) && files.has(path)) names.set(path, attr(tag, "name"));
+    }, { openOnly: true });
+    const ordered = [...names.keys(), ...paths.filter(path => !names.has(path))];
     const tables = [];
-    for (const name of names) {
-      const xml = await get(name), rows = [];
+    for (const [index, path] of ordered.slice(0, 6).entries()) {
+      const xml = await get(path), rows = [];
       eachTag(xml, "row", (ra, inner) => {
         if (inner == null || rows.length >= MAX_ROWS) return;
         const row = [];
@@ -180,25 +190,25 @@
         });
         rows.push(Array.from(row, c => c || ""));
       });
-      if (rows.length) tables.push(rows);
+      tables.push({ name: names.get(path) || `Лист ${index + 1}`, rows });
     }
-    return tables;
+    return { tables, total: ordered.length, workbook: true };
   }
 
-  // Любой файл-таблица → список таблиц (в .xlsx листов может быть несколько). Ошибка с понятным текстом, если формат не читается.
-  async function read(bytes, fileName) {
+  async function readTables(bytes) {
     if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
-      let tables;
-      try { tables = await readXlsx(bytes); } catch (e) { throw new Error("файл Excel не открывается: он повреждён или защищён паролем. Сохраните выписку заново"); }
-      return tables;
+      try { return await readXlsxTables(bytes); } catch (e) { throw new Error("файл Excel не открывается: он повреждён или защищён паролем. Сохраните выписку заново"); }
     }
     if (bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0) throw new Error("это старый формат Excel (.xls). Откройте файл в Excel и сохраните как «Книга Excel (.xlsx)» или как CSV, потом загрузите его сюда");
     const text = decode(bytes);
-    if (/<table[\s>]/i.test(text.slice(0, 200000))) return [parseHtml(text)];
-    return [parseCsv(text)];
+    const rows = /<table[\s>]/i.test(text.slice(0, 200000)) ? parseHtml(text) : parseCsv(text);
+    return { tables: [{ name: "", rows }], total: 1, workbook: false };
   }
 
-  const api = { decode, parseCsv, parseHtml, readXlsx, read, serialDate, delimiterOf };
+  const rowsOf = ({ tables, workbook }) => tables.filter(t => !workbook || t.rows.length).map(t => t.rows);
+  const readXlsx = async bytes => rowsOf(await readXlsxTables(bytes));
+  const read = async bytes => rowsOf(await readTables(bytes));
+  const api = { decode, parseCsv, parseHtml, readXlsx, read, readTables, serialDate, delimiterOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Sheets = api;
 })(typeof self !== "undefined" ? self : this);

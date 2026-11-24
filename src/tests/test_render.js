@@ -924,5 +924,48 @@ check("азарт: нейтральная строка и никаких «по�
   check("аудит: человек назвал весь перевод арендой: комиссия идёт туда же", vm.runInContext(`(() => { const o = txs.find(t => t.splitOf && !t.part); setTxRule(o, "Аренда и жильё"); const m = new Map(statsFor(txs).rows); const ok = Math.abs(m.get("Аренда и жильё") - 505) < 1e-9; txRules = {}; return ok; })()`, ctx));
   vm.runInContext(`txs = Splits.collapse(txs); txs.forEach(t => { delete t.pair; delete t.pfee; }); txRules = {}; applySplits(); render();`, ctx);
 }
-console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
-process.exit(failed === 0 ? 0 : 1);
+async function testImport() {
+  ctx.Universal = require("../universal.js");
+  const rows = amount => [
+    ["Дата", "Описание", "Сумма"],
+    ["01.10.2026", "Магазин", String(-amount)],
+    ["02.10.2026", "Поступление", "125"],
+    ["03.10.2026", "Магазин", "-7"],
+  ];
+  ctx.Sheets = { readTables: async () => ({
+    workbook: true, total: 3,
+    tables: [{ name: "Справка", rows: [["Справка"]] }, { name: "Первый", rows: rows(20) }, { name: "Второй", rows: rows(35) }],
+  }) };
+  vm.runInContext('txs = []; statements = []; parked = []; header = {}; render();', ctx);
+  byId.file.files = [{ name: "Тест.xlsx", size: 1, arrayBuffer: async () => new ArrayBuffer(1) }];
+  const importing = byId.file.listeners.change[0]();
+  await new Promise(resolve => setImmediate(resolve));
+  check("импорт Excel: в выборе только два подходящих листа",
+    !byId.uniSheet.hidden && !byId.uniSheetLabel.hidden && byId.uniTab.children.map(textOf).join("|") === " Первый| Второй");
+  byId.uniTab.value = "1";
+  byId.uniTab.onchange();
+  check("импорт Excel: при выборе листа меняется предпросмотр", /35,00/.test(textOf(byId.uniOps)));
+  byId.uniOk.listeners.click[0]();
+  await importing;
+  check("импорт Excel: в отчёте только выбранный лист", vm.runInContext(
+    'statements.length === 1 && txs.some(t => t.amount === -35) && !txs.some(t => t.amount === -20)', ctx));
+  check("импорт Excel: показаны файл, лист и результат сверки",
+    /Тест\.xlsx, лист «Второй»: Сверить суммы не удалось/.test(byId.status.textContent));
+
+  const quality = vm.runInContext(`[
+    readQuality({check: {headerIncome: 0, ok: true}}).label,
+    readQuality({check: {headerIncome: 0, ok: false}}).label,
+    readQuality({proof: "balance"}).label,
+    readQuality({proof: "partial", check: {headerIncome: 0, ok: true}}).label
+  ].join("|")`, ctx);
+  check("результат импорта различает успешную сверку, расхождение и частичное чтение",
+    quality === "Суммы сверены|Суммы не сошлись|Суммы сверены|Прочитана только часть операций");
+}
+
+testImport().then(() => {
+  console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
+  process.exitCode = failed === 0 ? 0 : 1;
+}).catch(err => {
+  console.error(err);
+  process.exitCode = 1;
+});
