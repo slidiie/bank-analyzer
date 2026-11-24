@@ -279,12 +279,13 @@
     function printRestore() { printOpened.forEach(d => d.removeAttribute("open")); printOpened = []; document.querySelectorAll(".printval").forEach(e => e.remove()); }
     if (typeof window !== "undefined" && window.addEventListener) { window.addEventListener("beforeprint", printPrepare); window.addEventListener("afterprint", printRestore); }
     $("printBtn").addEventListener("click", () => { try { window.print(); } catch (e) { setStatus("Не удалось открыть печать. Нажмите Ctrl+P (на телефоне: меню браузера → «Печать»)."); } });
-    $("clearBtn").addEventListener("click", () => {
+    $("clearBtn").addEventListener("click", async () => {
       txs = []; parked = []; curPick = null; header = {}; statements = [];
       bottomTab = null; allCat = "all"; allFilt = Filters.empty(); activeTab = "all";
       hideReport(); $("clearBtn").hidden = true;
-      forgetDeviceCopy();
-      setStatus("Выписки убраны" + (keepOnDevice ? ", копия на этом устройстве стёрта" : "") + ". Ваш выбор категорий сохранён.");
+      const deleted = await forgetDeviceCopy();
+      setStatus("Выписки убраны из отчёта. Ваш выбор категорий сохранён." +
+        (deleted ? "" : " Не удалось удалить сохранённую копию. Попробуйте ещё раз в «Настройках»."), !deleted);
       $("backupMsg").textContent = backupSummary();
     });
     $("demoExit").addEventListener("click", () => { leaveDemo(); try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ } });

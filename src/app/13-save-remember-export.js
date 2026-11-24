@@ -79,17 +79,67 @@
     }
     const devStore = (() => { try { return Device.openStore(window.indexedDB); } catch (e) { return null; } })();
     let keepOnDevice = !!loadJSON("ba_keep_v1", false) && !!devStore;
-    let deviceSnap = null, deviceTimer = null;
-    $("keepDevice").checked = keepOnDevice;
+    // Старые настройки означали автосохранение. Новое согласие в плашке относится только к выбранным файлам.
+    let autoKeep = keepOnDevice && !!loadJSON("ba_keep_auto_v1", true);
+    let deviceSnap = null, deviceTimer = null, pendingKeep = [], deviceWrite = Promise.resolve();
+    $("keepDevice").checked = autoKeep;
     if (!devStore) { $("keepDevice").disabled = true; $("deviceMsg").textContent = "Этот браузер не разрешает хранить данные, поэтому выписку придётся загружать заново. Правила и категории сохраняются."; }
-    // Один раз после первой загрузки: человек сам решает, хранить ли выписку (по умолчанию не храним)
-    const keepAskPending = () => !!(devStore && txs.length && !demoMode && !keepOnDevice && !loadJSON("ba_keep_asked_v1", false));
-    function renderKeepAsk() { $("keepAsk").hidden = !keepAskPending(); }
-    $("keepYes").addEventListener("click", () => { saveJSON("ba_keep_asked_v1", true); $("keepDevice").checked = true; $("keepDevice").dispatchEvent(new Event("change")); $("keepAsk").hidden = true; setStatus("Выписка будет храниться на этом устройстве. Выключить можно в «Настройках»."); });
-    $("keepNo").addEventListener("click", () => { saveJSON("ba_keep_asked_v1", true); $("keepAsk").hidden = true; });
+    const keepAskPending = () => !!(devStore && txs.length && !demoMode && !autoKeep && pendingKeep.length);
+    function renderKeepAsk() {
+      const visible = keepAskPending();
+      $("keepAsk").hidden = !visible;
+      $("keepFiles").textContent = visible ? pendingKeep.map(file =>
+        file.result.sheetName ? `${file.name}, лист «${file.result.sheetName}»` : file.name).join(" · ") : "";
+    }
+    function offerDeviceSave(files) {
+      if (devStore && !autoKeep && files.length) pendingKeep = files;
+    }
+    function queueDeviceWrite(action) {
+      const result = deviceWrite.then(action);
+      deviceWrite = result.catch(() => {});
+      return result;
+    }
+    async function storeDeviceSnapshot(snap) {
+      await devStore.put(snap);
+      deviceSnap = snap;
+      keepOnDevice = true;
+      saveJSON("ba_keep_v1", true);
+      saveJSON("ba_keep_auto_v1", autoKeep);
+      renderDeviceCard();
+    }
+    $("keepYes").addEventListener("click", async () => {
+      if (!keepAskPending()) return;
+      const files = pendingKeep;
+      pendingKeep = [];
+      renderKeepAsk();
+      try {
+        await queueDeviceWrite(async () => {
+          await deviceReady;
+          const saved = {
+            txs: deviceSnap ? deviceSnap.txs.map(t => ({ ...t })) : [],
+            statements: deviceSnap ? deviceSnap.statements.slice() : [],
+          };
+          for (const { result } of files) {
+            const { index } = Merge.addStatement(saved, result);
+            if (result.uni) Object.assign(saved.statements[index], { universal: true, proof: result.uni.proof });
+          }
+          Merge.markCrossPairs(saved.txs, isRetail);
+          Merge.markRoundTrips(saved.txs, isRetail);
+          await storeDeviceSnapshot(Device.makeSnapshot(saved.txs, saved.statements, Merge.mergedHeader(saved.statements)));
+        });
+        setStatus("Выбранные выписки сохранены на этом устройстве. Копию можно удалить в «Настройках».");
+      } catch (e) {
+        if (!pendingKeep.length && txs.length && !autoKeep) pendingKeep = files;
+        setStatus("Не удалось сохранить выписки на этом устройстве. Попробуйте ещё раз.", true);
+      }
+      renderKeepAsk();
+      renderKeepNote();
+    });
+    $("keepNo").addEventListener("click", () => { pendingKeep = []; renderKeepAsk(); renderKeepNote(); });
     function renderDeviceCard() {
       const info = deviceSnap && keepOnDevice ? Device.describe(deviceSnap) : null;
       $("deviceCard").hidden = !info || txs.length > 0 || demoMode;
+      $("deviceForgetSettings").hidden = !info;
       $("startBtn").classList.toggle("primary", $("deviceCard").hidden);   // на первом экране одна главная кнопка
       if (info) $("deviceInfo").textContent = Device.label(info) + (Device.when(info) ? ", сохранено " + Device.when(info) : "") + (info.old ? ". Копия давно не обновлялась, лучше загрузить свежую выписку." : ".");
     }
@@ -99,26 +149,49 @@
       renderDeviceCard();
     })();
     function scheduleDeviceSave() {
-      if (!keepOnDevice || demoMode || !txs.length) return;
+      if (!autoKeep || demoMode || !txs.length) return;
       clearTimeout(deviceTimer);
       deviceTimer = setTimeout(async () => {
         try {
           const snap = Device.makeSnapshot(Splits.collapse(txs.concat(parked)), statements, header);
-          await devStore.put(snap); deviceSnap = snap;
+          await queueDeviceWrite(() => storeDeviceSnapshot(snap));
+          $("deviceMsg").textContent = "Выписки сохранены на этом устройстве.";
         } catch (e) { $("deviceMsg").textContent = "Не удалось сохранить выписку на этом устройстве (возможно, нет места). Остальное работает как обычно."; }
       }, 500);
     }
-    function forgetDeviceCopy() {
+    async function forgetDeviceCopy() {
       if (deviceTimer) clearTimeout(deviceTimer);
-      deviceSnap = null;
-      if (devStore) devStore.del().catch(() => { /* нечего стирать */ });
-      renderDeviceCard();
+      pendingKeep = [];
+      renderKeepAsk();
+      try {
+        if (devStore) await queueDeviceWrite(async () => {
+          await deviceReady;
+          await devStore.del();
+          deviceSnap = null;
+          keepOnDevice = autoKeep;
+          saveJSON("ba_keep_v1", keepOnDevice);
+        });
+        renderDeviceCard();
+        return true;
+      } catch (e) {
+        $("deviceMsg").textContent = "Не удалось удалить сохранённую копию. Попробуйте ещё раз.";
+        return false;
+      }
     }
-    $("keepDevice").addEventListener("change", () => {
-      keepOnDevice = $("keepDevice").checked && !!devStore;
-      saveJSON("ba_keep_v1", keepOnDevice);
-      if (keepOnDevice) { $("deviceMsg").textContent = txs.length ? "Включено: выписка сохранена на этом устройстве." : "Включено: после загрузки выписка сохранится на этом устройстве."; scheduleDeviceSave(); }
-      else { forgetDeviceCopy(); $("deviceMsg").textContent = "Выключено: сохранённая копия выписки стёрта. Категории и правила остались."; }
+    $("keepDevice").addEventListener("change", async () => {
+      autoKeep = $("keepDevice").checked && !!devStore;
+      saveJSON("ba_keep_auto_v1", autoKeep);
+      if (autoKeep) {
+        keepOnDevice = true;
+        pendingKeep = [];
+        saveJSON("ba_keep_v1", true);
+        $("deviceMsg").textContent = txs.length ? "Сохраняю загруженные выписки…" : "Автосохранение включено.";
+        scheduleDeviceSave();
+      } else if (await forgetDeviceCopy()) {
+        $("deviceMsg").textContent = "Автосохранение выключено. Сохранённая копия удалена.";
+      }
+      renderKeepAsk();
+      renderKeepNote();
     });
     $("deviceOpen").addEventListener("click", () => {
       if (!deviceSnap) return;
@@ -128,10 +201,18 @@
         render();
         setStatus("Открыта выписка, сохранённая на этом устройстве. Можно загрузить новую: она добавится к ней.");
         try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }
-      } catch (e) { forgetDeviceCopy(); setStatus("Сохранённая копия повреждена и удалена. Загрузите выписку заново."); }
+      } catch (e) { setStatus("Не удалось открыть сохранённую копию. Загрузите выписку заново.", true); }
       renderDeviceCard();
     });
-    $("deviceForget").addEventListener("click", () => { forgetDeviceCopy(); setStatus("Сохранённая копия выписки стёрта с этого устройства."); });
+    async function forgetRemembered() {
+      autoKeep = false;
+      $("keepDevice").checked = false;
+      saveJSON("ba_keep_auto_v1", false);
+      const deleted = await forgetDeviceCopy();
+      setStatus(deleted ? "Сохранённая копия выписки стёрта с этого устройства." : "Не удалось удалить сохранённую копию. Попробуйте ещё раз.", !deleted);
+    }
+    $("deviceForget").addEventListener("click", forgetRemembered);
+    $("deviceForgetSettings").addEventListener("click", forgetRemembered);
     function backupSummary() {
       const n = Object.keys(txRules).length, g = Object.keys(userRules).length;
       if (txs.length) {
@@ -218,16 +299,18 @@
     $("resetBox").addEventListener("click", e => { if (e.target === $("resetBox")) closeReset(); });
     if (document.addEventListener) document.addEventListener("keydown", e => { if (e.key === "Escape") closeReset(); });
     $("resetSave").addEventListener("click", () => $("exportBtn").click());
-    $("resetYes").addEventListener("click", () => {
+    $("resetYes").addEventListener("click", async () => {
       userRules = {}; customCats = []; txRules = {}; condRules = []; saveJSON("ba_condrules_v1", condRules); splits = {}; saveJSON("ba_splits_v1", splits); applySplits(); txNotes = {}; saveJSON("ba_notes_v1", txNotes); customIcons = {}; customColors = {}; acctNames = {}; budgets = {}; calc = {}; rates = {}; saveJSON("ba_rates_v1", rates); historyStore = {}; saveJSON("ba_history_v1", historyStore);
       ownUndo.length = 0; saveJSON("ba_acctnames_v1", acctNames);
       saveJSON("ba_budget_v1", budgets); saveJSON("ba_calc_v1", calc);
       mergeNote = []; keepCats = []; saveJSON("ba_mergenote_v1", mergeNote); saveJSON("ba_keepcats_v1", keepCats); renderMergeNote();
       saveJSON("ba_rules_v1", userRules); saveJSON("ba_cats_v1", customCats); saveJSON("ba_txrules_v1", txRules); saveJSON("ba_icons_v1", customIcons); saveJSON("ba_catcolors_v1", customColors);
-      // Сохранённая копия выписки и ответ на «Помнить выписку?» тоже стираются: после «Забыть» на устройстве не остаётся ничего, следующая загрузка снова спросит
-      keepOnDevice = false; $("keepDevice").checked = false; saveJSON("ba_keep_v1", false); saveJSON("ba_keep_asked_v1", false); forgetDeviceCopy();
-      $("deviceMsg").textContent = "";
+      autoKeep = false; $("keepDevice").checked = false; saveJSON("ba_keep_auto_v1", false);
       $("resetBox").hidden = true;
-      $("backupMsg").textContent = "Готово: категории, выбор по операциям и сохранённая выписка стёрты с этого устройства.";
+      const deleted = await forgetDeviceCopy();
+      if (deleted) $("deviceMsg").textContent = "";
+      $("backupMsg").textContent = deleted
+        ? "Готово: категории, выбор по операциям и сохранённая выписка стёрты с этого устройства."
+        : "Категории и выбор по операциям стёрты. Не удалось удалить копию выписки. Попробуйте ещё раз.";
       if (txs.length) render(); else renderRules();
     });

@@ -24,7 +24,14 @@ const Hints = require("../hints.js");
 const Merchants = require("../merchants.js");
 const Recap = require("../recap.js");
 const Goals = require("../goals.js");
+const Device = require("../device.js");
 const lsWrites = [];
+let savedDevice, failDeviceDelete = false;
+const deviceStore = {
+  get: async () => savedDevice,
+  put: async copy => { savedDevice = JSON.parse(JSON.stringify(copy)); },
+  del: async () => { if (failDeviceDelete) throw new Error("Ошибка хранения"); savedDevice = undefined; },
+};
 
 // ---- Заглушка страницы ----
 class Node {}
@@ -68,9 +75,12 @@ const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
 const ctx = vm.createContext({
   document, Node, console,
-  localStorage: { getItem: () => null, setItem: k => lsWrites.push(k) },
+  localStorage: { getItem: k => k === "ba_keep_asked_v1" ? "true" : null, setItem: k => lsWrites.push(k) },
+  window: { indexedDB: {}, addEventListener() {} },
+  setTimeout, clearTimeout,
   pdfjsLib: { GlobalWorkerOptions: {}, getDocument: () => { throw new Error("не нужен в тесте"); } },
   StatementParser: SP, Categories: Cat, Banks, Demo, Merge, Exporter, Planner, Backup, History, Filters, CondRules, Splits, Rates, Feedback, Hints, Merchants, Recap, Goals,
+  Device: { ...Device, openStore: () => deviceStore },
 });
 vm.runInContext(script, ctx);
 
@@ -676,7 +686,11 @@ vm.runInContext(`demoMode = false; statements = []; activeTab = "all"; userRules
   txs = [2, 4, 8].map((d, i) => ({ date: "2026-11-0" + d, time: "10:0" + i, amount: -[150, 50, 50][i], balance: 1, details: "ЛАВКА " + i }));
   render();`, ctx);
 const headText = () => textOf(vm.runInContext(`headlineCard(renderSummaryCore())`, ctx));
+let scheduledFrames = 0;
+ctx.requestAnimationFrame = () => { scheduledFrames++; };
 const hs = headText();
+check("итог трат показан сразу, без ожидания кадра анимации", hs.includes("250,00") && scheduledFrames === 0);
+delete ctx.requestAnimationFrame;
 check("история: «на 67% больше, чем за те же числа» и подпись об источнике", hs.includes("на 67% больше"));
 check("история: текст про числа 1–8", hs.includes("С 1 по 8 число"));
 check("история: выписка сохранила месяц, без описаний операций", vm.runInContext(`Object.keys(historyStore).includes("2026-11") && !JSON.stringify(historyStore).includes("ЛАВКА")`, ctx));
@@ -962,7 +976,50 @@ async function testImport() {
     quality === "Суммы сверены|Суммы не сошлись|Суммы сверены|Прочитана только часть операций");
 }
 
-testImport().then(() => {
+async function testSelectiveRemember() {
+  const samples = {
+    alfa: { bank: { id: "alfa", name: "Альфа-Банк" }, txs: [{ date: "2026-10-10", amount: -20, details: "Кафе" }] },
+    mtb: { bank: { id: "mtb", name: "МТБанк" }, txs: [{ date: "2026-10-12", amount: -35, details: "Магазин" }] },
+    prior: { bank: { id: "prior", name: "Приорбанк" }, txs: [{ date: "2026-10-13", amount: -10, details: "Транспорт" }] },
+  };
+  ctx.PriorCsvParser = { decode: bytes => Buffer.from(bytes).toString("utf8") };
+  ctx.Banks = { ...Banks, parseCsv: key => {
+    const item = samples[key];
+    return { ...item, header: {}, bank: { ...item.bank, validate: () => ({}) } };
+  } };
+  vm.runInContext('txs = []; statements = []; parked = []; header = {}; pendingKeep = []; render();', ctx);
+  const importCsv = async key => {
+    const bytes = new TextEncoder().encode(key);
+    byId.file.files = [{ name: key + ".csv", size: bytes.length, arrayBuffer: async () => bytes.buffer }];
+    await byId.file.listeners.change[0]();
+  };
+  await importCsv("alfa");
+  check("даже после старого отказа сайт предлагает сохранить свежий файл", !byId.keepAsk.hidden && byId.keepFiles.textContent === "alfa.csv");
+  byId.keepNo.listeners.click[0]();
+  check("отказ закрывает предложение и не сохраняет файл", byId.keepAsk.hidden && !savedDevice);
+  await importCsv("alfa");
+  check("повторная загрузка того же файла не открывает предложение", byId.keepAsk.hidden);
+  await importCsv("mtb");
+  check("после отказа следующий файл предлагается отдельно", !byId.keepAsk.hidden && byId.keepFiles.textContent === "mtb.csv");
+  await byId.keepYes.listeners.click[0]();
+  check("в копии только МТБ, Альфа осталась в открытом отчёте", savedDevice?.txs.length === 1 &&
+    savedDevice.txs[0].bank === "mtb" && vm.runInContext("txs.some(t => t.bank === 'alfa')", ctx));
+  await importCsv("prior");
+  check("сохранение одного файла не включает автосохранение следующих", !byId.keepAsk.hidden &&
+    byId.keepFiles.textContent === "prior.csv" && !byId.keepDevice.checked);
+  await byId.keepYes.listeners.click[0]();
+  check("одобренные выписки на устройстве накапливаются", savedDevice?.txs.length === 2 &&
+    savedDevice.statements.map(st => st.bank).join("|") === "mtb|prior");
+  failDeviceDelete = true;
+  await byId.deviceForgetSettings.listeners.click[0]();
+  check("при ошибке удаления не говорим, что копия стёрта", !!savedDevice &&
+    /Не удалось удалить/.test(byId.status.textContent) && !byId.deviceForgetSettings.hidden);
+  failDeviceDelete = false;
+  await byId.deviceForgetSettings.listeners.click[0]();
+  check("после успешного удаления действие исчезает", !savedDevice && byId.deviceForgetSettings.hidden);
+}
+
+testImport().then(testSelectiveRemember).then(() => {
   console.log(failed === 0 ? "\nВсе проверки пройдены." : `\nПровалено проверок: ${failed}`);
   process.exitCode = failed === 0 ? 0 : 1;
 }).catch(err => {
