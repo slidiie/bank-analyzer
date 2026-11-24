@@ -13,6 +13,13 @@
   // Для валютных операций (cur, orig) берётся исходная сумма: смена курса не ломает идентификатор
   const baseAmt = tx => (typeof tx.orig === "number" ? tx.orig : tx.amount);
   const txId = tx => [tx.date, tx.time || "", baseAmt(tx), tx.balance].join("|");
+  // cur — валюта счёта. currency у некоторых банков — валюта покупки, а сумма уже в валюте счёта.
+  const accountCurrency = tx => tx.cur || "BYN";
+  const sameCurrency = (a, b) => accountCurrency(a) === accountCurrency(b);
+  const cardKey = tx => String(tx.card || "").replace(/\s+/g, "");
+  const sameCard = (a, b) => !cardKey(a) || !cardKey(b) || cardKey(a) === cardKey(b);
+  const detailsKey = tx => String(tx.details || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const sameStatus = (a, b) => Boolean(a.pending) === Boolean(b.pending);
 
   // Слова, по которым операция похожа на перевод между счетами. Покупки и наличные сюда не входят.
   const TRANSFERISH = /перевод|p2p|пополнен|интернет-банк|internetbank|ерип|erip|между своими|своего счёта|своего счета/i;
@@ -21,10 +28,13 @@
   // МТБ за интернет или связь. Если на перевод похожа только одна сторона и только слабым словом, это не пара.
   const STRONG_TRANSFER = /перевод|p2p|пополнен|между своими|своего счёта|своего счета/i;
   const NOT_TRANSFER = /покупка товара|выдача наличных|снятие наличных|заработн|зарплат|пенси|стипенд|пособи|отпускны/i;
+  const OWN_TRANSFER = /между своими|(?:свой|своего|своему|сво[её]м|своим|своих|своими)\s+сч[её]т|собственн\S* сч[её]т/i;
+  const hasTransferEvidence = (credit, debit) => /пополнен/i.test(credit.details || "") ||
+    OWN_TRANSFER.test(credit.details || "") || OWN_TRANSFER.test(debit.details || "");
 
   const newState = () => ({ txs: [], statements: [] });
 
-  // Сколько раз каждая операция уже есть в разборе: ключ «банк|идентификатор».
+  // Сколько раз каждая операция уже есть в разборе: ключ «банк|валюта счёта|идентификатор».
   // Повтором считается только операция того же банка, и столько раз, сколько она уже встречалась:
   // две одинаковые покупки в одной выписке (без времени и остатка) обе остаются.
   // У операций из старых файлов разбора банка нет: они сравниваются с любым банком.
@@ -32,29 +42,32 @@
   // Свободное сравнение: банк, дата, сумма, часы и минуты совпали; секунды и остаток либо равны, либо у одной стороны их нет.
   // Без времени свободно не сравниваем: две покупки на одну сумму в один день обычное дело.
   const hm = t => (/^\d\d:\d\d/.test(t.time || "") ? t.time.slice(0, 5) : "");
-  const looseKey = (bank, t) => (hm(t) ? [bank, t.date, hm(t), cents(baseAmt(t))].join("|") : "");
+  const exactKey = (bank, t) => [bank, accountCurrency(t), txId(t)].join("|");
+  const looseKey = (bank, t) => (hm(t) ? [bank, accountCurrency(t), t.date, hm(t), cents(baseAmt(t))].join("|") : "");
   const noVal = v => v === null || v === undefined || v === "";
+  const hasBalance = tx => !noVal(tx.balance);
   const sameShape = (a, b) => (a.time === b.time || a.time.length === 5 || b.time.length === 5) &&
-    (noVal(a.balance) || noVal(b.balance) || cents(a.balance) === cents(b.balance));
+    (!hasBalance(a) || !hasBalance(b) || cents(a.balance) === cents(b.balance));
   function counter(txs) {
     const exact = new Map(), loose = new Map();
     const push = (m, k, e) => { if (!m.has(k)) m.set(k, []); m.get(k).push(e); };
     for (const t of txs) {
       const e = { t, used: false }, bank = t.bank || "?";
-      push(exact, bank + "|" + txId(t), e);
+      push(exact, exactKey(bank, t), e);
       const lk = looseKey(bank, t); if (lk) push(loose, lk, e);
     }
     return { exact, loose };
   }
   function takeDup(cnt, bank, t) {
-    const id = txId(t);
-    for (const k of [bank + "|" + id, "?|" + id]) {
-      const e = (cnt.exact.get(k) || []).find(x => !x.used);
+    const compatible = x => !x.used && sameStatus(x.t, t) && sameCard(x.t, t) &&
+      (hasBalance(x.t) || hasBalance(t) || detailsKey(x.t) === detailsKey(t));
+    for (const b of [bank, "?"]) {
+      const e = (cnt.exact.get(exactKey(b, t)) || []).find(compatible);
       if (e) { e.used = true; return true; }
     }
     if (!hm(t)) return false;
     for (const b of [bank, "?"]) {
-      const e = (cnt.loose.get(looseKey(b, t)) || []).find(x => !x.used && sameShape(x.t, t));
+      const e = (cnt.loose.get(looseKey(b, t)) || []).find(x => compatible(x) && sameShape(x.t, t));
       if (e) { e.used = true; return true; }
     }
     return false;
@@ -67,7 +80,8 @@
     let added = 0, skipped = 0;
     // Непроведённая операция (авторизация) потом приходит в новой выписке уже проведённой, с другим остатком и датой.
     // Ключ «банк, дата и время регистрации, сумма»: проведённая заменяет непроведённую, а непроведённая не дублирует проведённую.
-    const pkey = (bank, t) => [bank, t.regDate || t.date || "", t.time || "", baseAmt(t)].join("|");
+    const pendingPrefix = (bank, t) => [bank, accountCurrency(t), cardKey(t), t.regDate || t.date || "", t.time || "", ""].join("|");
+    const pkey = (bank, t) => pendingPrefix(bank, t) + [baseAmt(t), t.time ? "" : detailsKey(t)].join("|");
     const posted = new Set(), pending = new Map();
     state.txs.forEach(t => { if (t.pending) pending.set(pkey(t.bank || "?", t), t); else posted.add(pkey(t.bank || "?", t)); });
     for (const t of list) {
@@ -78,7 +92,7 @@
         // Покупка в валюте: банк списывает по курсу дня проведения, сумма отличается от холда на проценты.
         // Та же секунда регистрации, тот же знак и сумма в пределах 10 %: это та же операция, холд заменяется списанием
         if (!pk && t.time) {
-          const head = [bank, t.regDate || t.date || "", t.time, ""].join("|"), a = baseAmt(t);
+          const head = pendingPrefix(bank, t), a = baseAmt(t);
           for (const [k, p] of pending) {
             const b = baseAmt(p);
             if (k.startsWith(head) && a * b > 0 && Math.abs(a - b) <= 0.1 * Math.abs(b)) { pk = k; break; }
@@ -170,7 +184,8 @@
       if (c.pair) continue;
       let best = null, bestGap = Infinity;
       for (const d of free) {
-        if (d.pair || d.amount >= 0 || (d.src === c.src && !allowSame) || cents(-d.amount) !== cents(c.amount)) continue;
+        if (d.pair || d.amount >= 0 || (d.src === c.src && !allowSame) || !sameCurrency(c, d) || cents(-baseAmt(d)) !== cents(baseAmt(c))) continue;
+        if (!hasTransferEvidence(c, d)) continue;
         if (!TRANSFERISH.test(c.details || "") && !TRANSFERISH.test(d.details || "")) continue;
         if (!(TRANSFERISH.test(c.details || "") && TRANSFERISH.test(d.details || "")) &&
             !STRONG_TRANSFER.test(c.details || "") && !STRONG_TRANSFER.test(d.details || "")) continue;
@@ -210,10 +225,9 @@
   }
   function markLoosePairs(txs, eligible, nextId) {
     const isT = t => TRANSFERISH.test(t.details || "");
-    const sameCur = (a, b) => (a.cur || "") === (b.cur || "");
     const okDate = t => /^\d{4}-\d\d-\d\d$/.test(t.date || "");
     const base = t => eligible(t) && isT(t) && okDate(t);
-    const feeOf = (c, d) => cents(-d.amount) - cents(c.amount);
+    const feeOf = (c, d) => cents(-baseAmt(d)) - cents(baseAmt(c));
     const rules = [
       (c, d) => feeOf(c, d) === 0 && weekendBetween(d.date, c.date),
       (c, d) => {
@@ -226,7 +240,7 @@
     let n = 0;
     for (const rule of rules) {
       const credits = txs.filter(t => t.amount > 0 && base(t)), debits = txs.filter(t => t.amount < 0 && base(t));
-      const fits = (c, d) => !c.pair && !d.pair && c.src !== d.src && sameCur(c, d) && rule(c, d);
+      const fits = (c, d) => !c.pair && !d.pair && c.src !== d.src && sameCurrency(c, d) && hasTransferEvidence(c, d) && rule(c, d);
       for (const c of credits) {
         if (c.pair) continue;
         const ds = debits.filter(d => fits(c, d));
