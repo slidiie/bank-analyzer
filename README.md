@@ -85,10 +85,11 @@
 
 ## Сборка и тесты
 
-```
+Из корня репозитория запустите `python3 src/build.py` (на Windows также можно `py -3 src/build.py`). Нужны Python 3.8+ и Node.js 22+. Устанавливать пакеты и скачивать шрифты не требуется: сборщик берёт Inter из уже включённого в Git `docs/index.html` и проверяет контрольные суммы. Сайт собирается в `docs/`. Чтобы собрать его в другую папку, используйте `python3 src/build.py --output dist`.
+
+```sh
 cd src
-python3 build.py                 # собирает ../bank-analyzer.html
-for t in tests/test_*.js; do node $t; done   # каждый должен напечатать «Все проверки пройдены.»
+for t in tests/test_*.js; do node "$t" || exit; done
 ```
 
 Проверка вёрстки в браузере (нужен Microsoft Edge и Node 22+, пакеты не ставятся): раздайте собранный сайт локально и запустите аудит.

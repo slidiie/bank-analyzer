@@ -31,7 +31,7 @@
     .uniproof { padding: .55rem .75rem; border-radius: var(--r-m); border: 1px solid var(--note-border); background: var(--note-bg); }
     .uniproof.ok { border-color: var(--ok-border); background: var(--ok-bg); }
     .uniproof.bad { border-color: var(--warn-border); background: var(--warn-bg); }
-    #uniFile, #uniSheetNote, #status { overflow-wrap: anywhere; }
+    #uniFile, #uniSheetNote, #status, #keepFiles { overflow-wrap: anywhere; }
     #uniSheetLabel select { max-width: 100%; }
     .uniop { display: grid; grid-template-columns: 6rem 9rem 1fr; gap: .2rem .7rem; padding: .4rem 0; border-bottom: 1px solid var(--line); align-items: baseline; }
     .uniop > span:first-child { white-space: nowrap; }

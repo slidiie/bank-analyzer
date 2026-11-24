@@ -239,7 +239,7 @@
       const files = [...$("file").files];
       if (!files.length) return;
       leaveDemo();
-      const notes = [];
+      const notes = [], newFiles = [];
       let failedFile = false;   // какой-то файл не прочитался: строку состояния выделяем
       await deviceReady;
       unpark();
@@ -256,6 +256,7 @@
           const st = { txs, statements };
           const r = Merge.addStatement(st, res);
           loaded++;
+          if (r.added) newFiles.push({ name: f.name, result: res });
           const statement = statements[r.index];
           if (res.uni) Object.assign(statement, { universal: true, proof: res.uni.proof });
           const quality = readQuality(statement);
@@ -284,6 +285,7 @@
         applySplits();
         const cov = rulesCoverage();
         if (cov) notes.push(cov);
+        offerDeviceSave(newFiles);
         render();
         $("backupMsg").textContent = backupSummary();
         try { window.scrollTo({ top: 0 }); } catch (e) { /* без прокрутки */ }

@@ -32,7 +32,7 @@
       }
       return out;
     }
-    let lastHeadline = "", lastTrend = "", ovMoreOpen = false;
+    let lastTrend = "", ovMoreOpen = false;
     // История между выписками (только в этом браузере): итоги по месяцам, без описаний операций
     let historyStore = loadJSON("ba_history_v1", {});
     function statementSummary() {
@@ -129,17 +129,6 @@
       box._sum = { level: sm.level, text: `Лимиты · ${monthTitle(ym).toLowerCase()}: ${word}` };
       return box;
     }
-    function countUp(el, to) {
-      const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (calm || typeof requestAnimationFrame !== "function" || typeof performance === "undefined") { el.textContent = fmt(to); return; }
-      const t0 = performance.now(), dur = 600;
-      const step = now => {
-        const k = Math.min(1, (now - t0) / dur);
-        el.textContent = fmt(k < 1 ? to * (1 - Math.pow(1 - k, 3)) : to);
-        if (k < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    }
     // Главная мысль: крупная сумма и 3–5 коротких фактов (без советов, только то, что видно в выписке)
     function headlineCard(ctx) {
       const st = ctx.stats;
@@ -180,10 +169,6 @@
         const after = Math.round((diff - st.saved) * 100) / 100;
         facts.push(`${st.saved > 0 ? `Отложено в накопления: ${fmt(st.saved)} ${CUR} (не траты)` : `Снято с накоплений: ${fmt(-st.saved)} ${CUR} (не доход)`}. С учётом этого на счёте ${after >= 0 ? "прибавилось" : "убавилось"} ${fmt(Math.abs(after))} ${CUR}`);
       }
-      const big = h("span", {}, fmt(st.total));
-      const key = `${ctx.label}|${st.total.toFixed(2)}`;
-      const fresh = key !== lastHeadline;
-      if (fresh) { lastHeadline = key; countUp(big, st.total); }
       const tile = (label, val, cls, hint) => h("div", { class: "ftile" + (cls ? " " + cls : "") }, h("div", { class: "flabel" }, label), h("div", { class: "fval" }, val, " ", h("small", {}, CUR)), hint ? h("div", { class: "fhint" }, hint) : "");
       // Реальное изменение остатка по итогам самих выписок (если они есть у всех): «Разница» считает только то, что входит в «Пришло» и «Потрачено»
       let balNote = "";
@@ -195,10 +180,10 @@
         }
       }
       const tiles = income > 0
-        ? [tile("Пришло", fmt(income)), tile("Потрачено", big, "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), (diff >= 0 ? "pos" : "neg") + " wide", diff >= 0 ? (st.saved > 0 ? "за период: пришло минус потрачено, до накоплений" : "за период: пришло минус потрачено") : "за период: ушло больше, чем пришло")]
-        : [tile("Потрачено", big, "spent")];
+        ? [tile("Пришло", fmt(income)), tile("Потрачено", fmt(st.total), "spent"), tile("Разница", (diff >= 0 ? "+" : "−") + fmt(Math.abs(diff)), (diff >= 0 ? "pos" : "neg") + " wide", diff >= 0 ? (st.saved > 0 ? "за период: пришло минус потрачено, до накоплений" : "за период: пришло минус потрачено") : "за период: ушло больше, чем пришло")]
+        : [tile("Потрачено", fmt(st.total), "spent")];
       if (balNote) facts.unshift(balNote);
-      return h("div", { class: "hsum" + (fresh ? " anim" : "") },
+      return h("div", { class: "hsum" },
         h("div", { class: "hlabel muted" }, ctx.label ? ctx.label.charAt(0).toUpperCase() + ctx.label.slice(1) : "За период"),
         h("div", { class: "flow" }, tiles),
         facts.length ? h("ul", {}, facts.slice(0, 5).map(f => h("li", {}, f))) : "");
