@@ -164,6 +164,11 @@
   <div id="uniSheet" class="modal sheet" hidden>
     <div class="modalcard unicard" role="dialog" aria-modal="true" aria-labelledby="uniTitle" tabindex="-1">
       <h2 id="uniTitle" style="margin-top:0">Этого банка нет в списке. Так читаем?</h2>
+      <p id="uniFile" class="muted"></p>
+      <div id="uniWorkbook" hidden>
+        <label id="uniSheetLabel" for="uniTab">Лист Excel <select id="uniTab"></select></label>
+        <p id="uniSheetNote" class="muted"></p>
+      </div>
       <p id="uniProof" class="uniproof" role="status"></p>
       <h3>Первые операции, как их прочитал сайт</h3>
       <div id="uniOps" class="uniops"></div>
@@ -299,7 +304,7 @@
       <button id="dlBtn" type="button" hidden title="Все операции одной таблицей (CSV): открывается в Excel и Google Таблицах">Скачать в Excel</button>
       <button id="printBtn" type="button" hidden title="Откроется окно печати браузера: там можно выбрать «Сохранить как PDF». Печатается открытый раздел.">Печать / PDF</button>
     </p>
-    <p id="status" data-sec="overview more"></p>
+    <p id="status" data-sec="overview more" role="status"></p>
     <div id="bankChips" class="bankchips" data-sec="overview more" aria-label="Загруженные банки"></div>
     <div id="mergeNote" class="note" data-sec="overview more" hidden style="margin:.6rem 0"></div>
     <div id="keepAsk" class="note" data-sec="overview" hidden style="margin:.6rem 0">
