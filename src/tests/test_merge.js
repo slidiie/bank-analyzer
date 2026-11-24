@@ -378,4 +378,43 @@ check("мусор в валюте: предупреждения нет", M.curre
   check("другой банк: не повтор", r.skipped === 0);
 }
 console.log(failed ? `\nПровалено проверок: ${failed}` : "\nВсе проверки пройдены.");
+// Слияние выписок не должно удалять разные операции с одинаковой числовой суммой.
+{
+  const make = (details, extra) => tx("2026-10-10", null, -20, null, details, extra);
+  const add = (s, item, currency = "BYN") => M.addStatement(s, { bank: bankA, header: { currency }, txs: [item] });
+  const s = M.newState();
+  add(s, make("Магазин А"));
+  add(s, make("Магазин Б"));
+  check("покупки без времени и остатка у разных продавцов сохраняются обе", s.txs.length === 2);
+  check("повторный импорт той же покупки по-прежнему пропускается", add(s, make("Магазин Б")).skipped === 1);
+  add(s, make("Магазин А"), "USD");
+  check("одинаковые суммы на счетах в разных валютах не являются дублями", s.txs.length === 3);
+
+  const cards = M.newState();
+  add(cards, make("Магазин А", { card: "****1111" }));
+  add(cards, make("Магазин А", { card: "****2222" }));
+  check("одинаковые операции по разным картам не являются дублями", cards.txs.length === 2);
+
+  const authorizations = M.newState();
+  const posted = make("Магазин А", { time: "10:30:00" });
+  add(authorizations, { ...posted, pending: true });
+  check("проведение с тем же ключом заменяет авторизацию", add(authorizations, posted).added === 1 &&
+    authorizations.txs.length === 1 && !authorizations.txs[0].pending);
+}
+
+// Перевод между своими счетами требует валюты счёта и признака пополнения или своего счёта.
+{
+  const date = "2026-10-10";
+  const pair = (debit, credit, extra) => [
+    tx(date, "10:00:00", -100, null, debit, { src: 0, ...extra }),
+    tx(date, "10:01:00", 100, null, credit, { src: 1 }),
+  ];
+  check("встречные переводы между разными людьми не считаются своими", M.markCrossPairs(pair("Перевод человеку А", "Перевод от человека Б")) === 0);
+  check("перевод с прибавлением той же суммы в другой валюте не считается своим", M.markCrossPairs(pair("Перевод со своего счёта", "Пополнение счёта", { cur: "USD" })) === 0);
+  check("явный перевод на свой счёт остаётся парой", M.markCrossPairs(pair("Перевод на свой счёт", "Перевод по реквизитам")) === 1);
+  const converted = pair("Перевод на свой счёт", "Пополнение счёта", { cur: "USD", orig: -100, amount: -320 });
+  Object.assign(converted[1], { cur: "USD", orig: 100 });
+  check("повторный импорт валютного счёта сравнивается в исходной валюте", M.markCrossPairs(converted) === 1);
+}
+
 process.exit(failed ? 1 : 0);
